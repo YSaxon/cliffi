@@ -21,16 +21,53 @@ bool endsWith(const char* str, char c) {
 
 bool isFloatingPoint(const char* str) {
     // Simple floating-point detection; consider enhancing for full spec compliance
-    bool hasDecimal = strchr(str, '.') != NULL;
-    bool hasExponent = strchr(str, 'e') != NULL || strchr(str, 'E') != NULL;
-    return hasDecimal || hasExponent;
+    bool hasDecimal = false;
+    bool hasExponent = false;
+    bool hasDigit = false;
+
+    for (size_t i = 0; str[i] != '\0'; i++) {
+        if (isdigit(str[i])) {
+            hasDigit = true;
+        } else if (str[i] == '.') {
+            if (hasDecimal || hasExponent) {
+                return false; // Multiple decimal points or already has exponent
+            }
+            hasDecimal = true;
+        } else if (str[i] == 'e' || str[i] == 'E') {
+            if (!hasDigit || hasExponent) {
+                return false; // Exponent without digits or multiple exponents
+            }
+            hasExponent = true;
+        } else if (str[i] == '-' || str[i] == '+') {
+            if (i != 0 && (str[i - 1] != 'e' && str[i - 1] != 'E')) {
+                return false; // Sign in the middle of the string
+            }
+            // allow d or D or f or F at the end of the string
+            else if (i==strlen(str)-1 && (str[i] == 'd' || str[i] == 'D' || str[i] == 'f' || str[i] == 'F')) {
+                continue; // valid
+            }
+        } else {
+            return false; // Invalid character
+        }
+    }
+
+    return hasDigit && (hasDecimal || hasExponent);
 }
 
 ArgType infer_arg_type(const char* arg) {
     if (!arg || strlen(arg) == 0) return TYPE_UNKNOWN;
     if (arg[0] == '"' || arg[0] == '\'') return TYPE_STRING;
-    if (isAllDigits(arg)) return TYPE_INT;
-    if (isFloatingPoint(arg)) return TYPE_FLOAT;
+    if (isFloatingPoint(arg)){
+            if (endsWith(arg, 'D') || endsWith(arg, 'd')) return TYPE_DOUBLE;
+            if (endsWith(arg, 'F') || endsWith(arg, 'f')) return TYPE_FLOAT;
+         return TYPE_FLOAT;
+         }
+    if (isAllDigits(arg)) {
+            if (endsWith(arg, 'L') || endsWith(arg, 'l')) return TYPE_LONG;
+            if (endsWith(arg, 'U') || endsWith(arg, 'u')) return TYPE_UINT;
+            if (endsWith(arg, 'I') || endsWith(arg, 'i')) return TYPE_INT;
+        return TYPE_INT;
+        }
     if (isHexFormat(arg)) {
         size_t length = strlen(arg);
         if (length <= 4) return TYPE_UCHAR;
@@ -38,8 +75,7 @@ ArgType infer_arg_type(const char* arg) {
         if (length <= 10) return TYPE_UINT;
         return TYPE_ULONG;
     }
-    if (endsWith(arg, 'L') || endsWith(arg, 'l')) return TYPE_LONG;
-    if (endsWith(arg, 'U') || endsWith(arg, 'u')) return TYPE_UINT;
+
     // Add more rules as needed
     return TYPE_STRING; // Default fallback
 }
