@@ -224,7 +224,7 @@ void log_function_call_info(FunctionCallInfo* info){
     printf("Return Type: %c\n", typeToChar(info->return_type));
     printf("Arg Count: %d\n", info->arg_count);
     for (int i = 0; i < info->arg_count; i++) {
-        printf("Arg %d: Type: %c, Value: ", i, typeToChar(info->args[i].type));
+        printf("Arg %d: %s Type: %c, Value: ", i,info->args[i].explicitType? "Explicit" : "Implicit", typeToChar(info->args[i].type));
         switch (info->args[i].type) {
             case TYPE_CHAR:
                 printf("%c\n", info->args[i].value.c_val);
