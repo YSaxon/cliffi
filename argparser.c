@@ -55,10 +55,21 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
 
     // arg[2] is the return type
     info->return_type = charToType(argv[2][0]);
-    // info->return_type->explicitType = true;
+    if (info->return_type == TYPE_UNKNOWN) {
+        fprintf(stderr, "Error: Unsupported return type\n");
+        return NULL;
+    } else {
+        printf("Return type: %c\n", info->return_type);
+    }
 
     // arg[3] is the function name
     info->function_name = strdup(argv[3]);
+    if (!info->function_name) {
+        fprintf(stderr, "Error: Unable to allocate memory for function name\n");
+        return NULL;
+    } else {
+        printf("Function name: %s\n", info->function_name);
+    }
     //TODO: maybe at some point we should be able to take a hex offset instead of a function name
 
     for (int i = 4; i < argc; i++) {
