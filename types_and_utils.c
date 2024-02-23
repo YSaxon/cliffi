@@ -123,7 +123,7 @@ void convert_arg_value(ArgInfo* arg, const char* argStr) {
         case TYPE_UINT: arg->value.ui_val = (unsigned int)strtoul(argStr, NULL, 0); break;
         case TYPE_ULONG: arg->value.ul_val = strtoul(argStr, NULL, 0); break;
         case TYPE_LONG: arg->value.l_val = strtol(argStr, NULL, 0); break;
-        case TYPE_STRING: arg->value.str_val = argStr; break;
+        case TYPE_STRING: arg->value.str_val = strdup(argStr); break;
         case TYPE_POINTER: 
             if (isHexFormat(argStr)) {
                 arg->value.ptr_val = hex_string_to_pointer(argStr);
@@ -132,7 +132,10 @@ void convert_arg_value(ArgInfo* arg, const char* argStr) {
             }
             break;
         // Add conversion logic for other types
-        default: break; // Handle as needed
+        default:
+            fprintf(stderr, "Unsupported argument type %c. Cannot convert value %s.\n", typeToChar(arg->type), argStr);
+            break;
+         break; // Handle as needed
     }
 }
 
