@@ -61,44 +61,22 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     info->function_name = strdup(argv[3]);
     //TODO: maybe at some point we should be able to take a hex offset instead of a function name
 
-    //TODO: check arguments validity
-    argc -= 3;
-    argv += 3;
+    for (int i = 4; i < argc; i++) {
+        char* argStr = argv[i];
+        ArgInfo arg;
 
-
-    while ((opt = getopt(argc, argv, "c:h:i:l:C:H:I:L:f:d:s:p:v:")) != -1) {
-    ArgType explicitType = TYPE_UNKNOWN;
-        switch (opt) {
-            case TYPE_CHAR: explicitType = TYPE_CHAR; break;
-            case TYPE_SHORT: explicitType = TYPE_SHORT; break;
-            case TYPE_INT: explicitType = TYPE_INT; break;
-            case TYPE_LONG: explicitType = TYPE_LONG; break;
-            case TYPE_UCHAR: explicitType = TYPE_UCHAR; break;
-            case TYPE_USHORT: explicitType = TYPE_USHORT; break;
-            case TYPE_UINT: explicitType = TYPE_UINT; break;
-            case TYPE_ULONG: explicitType = TYPE_ULONG; break;
-            case TYPE_FLOAT: explicitType = TYPE_FLOAT; break;
-            case TYPE_DOUBLE: explicitType = TYPE_DOUBLE; break;
-            case TYPE_STRING: explicitType = TYPE_STRING; break;
-            case TYPE_POINTER: explicitType = TYPE_POINTER; break;
-            // case TYPE_VOID: explicitType = TYPE_VOID; break; Not allowed for a function argument
-
-            // Handle other type flags
-            default: break; // Or handle unknown flags
+        if (argStr[0] == '-') {
+            ArgType explicitType = charToType(argStr[1]); // Convert flag to type
+            argStr = argv[++i]; // Move to the next argument
+            arg.type = explicitType;
+            arg.explicitType = true;
+        } else {
+            ArgType implicitType = infer_arg_type(argStr);
+            arg.type = implicitType;
+            arg.explicitType = false;
         }
 
-        if (explicitType != TYPE_UNKNOWN) {
-            ArgInfo arg = {.type = explicitType, .explicitType = true};
-            convert_arg_value(&arg, optarg);
-            addArgToFunctionCallInfo(info, &arg); // Implement this addition
-            explicitType = TYPE_UNKNOWN; // Reset for the next argument
-        }
-    }
-
-    // Handle non-flagged (inferred type) arguments
-    for (int index = optind; index < argc; index++) {
-        argStr = argv[index];
-        ArgInfo arg = {.type = infer_arg_type(argStr), .explicitType = false};
+        printf("Converting Arg %d: %s\n", i - 3, argStr);
         convert_arg_value(&arg, argStr);
         addArgToFunctionCallInfo(info, &arg);
     }
