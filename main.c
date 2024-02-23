@@ -14,14 +14,8 @@ int main(int argc, char* argv[]) {
     }
 
     // Step 1: Resolve the library path
-    char* library_path = resolve_library_path(argv[1]);
-    if (!library_path) {
-        fprintf(stderr, "Error: Unable to resolve library path for %s\n", argv[1]);
-        return 1;
-    }
+    // For now we've delegated that call to parse_arguments
 
-    // Update the library path in argv for consistent parsing
-    argv[1] = library_path;
 
     // Step 2: Parse command-line arguments
     FunctionCallInfo* call_info = parse_arguments(argc, argv);

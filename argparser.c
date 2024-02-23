@@ -1,4 +1,5 @@
 #include "argparser.h"
+#include "library_path_resolver.h"
 #include "types_and_utils.h"
 #include <getopt.h>
 #include <stdlib.h>
@@ -38,7 +39,15 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     char* argStr;
 
     // arg[1] is the library path
-    info->library_path = strdup(argv[1]);
+    info->library_path = resolve_library_path(argv[1]);
+    if (!info->library_path) {
+        fprintf(stderr, "Error: Unable to resolve library path for %s\n", argv[1]);
+        return NULL;
+    }
+    else {
+        printf("Library path: %s\n", info->library_path);
+    }
+
     // arg[2] is the return type
     info->return_type = charToType(argv[2][0]);
     // info->return_type->explicitType = true;

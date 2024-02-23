@@ -19,10 +19,15 @@ char* resolve_library_path(const char* library_name) {
 
     // Check if the path is already absolute or relative
     if (library_name[0] == '/' || library_name[0] == '.' || strstr(library_name, "./") == library_name || strstr(library_name, "../") == library_name) {
+        // Inside resolve_library_path, after checking if the path exists
         if (file_exists(library_name)) {
+            printf("Library found at path: %s\n", library_name);
             return strdup(library_name);
+        } else {
+            printf("Checking library path: %s\n", library_name);
         }
-        return NULL;
+        // Before returning NULL
+        printf("Library %s not found\n", library_name);
     }
 
     // Attempt to find the library in LD_LIBRARY_PATH or default paths
