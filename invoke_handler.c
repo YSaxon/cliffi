@@ -68,10 +68,9 @@ int invoke_dynamic_function(const FunctionCallInfo* call_info, ArgInfo* out_retu
     void* return_value = malloc(return_type->size);
     ffi_call(&cif, func, return_value, values);
 
-    out_return_value->type = call_info->return_type;
-    setArgInfo(call_info->return_type, out_return_value, return_value);
+    setArgInfoValue(out_return_value, return_value); //maybe add size to this function for pointer types and then do memcpy?
 
-    free(return_value); //TODO can we do this? What if the return value is a pointer?
+    free(return_value); //TODO can we safely do this? What if the return value is a pointer?
     dlclose(lib_handle);
     return 0;
 }

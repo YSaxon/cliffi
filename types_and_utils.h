@@ -64,7 +64,7 @@ bool endsWith(const char* str, char c);
 bool isFloatingPoint(const char* str);
 ArgType infer_arg_type(const char* arg);
 void* hex_string_to_pointer(const char* hexStr);
-void setArgInfo(ArgType type, ArgInfo* arg, const void* value);
+void setArgInfoValue(ArgInfo* arg, const void* value);
 void convert_arg_value(ArgInfo* arg, const char* argStr);
 void log_function_call_info(FunctionCallInfo* info);
 

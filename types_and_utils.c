@@ -160,8 +160,7 @@ ArgType charToType(char c) {
     }
 }
 
- void setArgInfo(ArgType type, ArgInfo* arg, const void* value){
-    // arg->type = type;
+ void setArgInfoValue(ArgInfo* arg, const void* value){
     switch(arg->type){
         case TYPE_CHAR:
             arg->value.c_val = *(char*)value;
