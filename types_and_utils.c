@@ -140,7 +140,27 @@ void convert_arg_value(ArgInfo* arg, const char* argStr) {
 }
 
 char typeToChar(ArgType type) {
-    return (char)type;
+    return type == TYPE_UNKNOWN ? '?' : (char) type;
+}
+
+char* typeToString(ArgType type) {
+    switch (type) {
+        case TYPE_CHAR: return "char";
+        case TYPE_SHORT: return "short";
+        case TYPE_INT: return "int";
+        case TYPE_LONG: return "long";
+        case TYPE_UCHAR: return "unsigned char";
+        case TYPE_USHORT: return "unsigned short";
+        case TYPE_UINT: return "unsigned int";
+        case TYPE_ULONG: return "unsigned long";
+        case TYPE_FLOAT: return "float";
+        case TYPE_DOUBLE: return "double";
+        case TYPE_STRING: return "string";
+        case TYPE_POINTER: return "pointer";
+        case TYPE_VOID: return "void";
+        case TYPE_UNKNOWN: return "unknown";
+        default: return "other?";
+    }
 }
 
 ArgType charToType(char c) {
