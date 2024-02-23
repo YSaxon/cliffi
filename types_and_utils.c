@@ -295,20 +295,9 @@ void log_function_call_info(FunctionCallInfo* info){
 
 void freeFunctionCallInfo(FunctionCallInfo* info) {
     if (info) {
-        // if (info->function_name) {
-        //     free((char *)info->function_name);
-        // }
-        // if (info->library_path) {
-        //     free(info->library_path);
-        // }
-        if (info->args) {
-            // for (int i = 0; i < info->arg_count; i++) {
-            //     if (info->args[i].value.ptr_val) { // Assuming all types need to be freed, adjust based on actual needs
-            //         free(info->args[i].value.ptr_val);
-            //     }
-            // }
+        free(info->library_path); // Assuming this was dynamically allocated
+        free(info->function_name);
             free(info->args);
-        }
         free(info);
     }
 }
