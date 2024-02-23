@@ -18,13 +18,18 @@
  void addArgToFunctionCallInfo(FunctionCallInfo* info, ArgInfo* arg) {
     if (!info || !arg) return;
     if (!info->args) {
-        info->args = malloc(sizeof(ArgInfo*));
+        // Allocate memory for a single ArgInfo struct
+        info->args = malloc(sizeof(ArgInfo));
         if (!info->args) return;
+        // Copy the first ArgInfo struct into the allocated space
         info->args[0] = *arg;
         info->arg_count = 1;
     } else {
-        info->args = realloc(info->args, (info->arg_count + 1) * sizeof(ArgInfo*));
-        if (!info->args) return;
+        // Reallocate memory to accommodate one more ArgInfo struct
+        ArgInfo* temp = realloc(info->args, (info->arg_count + 1) * sizeof(ArgInfo));
+        if (!temp) return; // Handle reallocation failure
+        info->args = temp;
+        // Copy the new ArgInfo struct into the newly allocated space
         info->args[info->arg_count] = *arg;
         info->arg_count++;
     }
