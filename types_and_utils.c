@@ -42,11 +42,10 @@ bool isFloatingPoint(const char* str) {
             if (i != 0 && (str[i - 1] != 'e' && str[i - 1] != 'E')) {
                 return false; // Sign in the middle of the string
             }
-            // allow d or D or f or F at the end of the string
-            else if (i==strlen(str)-1 && (str[i] == 'd' || str[i] == 'D' || str[i] == 'f' || str[i] == 'F')) {
-                continue; // valid
+        } else if (i==strlen(str)-1 && (str[i] == 'd' || str[i] == 'D' || str[i] == 'f' || str[i] == 'F')) { 
+                continue; // allow d or D or f or F at the end of the string
             }
-        } else {
+        else {
             return false; // Invalid character
         }
     }
