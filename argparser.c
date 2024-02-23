@@ -1,7 +1,6 @@
 #include "argparser.h"
 #include "library_path_resolver.h"
 #include "types_and_utils.h"
-#include <getopt.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
