@@ -38,13 +38,13 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     char* argStr;
 
     // arg[1] is the library path
-    info->library_path = argv[1];
+    info->library_path = strdup(argv[1]);
     // arg[2] is the return type
     info->return_type = charToType(argv[2][0]);
     // info->return_type->explicitType = true;
 
     // arg[3] is the function name
-    info->function_name = argv[3];
+    info->function_name = strdup(argv[3]);
     //TODO: maybe at some point we should be able to take a hex offset instead of a function name
 
     //TODO: check arguments validity
