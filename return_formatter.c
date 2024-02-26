@@ -6,6 +6,9 @@ void format_and_print_return_value(const ArgInfo* return_value){
         printf("No return value to display.\n");
         return;
     }
+    else {
+    printf("");
+    }
 
     switch (return_value->type) {
         case TYPE_INT:

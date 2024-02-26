@@ -56,6 +56,7 @@ int invoke_dynamic_function(const FunctionCallInfo* call_info, ArgInfo* out_retu
     for (int i = 0; i < call_info->arg_count; ++i) {
         args[i] = arg_type_to_ffi_type(call_info->args[i].type);
         if (!args[i]) {
+            fprintf(stderr, "Failed to convert arg[%d].type = %c to ffi_type.\n", i, call_info->args[i].type);
             dlclose(lib_handle);
             return -1;
         }

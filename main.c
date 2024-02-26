@@ -1,5 +1,7 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "library_path_resolver.h"
 #include "argparser.h"
 #include "invoke_handler.h"

@@ -106,7 +106,8 @@ void* hex_string_to_pointer(const char* hexStr) {
 
 // Type converter
 void convert_arg_value(ArgInfo* arg, const char* argStr) {
-    switch (arg->type) {
+    ArgType type = arg->type;
+    switch (type) {
         case TYPE_INT: arg->value.i_val = atoi(argStr); break;
         case TYPE_FLOAT: arg->value.f_val = atof(argStr); break;
         case TYPE_DOUBLE: arg->value.d_val = strtod(argStr, NULL); break;

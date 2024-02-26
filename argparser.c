@@ -38,7 +38,6 @@
 
 FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     FunctionCallInfo* info = malloc(sizeof(FunctionCallInfo));
-         //createFunctionCallInfo(); // Handle initialization
     int opt;
     char* argStr;
 
@@ -90,6 +89,7 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         convert_arg_value(&arg, argStr);
         addArgToFunctionCallInfo(info, &arg);
     }
+    printf("Done parsing arguments\n");
 
     return info;
 }
