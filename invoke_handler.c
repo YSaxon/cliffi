@@ -1,6 +1,10 @@
 #include "invoke_handler.h"
-#include <ffi.h>
-#include <ffi/ffi.h>
+
+#if defined(__APPLE__)
+    #include <ffi/ffi.h>
+#else
+    #include <ffi.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <dlfcn.h>
