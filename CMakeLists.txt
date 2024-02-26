@@ -6,9 +6,17 @@ enable_testing()
 # Set C standard
 set(CMAKE_C_STANDARD 99)
 
-# Find libffi
-find_package(PkgConfig REQUIRED)
-pkg_search_module(LIBFFI REQUIRED libffi)
+if(CMAKE_SYSTEM_NAME STREQUAL "Android" AND ANDROID_ABI STREQUAL "armeabi-v7a")
+message("compiling for Android")
+    set(LIBFFI_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libffi-3.4.6-android-27-armeabi-v7a/include)
+# set it to static compile against prebuilt libffi instead of shared
+    set(LIBFFI_STATIC_LIB ${CMAKE_SOURCE_DIR}/libffi-3.4.6-android-27-armeabi-v7a/lib/libffi.a)
+    set(LIBFFI_LIBRARIES ${LIBFFI_STATIC_LIB})
+else()
+    message("Not Android")
+    find_package(PkgConfig REQUIRED)
+    pkg_search_module(LIBFFI REQUIRED libffi)
+endif()
 
 # Include directories
 include_directories(${LIBFFI_INCLUDE_DIRS})
