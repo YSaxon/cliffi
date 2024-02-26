@@ -36,6 +36,12 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+
+    //print all args
+    for (int i = 0; i < argc; i++) {
+        printf("argv[%d] = %s\n", i, argv[i]);
+    }
+
     // Step 1: Resolve the library path
     // For now we've delegated that call to parse_arguments
 
