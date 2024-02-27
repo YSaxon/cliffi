@@ -14,7 +14,7 @@
 //     return arg;
 // }
 
- void addArgToFunctionCallInfo(FunctionCallInfo* info, ArgInfo* arg) {
+void addArgToFunctionCallInfo(FunctionCallInfo* info, ArgInfo* arg) {
     if (!info || !arg) return;
     if (!info->args) {
         // Allocate memory for a single ArgInfo struct
@@ -32,10 +32,10 @@
         info->args[info->arg_count] = *arg;
         info->arg_count++;
     }
- }
+}
+
 
  
-
 FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     FunctionCallInfo* info = malloc(sizeof(FunctionCallInfo));
     int opt;
@@ -73,18 +73,45 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     for (int i = 4; i < argc; i++) {
         char* argStr = argv[i];
         ArgInfo arg;
+        int pointer_depth = 0;
+        bool is_array = false;
 
         if (argStr[0] == '-') {
             ArgType explicitType = charToType(argStr[1]); // Convert flag to type
-            argStr = argv[++i]; // Move to the next argument
+            while (explicitType == TYPE_POINTER) {
+                pointer_depth++;
+                explicitType = charToType(argStr[1 + pointer_depth]);
+            }
+            if (explicitType == TYPE_ARRAY) {
+                is_array = true;
+                // We'll need to figure out how to move forward argv past the array values
+                // For now we'll just say that the array values can't have a space in them
+                // So the entire array will just be one argv
+                // In the future we may switch to using end delimitters eg a: 3 2 1 :a
+                explicitType = charToType(argStr[2 + pointer_depth]);
+                // pointer_depth++; Should we increment pointer_depth here?
+            }
+            if (explicitType == TYPE_UNKNOWN) {
+                fprintf(stderr, "Error: Unsupported argument type flag in flags %s on arg %d\n", argStr, i);
+                return NULL;
+            }
+            else if (explicitType == TYPE_ARRAY || explicitType == TYPE_POINTER) {
+                fprintf(stderr, "Error: Array or Pointer flag in unsupported position in flags %s on arg %d. Order must be -[p[p..]][a][primitive type flag]\n", argStr, i);
+            }
+
             arg.type = explicitType;
             arg.explicitType = true;
+            arg.is_array = is_array;
+            arg.pointer_depth = pointer_depth;
+            argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
+        
         } else {
             ArgType implicitType = infer_arg_type(argStr);
             arg.type = implicitType;
+            arg.is_array = false;
+            arg.pointer_depth = 0;
             arg.explicitType = false;
         }
-
         printf("Converting Arg %d: %s\n", i - 3, argStr);
         convert_arg_value(&arg, argStr);
         addArgToFunctionCallInfo(info, &arg);

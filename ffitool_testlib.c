@@ -21,7 +21,7 @@ double multiply(double a, double b) {
 }
 
 // A function that takes a pointer to an integer, increments it, and returns the result
-int increment(int* a) {
+int increment_at_pointer(int* a) {
     if (a) {
         (*a)++;
         return *a;
@@ -46,6 +46,15 @@ void modify_point(Point* p, int x, double y) {
         p->x = x;
         p->y = y;
     }
+}
+
+//Function that takes an array of integers and returns the sum
+int sum_array(int* arr, int size) {
+    int sum = 0;
+    for (int i = 0; i < size; i++) {
+        sum += arr[i];
+    }
+    return sum;
 }
 
 // Entry point to prevent the compiler from complaining when compiling as a shared library

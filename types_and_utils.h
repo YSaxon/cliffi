@@ -17,8 +17,9 @@ typedef enum {
     TYPE_ULONG = 'L',
     TYPE_FLOAT = 'f',
     TYPE_DOUBLE = 'd',
-    TYPE_STRING = 's', // For strings (char*)
+    TYPE_STRING = 's',  // For null terminated strings (char*)
     TYPE_POINTER = 'p', // For pointers, including arbitrary structs
+    TYPE_ARRAY = 'a',   // For arrays of any type
     TYPE_VOID = 'v',    // For functions with no return value
     TYPE_UNKNOWN = -1 // For unknown types
 } ArgType;
@@ -43,6 +44,9 @@ typedef struct ArgInfo {
         char* str_val; // For strings
         void* ptr_val; // For pointers or complex data
     } value;
+    int pointer_depth; // For pointer types, indicates how many levels of indirection
+    bool is_array; // For pointer types, indicates if the pointer is an array
+    size_t array_size; // For array types, indicates the size of the array
 } ArgInfo;
 
 typedef struct FunctionCallInfo {
@@ -67,5 +71,7 @@ void* hex_string_to_pointer(const char* hexStr);
 void setArgInfoValue(ArgInfo* arg, const void* value);
 void convert_arg_value(ArgInfo* arg, const char* argStr);
 void log_function_call_info(FunctionCallInfo* info);
-
+size_t typeToSize(ArgType type);
+char* typeToFormatSpecifier(ArgType type);
+void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr);
 #endif /* ARG_TOOLS_H */

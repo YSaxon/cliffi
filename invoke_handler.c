@@ -12,8 +12,11 @@
 
 
 // Utility function to convert ArgType to ffi_type
-ffi_type* arg_type_to_ffi_type(ArgType arg_type) {
-    switch (arg_type) {
+ffi_type* arg_type_to_ffi_type(const ArgInfo* arg) {
+    if (arg->pointer_depth > 0 || arg->is_array) {
+        return &ffi_type_pointer;
+    }
+    switch (arg->type) {
         case TYPE_CHAR: return &ffi_type_schar;
         case TYPE_SHORT: return &ffi_type_sshort;
         case TYPE_INT: return &ffi_type_sint;
@@ -54,7 +57,7 @@ int invoke_dynamic_function(const FunctionCallInfo* call_info, ArgInfo* out_retu
     ffi_type* args[call_info->arg_count];
     void* values[call_info->arg_count];
     for (int i = 0; i < call_info->arg_count; ++i) {
-        args[i] = arg_type_to_ffi_type(call_info->args[i].type);
+        args[i] = arg_type_to_ffi_type(&call_info->args[i]);
         if (!args[i]) {
             fprintf(stderr, "Failed to convert arg[%d].type = %c to ffi_type.\n", i, call_info->args[i].type);
             dlclose(lib_handle);
@@ -63,7 +66,9 @@ int invoke_dynamic_function(const FunctionCallInfo* call_info, ArgInfo* out_retu
         values[i] = &call_info->args[i].value;
     }
 
-    ffi_type* return_type = arg_type_to_ffi_type(call_info->return_type);
+    ArgInfo dummy_return_value = {.type = call_info->return_type, .array_size=0, .is_array=false, .pointer_depth=0, .value=0};
+    //TODO refactor returntype to actually be an arginfo
+    ffi_type* return_type = arg_type_to_ffi_type(&dummy_return_value);
     if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, call_info->arg_count, return_type, args) != FFI_OK) {
         fprintf(stderr, "ffi_prep_cif failed.\n");
         dlclose(lib_handle);

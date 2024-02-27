@@ -1,54 +1,107 @@
+#include "return_formatter.h"
 #include "types_and_utils.h"
+#include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 void format_and_print_return_value(const ArgInfo* return_value){
-    if (!return_value) {
-        printf("No return value to display.\n");
-        return;
-    }
-    else {
-    printf("");
-    }
+    printf("Function returned: ");
+    format_and_print_arg_value(return_value);
+}
 
-    switch (return_value->type) {
-        case TYPE_INT:
-            printf("Function returned: %d\n", return_value->value.i_val);
-            break;
-        case TYPE_FLOAT:
-            printf("Function returned: %f\n", return_value->value.f_val);
-            break;
-        case TYPE_DOUBLE:
-            printf("Function returned: %lf\n", return_value->value.d_val);
-            break;
+
+    void format_and_print_arg_value(const ArgInfo* arg) {  //, char* buffer, size_t buffer_size) {
+        const void* value = &(arg->value);
+        // char* formatted_value = buffer;
+        if (arg->pointer_depth > 0) {
+            printf("Pointer Depth: %d, ", arg->pointer_depth);
+            for (int j = 0; j < arg->pointer_depth; j++) {
+                value = *(void**)value;
+            }
+        }
+        if (arg->is_array) {
+            value = *(void**)value;
+            printf("Array Size: %zu, ", arg->array_size);
+            char* format_specifier = typeToFormatSpecifier(arg->type);
+            int format_specifier_len = strlen(format_specifier);
+
+            // size_t format_string_len = 7 + // for the "{}" and the null terminator
+            //                            (format_specifier_len * arg->array_size) + // for the format specifiers
+            //                            (2 * (arg->array_size - 1)); // for the commas
+            // char format_string[format_string_len];
+            // format_string[0] = '\0';
+            // strcat(format_string, "{ ");
+            // for (size_t i = 0; i < arg->array_size; i++) {
+            //     strcat(format_string, format_specifier);
+            //     if (i < arg->array_size - 1) {
+            //         strcat(format_string, ", ");
+            //     }
+            // }
+            // strcat(format_string, " }");
+            
+            printf("{ ");
+            for (size_t i = 0; i < arg->array_size; i++) {
+                void* array_element = (void*)value + (i * typeToSize(arg->type));
+                print_arg_value(array_element, arg->type);
+                if (i < arg->array_size - 1) {
+                    printf(", ");
+                }
+            }
+            printf(" }\n");
+        } else {
+            print_arg_value(value, arg->type);
+            printf("\n");
+        }
+        }
+
+
+
+    void print_arg_value(const void* value, ArgType type) {
+    switch (type) {
         case TYPE_CHAR:
-            printf("Function returned: '%c'\n", return_value->value.c_val);
+            printf("%c", *(char*)value);
+            break;
+        case TYPE_SHORT:
+            printf("%hd", *(short*)value);
+            break;
+        case TYPE_INT:
+            printf("%d", *(int*)value);
             break;
         case TYPE_LONG:
-            printf("Function returned: %ld\n", return_value->value.l_val);
+            printf("%ld", *(long*)value);
             break;
         case TYPE_UCHAR:
-            printf("Function returned: %u\n", (unsigned) return_value->value.uc_val); // Cast to unsigned to match %u
+            printf("%u", (unsigned)*(unsigned char*)value);
             break;
         case TYPE_USHORT:
-            printf("Function returned: %hu\n", return_value->value.us_val);
+            printf("%hu", *(unsigned short*)value);
             break;
         case TYPE_UINT:
-            printf("Function returned: %u\n", return_value->value.ui_val);
+            printf("%u", *(unsigned int*)value);
             break;
         case TYPE_ULONG:
-            printf("Function returned: %lu\n", return_value->value.ul_val);
+            printf("%lu", *(unsigned long*)value);
             break;
-        case TYPE_STRING: // Assuming the function returns a char pointer
-            printf("Function returned: \"%s\"\n", return_value->value.str_val);
+        case TYPE_FLOAT:
+            printf("%f", *(float*)value);
             break;
+        case TYPE_DOUBLE:
+            printf("%lf", *(double*)value);
+            break;
+        case TYPE_STRING:
+            printf("\"%s\"", *(char**)value);
+            break;
+        case TYPE_POINTER:
+            fprintf(stderr, "Should not be printing pointer values directly");
+            exit(1);
         case TYPE_VOID:
-            printf("(Function was void)\n");
+            printf("(void)");
             break;
-        // case TYPE_POINTER:
-        //     printf("Function returned pointer: %p\n", return_value->value.ptr_val);
-        //     break;
         default:
-            printf("Unsupported return type.\n");
+            printf("Unsupported type");
             break;
     }
 }
+
+// char* argvalue_to_string()
