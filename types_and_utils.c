@@ -200,6 +200,14 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
         if (*p == ',') count++;
     }
 
+    if (arg->array_size != -1){
+        // it has already been set presumably by appending a number to the flag
+        if (!(strcmp(argStr, "0") == 0 || strcmp(argStr, "NULL") == 0 || strcmp(argStr, "null") == 0)){
+            fprintf(stderr, "Error: Array size already set to %zu, but a size was also at least implicitly specified in the argument after the flag %s\n", arg->array_size, argStr);
+            exit(1);
+        }
+    }
+
     if (count == 1){
         if (isAllDigits(argStr))
         {

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 // Simple function that adds two integers
@@ -27,6 +28,14 @@ int increment_at_pointer(int* a) {
         return *a;
     }
     return 0;
+}
+
+int* get_array_of_int(int a, size_t size) {
+    int* arr = calloc(size, sizeof(int));
+    for (size_t i = 0; i < size; i++) {
+        arr[i] = a;
+    }
+    return arr;
 }
 
 // A function that returns a static string

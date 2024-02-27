@@ -1,6 +1,7 @@
 #include "argparser.h"
 #include "library_path_resolver.h"
 #include "types_and_utils.h"
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -34,7 +35,48 @@ void addArgToFunctionCallInfo(FunctionCallInfo* info, ArgInfo* arg) {
     }
 }
 
+void parse_arg_from_flag(ArgInfo* arg, const char* argStr){
+    int pointer_depth = 0;
+    bool is_array = false;
+    ArgType explicitType = charToType(argStr[0]); // Convert flag to type
+    while (explicitType == TYPE_POINTER) {
+        pointer_depth++;
+        explicitType = charToType(argStr[pointer_depth]);
+    }
+    if (explicitType == TYPE_ARRAY) {
+        is_array = true;
+        // We'll need to figure out how to move forward argv past the array values
+        // For now we'll just say that the array values can't have a space in them
+        // So the entire array will just be one argv
+        // In the future we may switch to using end delimitters eg a: 3 2 1 :a
+        explicitType = charToType(argStr[1 + pointer_depth]);
 
+        // see if there's a size appended to the end of the array flag
+        if (isAllDigits(&argStr[2 + pointer_depth])){
+            arg->array_size = atoi(argStr + 2 + pointer_depth);
+        }
+        else {
+            arg->array_size = -1; //flag for unknown size
+        }
+
+        //note that array_size can also be set by the following arg if it's not a return type
+
+    }
+
+    if (explicitType == TYPE_UNKNOWN) {
+        fprintf(stderr, "Error: Unsupported argument type flag in flags %sn", argStr);
+        exit(1);
+    }
+    else if (explicitType == TYPE_ARRAY || explicitType == TYPE_POINTER) {
+        fprintf(stderr, "Error: Array or Pointer flag in unsupported position in flags %s. Order must be -[p[p..]][a][primitive type flag]\n", argStr);
+        exit(1);
+    }
+
+    arg->type = explicitType;
+    arg->explicitType = true;
+    arg->is_array = is_array;
+    arg->pointer_depth = pointer_depth;
+}
  
 FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     FunctionCallInfo* info = malloc(sizeof(FunctionCallInfo));
@@ -51,8 +93,14 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         printf("Library path: %s\n", info->library_path);
     }
 
-    // arg[2] is the return type
-    info->return_var.type = charToType(argv[2][0]);
+    parse_arg_from_flag(&info->return_var, argv[2]);
+    //check if return is an array without a specified size
+    if (info->return_var.is_array && info->return_var.array_size==-1) {
+        fprintf(stderr, "Error: Array return type must have a specified size (put a number at the end of the flag with no spaces, eg %s4)\n", argv[2]);
+        exit(1);
+    }
+    else
+
     if (info->return_var.type == TYPE_UNKNOWN) {
         fprintf(stderr, "Error: Unsupported return type\n");
         return NULL;
@@ -77,32 +125,7 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         bool is_array = false;
 
         if (argStr[0] == '-') {
-            ArgType explicitType = charToType(argStr[1]); // Convert flag to type
-            while (explicitType == TYPE_POINTER) {
-                pointer_depth++;
-                explicitType = charToType(argStr[1 + pointer_depth]);
-            }
-            if (explicitType == TYPE_ARRAY) {
-                is_array = true;
-                // We'll need to figure out how to move forward argv past the array values
-                // For now we'll just say that the array values can't have a space in them
-                // So the entire array will just be one argv
-                // In the future we may switch to using end delimitters eg a: 3 2 1 :a
-                explicitType = charToType(argStr[2 + pointer_depth]);
-                // pointer_depth++; Should we increment pointer_depth here?
-            }
-            if (explicitType == TYPE_UNKNOWN) {
-                fprintf(stderr, "Error: Unsupported argument type flag in flags %s on arg %d\n", argStr, i);
-                return NULL;
-            }
-            else if (explicitType == TYPE_ARRAY || explicitType == TYPE_POINTER) {
-                fprintf(stderr, "Error: Array or Pointer flag in unsupported position in flags %s on arg %d. Order must be -[p[p..]][a][primitive type flag]\n", argStr, i);
-            }
-
-            arg.type = explicitType;
-            arg.explicitType = true;
-            arg.is_array = is_array;
-            arg.pointer_depth = pointer_depth;
+            parse_arg_from_flag(&arg, argStr+1);
             argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
         
         } else {
