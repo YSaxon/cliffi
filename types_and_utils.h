@@ -18,14 +18,20 @@ typedef enum {
     TYPE_FLOAT = 'f',
     TYPE_DOUBLE = 'd',
     TYPE_STRING = 's',  // For null terminated strings (char*)
-    TYPE_POINTER = 'p', // For pointers, including arbitrary structs
-    TYPE_ARRAY = 'a',   // For arrays of any type
-    TYPE_VOID = 'v',    // For functions with no return value
-    TYPE_UNKNOWN = -1 // For unknown types
+    TYPE_POINTER = 'p', // For parsing pointers only, not an actual type
+    TYPE_ARRAY = 'a',   // For parsing only, not an actual type
+    TYPE_VOID = 'v',    // For parsing return types only
+    TYPE_UNKNOWN = -1   // For representing unknown types when parsing
 } ArgType;
 
 
-
+typedef enum{
+    NOT_ARRAY, // evaluates as false
+    ARRAY_STATIC_SIZE_UNSET,
+    ARRAY_STATIC_SIZE,
+    ARRAY_SIZE_AT_ARGNUM,
+    ARRAY_SIZE_AT_ARGINFO_PTR
+} arrayMode;
 
 typedef struct ArgInfo {
     ArgType type;  // Argument type
@@ -45,8 +51,12 @@ typedef struct ArgInfo {
         void* ptr_val; // For pointers or complex data
     } value;
     int pointer_depth; // For pointer types, indicates how many levels of indirection
-    bool is_array; // For pointer types, indicates if the pointer is an array
-    size_t array_size; // For array types, indicates the size of the array
+    arrayMode is_array; // For pointer types, indicates if the pointer is an array
+    union {
+        size_t static_size; // For array types, indicates the size of the array
+        int argnum_of_size_t_to_be_replaced; // For array types, indicates which argument to use as the size_t, -1 = RETURN VAL, 0 = FIRST ARG, 1 = SECOND ARG, etc.
+        struct ArgInfo* arginfo_of_size_t;
+    } array_size; // For array types, indicates which argument to use as the size_t, as an alternative to array_size
 } ArgInfo;
 
 typedef struct FunctionCallInfo {
@@ -72,4 +82,9 @@ void log_function_call_info(FunctionCallInfo* info);
 size_t typeToSize(ArgType type);
 char* typeToFormatSpecifier(ArgType type);
 void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr);
+
+size_t get_size_for_arginfo_sized_array(const ArgInfo* arg);
+void convert_all_arrays_to_arginfo_ptr_sized_after_parsing(FunctionCallInfo* functionInfo);
+void convert_all_arrays_to_static_sized_after_function_return(FunctionCallInfo* call_info);
+
 #endif /* ARG_TOOLS_H */

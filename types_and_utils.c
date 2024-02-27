@@ -200,10 +200,10 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
         if (*p == ',') count++;
     }
 
-    if (arg->array_size != -1){
+    if (arg->is_array==ARRAY_STATIC_SIZE){
         // it has already been set presumably by appending a number to the flag
         if (!(strcmp(argStr, "0") == 0 || strcmp(argStr, "NULL") == 0 || strcmp(argStr, "null") == 0)){
-            fprintf(stderr, "Error: Array size already set to %zu, but a size was also at least implicitly specified in the argument after the flag %s\n", arg->array_size, argStr);
+            fprintf(stderr, "Error: Array size already set to %zu, but a size was also at least implicitly specified in the argument after the flag %s\n", arg->array_size.static_size, argStr);
             exit(1);
         }
     }
@@ -258,7 +258,10 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
             free(convertedValue);
         }
     }
-    arg->array_size = array_size;
+    if (arg->is_array==ARRAY_STATIC_SIZE_UNSET){
+        arg->is_array = ARRAY_STATIC_SIZE;
+        arg->array_size.static_size = array_size;
+    }
 }
 
 
@@ -347,6 +350,92 @@ ArgType charToType(char c) {
     }
 }
 
+void convert_argnum_sized_array_to_arginfo_ptr(ArgInfo* arg,FunctionCallInfo* functionInfo){
+    if (arg->is_array==ARRAY_SIZE_AT_ARGNUM){
+        if (arg->array_size.argnum_of_size_t_to_be_replaced > functionInfo->arg_count){
+            fprintf(stderr, "Error: array was specified to have its size_t be at argnum %d, but there are only %d args\n", arg->array_size.argnum_of_size_t_to_be_replaced, functionInfo->arg_count);
+            exit(1);
+        }
+        else if (arg->array_size.argnum_of_size_t_to_be_replaced < 0){
+            fprintf(stderr, "Error: array was specified to have its size_t be at argnum %d, but argnums must be positive\n", arg->array_size.argnum_of_size_t_to_be_replaced);
+            exit(1);
+        } else {
+            arg->is_array = ARRAY_SIZE_AT_ARGINFO_PTR;
+            if (arg->array_size.argnum_of_size_t_to_be_replaced==0) arg->array_size.arginfo_of_size_t = (ArgInfo*)&functionInfo->return_var; // 0 is the return value
+            else arg->array_size.arginfo_of_size_t= &functionInfo->args[arg->array_size.argnum_of_size_t_to_be_replaced-1]; // -1 because the argnums are 1 indexed
+        }
+    }
+}
+
+void convert_all_arrays_to_arginfo_ptr_sized_after_parsing(FunctionCallInfo* functionInfo){
+    for (int i = 0; i < functionInfo->arg_count; i++) {
+        if (functionInfo->args[i].is_array==ARRAY_SIZE_AT_ARGNUM){
+            convert_argnum_sized_array_to_arginfo_ptr(&functionInfo->args[i], functionInfo);
+        }
+    }
+    if (functionInfo->return_var.is_array==ARRAY_SIZE_AT_ARGNUM){
+        convert_argnum_sized_array_to_arginfo_ptr(&functionInfo->return_var, functionInfo);
+    }
+}
+
+size_t get_size_for_arginfo_sized_array(const ArgInfo* arg){
+    switch(arg->is_array){
+        case ARRAY_SIZE_AT_ARGINFO_PTR:
+            switch (arg->array_size.arginfo_of_size_t->type) {
+                case TYPE_SHORT:
+                    return (size_t)arg->array_size.arginfo_of_size_t->value.s_val;
+                case TYPE_INT:
+                    return (size_t)arg->array_size.arginfo_of_size_t->value.i_val;
+                case TYPE_LONG:
+                    return (size_t)arg->array_size.arginfo_of_size_t->value.l_val;
+                case TYPE_UCHAR:
+                    return (size_t)arg->array_size.arginfo_of_size_t->value.uc_val;
+                case TYPE_USHORT:
+                    return (size_t)arg->array_size.arginfo_of_size_t->value.us_val;
+                case TYPE_UINT:
+                    return (size_t)arg->array_size.arginfo_of_size_t->value.ui_val;
+                case TYPE_ULONG:
+                    return (size_t)arg->array_size.arginfo_of_size_t->value.ul_val;
+                default:
+                    fprintf(stderr, "Error: array was specified to have its size_t be another argument, but the arg at that position is not a numeric type\n");
+                    exit(1);
+        }
+        case ARRAY_STATIC_SIZE:
+            // fprintf(stderr,"Warning: getSizeForSizeTArray was called on an array with static size\n");
+            return arg->array_size.static_size;
+        case ARRAY_STATIC_SIZE_UNSET:
+            fprintf(stderr,"Error: getSizeForSizeTArray was called on an array on static_unset mode\n");
+            exit(1);
+        case ARRAY_SIZE_AT_ARGNUM:
+            fprintf(stderr,"Error: getSizeForSizeTArray was called on an arginfo with is_array ARRAY_SIZE_AT_ARGNUM. Call convert_all_arrays_to_arginfo_ptr_sized_after_parsing() first.\n");
+            exit(1);
+        case NOT_ARRAY:
+            fprintf(stderr,"Error: getSizeForSizeTArray was called on an arginfo with is_array NOT_ARRAY\n");
+            exit(1);
+        default:
+            fprintf(stderr, "Error: getSizeForSizeTArray was called on an arginfo with unsupported is_array mode %d\n", arg->is_array);
+            exit(1);
+    }
+}
+
+void convert_all_arrays_to_static_sized_after_function_return(FunctionCallInfo* call_info){
+    // First, for simplicity, lets convert any size_t referenced arrays to their actual size
+    for (int i = 0; i < call_info->arg_count; i++) { // get final sizes for any arrays before freeing, although TODO we should just make them static on function return for simplicity
+    if (call_info->args[i].is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
+        call_info->args[i].array_size.static_size = get_size_for_arginfo_sized_array(&call_info->args[i]);
+        call_info->args[i].is_array=ARRAY_STATIC_SIZE;
+    }
+    }
+    // do the same for the return value
+    if (call_info->return_var.is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
+        call_info->return_var.array_size.static_size = get_size_for_arginfo_sized_array(&call_info->return_var);
+        call_info->return_var.is_array=ARRAY_STATIC_SIZE;
+    }
+}
+
+
+
+
 void log_function_call_info(FunctionCallInfo* info){
     //this should all be fprintf(stderr, ...)
     if (!info) {
@@ -372,7 +461,7 @@ void freeArgInfo(ArgInfo* arg){
     }
 
     if (arg->is_array && (arg->type==TYPE_STRING /* || arg->type==TYPE_STRUCT */)){
-        for (int i = 0; i < arg->array_size; i++) {
+        for (int i = 0; i < arg->array_size.static_size; i++) { // we are assuming we've already made the array be of static size
             free((*((char***)temp))[i]);
         }
     }
@@ -397,8 +486,8 @@ void freeFunctionCallInfo(FunctionCallInfo* info) {
         for (int i = 0; i < info->arg_count; i++) {
             freeArgInfo(&info->args[i]);
         }
+        freeArgInfo(&info->return_var);
         free(info->args);
         free(info);
+        }
     }
-}
-

@@ -5,11 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-void format_and_print_return_value(const ArgInfo* return_value){
-    printf("Function returned: ");
-    format_and_print_arg_value(return_value);
-}
-
 
     void format_and_print_arg_value(const ArgInfo* arg) {  //, char* buffer, size_t buffer_size) {
         const void* value = &(arg->value);
@@ -22,7 +17,8 @@ void format_and_print_return_value(const ArgInfo* return_value){
         }
         if (arg->is_array) {
             value = *(void**)value;
-            printf("Array Size: %zu, ", arg->array_size);
+            size_t array_size = get_size_for_arginfo_sized_array(arg);
+            printf("Array Size: %zu, ", array_size);
             char* format_specifier = typeToFormatSpecifier(arg->type);
             int format_specifier_len = strlen(format_specifier);
 
@@ -41,10 +37,10 @@ void format_and_print_return_value(const ArgInfo* return_value){
             // strcat(format_string, " }");
             
             printf("{ ");
-            for (size_t i = 0; i < arg->array_size; i++) {
+            for (size_t i = 0; i < array_size; i++) {
                 void* array_element = (void*)value + (i * typeToSize(arg->type));
                 print_arg_value(array_element, arg->type);
-                if (i < arg->array_size - 1) {
+                if (i < array_size - 1) {
                     printf(", ");
                 }
             }

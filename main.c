@@ -6,6 +6,7 @@
 #include "argparser.h"
 #include "invoke_handler.h"
 #include "return_formatter.h"
+#include "types_and_utils.h"
 
 
 
@@ -48,9 +49,11 @@ int main(int argc, char* argv[]) {
 
     // Step 2: Parse command-line arguments
     FunctionCallInfo* call_info = parse_arguments(argc, argv);
+    convert_all_arrays_to_arginfo_ptr_sized_after_parsing(call_info);
+    
 
-    // Step 2.5 (optional): Print the parsed function call info
-    printf("Parsed function call info:\n");
+    // Step 2.5 (optional): Print the parsed function call call_info
+    printf("Parsed function call call_info:\n");
     log_function_call_info(call_info);
 
     // Step 3: Invoke the specified function
@@ -59,7 +62,14 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "Error: Function invocation failed\n");
     }
 
+    // Step 4: Print the return value and any modified arguments
+
+
+
+    convert_all_arrays_to_static_sized_after_function_return(call_info);
+
     printf("Function returned: ");
+
     format_and_print_arg_value(&call_info->return_var);
 
     for (int i = 0; i < call_info->arg_count; i++) {

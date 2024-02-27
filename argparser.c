@@ -37,29 +37,46 @@ void addArgToFunctionCallInfo(FunctionCallInfo* info, ArgInfo* arg) {
 
 void parse_arg_from_flag(ArgInfo* arg, const char* argStr){
     int pointer_depth = 0;
-    bool is_array = false;
     ArgType explicitType = charToType(argStr[0]); // Convert flag to type
     while (explicitType == TYPE_POINTER) {
         pointer_depth++;
         explicitType = charToType(argStr[pointer_depth]);
     }
     if (explicitType == TYPE_ARRAY) {
-        is_array = true;
         // We'll need to figure out how to move forward argv past the array values
         // For now we'll just say that the array values can't have a space in them
         // So the entire array will just be one argv
         // In the future we may switch to using end delimitters eg a: 3 2 1 :a
         explicitType = charToType(argStr[1 + pointer_depth]);
 
-        // see if there's a size appended to the end of the array flag
-        if (isAllDigits(&argStr[2 + pointer_depth])){
-            arg->array_size = atoi(argStr + 2 + pointer_depth);
-        }
-        else {
-            arg->array_size = -1; //flag for unknown size
+        if (isAllDigits(&argStr[1+pointer_depth]) || argStr[1+pointer_depth] == 't') {
+            //argStr[:2+pointer_depth] is the array flag + 'i' + argStr[2+pointer_depth:]
+            fprintf(stderr, "Error: Array flag must be followed by a primitive type flag, and THEN it can be followed by a size or size_t argnum, so for instance ai4 or ait1 for an array of ints, whereas you have %s\n", argStr);
+            exit(1);
         }
 
-        //note that array_size can also be set by the following arg if it's not a return type
+        // see if there's a size appended to the end of the array flag
+        if (isAllDigits(&argStr[2 + pointer_depth])){
+            arg->is_array = ARRAY_STATIC_SIZE;
+            arg->array_size.static_size = atoi(argStr + 2 + pointer_depth);
+        } else if (argStr[2 + pointer_depth] == 't')
+        { 
+            // t is a flag indicating that the array size is specified as a size_t in another argument
+            if (isAllDigits(&argStr[3 + pointer_depth])){
+                arg->is_array = ARRAY_SIZE_AT_ARGNUM;
+                arg->array_size.argnum_of_size_t_to_be_replaced = atoi(argStr + 3 + pointer_depth);
+            } else {
+                //maybe in the future we'll allow just assuming its the next arg if it's not a number
+                fprintf(stderr, "Error: Array size flag t must be followed by a number in flags %s\n", argStr);
+                exit(1);
+            }
+        }
+        else {
+            arg->is_array = ARRAY_STATIC_SIZE_UNSET;
+            // will be set from the values given later on if it's an argument (or will fail if it's a return)
+        }
+
+        
 
     }
 
@@ -74,7 +91,6 @@ void parse_arg_from_flag(ArgInfo* arg, const char* argStr){
 
     arg->type = explicitType;
     arg->explicitType = true;
-    arg->is_array = is_array;
     arg->pointer_depth = pointer_depth;
 }
  
@@ -95,8 +111,8 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
 
     parse_arg_from_flag(&info->return_var, argv[2]);
     //check if return is an array without a specified size
-    if (info->return_var.is_array && info->return_var.array_size==-1) {
-        fprintf(stderr, "Error: Array return type must have a specified size (put a number at the end of the flag with no spaces, eg %s4)\n", argv[2]);
+    if (info->return_var.is_array==ARRAY_STATIC_SIZE_UNSET) {
+        fprintf(stderr, "Error: Array return types must have a specified size. Put a number at the end of the flag with no spaces, eg %s4 for a static size, or t and a number to specify an argnumber that will represent size_t for it eg %st1 for the first arg, since 0=return\n", argv[2],argv[2]);
         exit(1);
     }
     else
@@ -120,9 +136,8 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
 
     for (int i = 4; i < argc; i++) {
         char* argStr = argv[i];
-        ArgInfo arg;
+        ArgInfo arg = {0};
         int pointer_depth = 0;
-        bool is_array = false;
 
         if (argStr[0] == '-') {
             parse_arg_from_flag(&arg, argStr+1);
@@ -131,7 +146,7 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         } else {
             ArgType implicitType = infer_arg_type(argStr);
             arg.type = implicitType;
-            arg.is_array = false;
+            arg.is_array = NOT_ARRAY;
             arg.pointer_depth = 0;
             arg.explicitType = false;
         }
@@ -140,6 +155,8 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         addArgToFunctionCallInfo(info, &arg);
     }
     printf("Done parsing arguments\n");
+
+    
 
     return info;
 }
