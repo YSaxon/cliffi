@@ -351,8 +351,6 @@ void log_function_call_info(FunctionCallInfo* info){
     printf("\tReturn Type: %c\n", typeToChar(info->return_var.type));
     printf("\tArg Count: %d\n", info->arg_count);
     for (int i = 0; i < info->arg_count; i++) {
-        char* format_buffer = malloc(100);
-        size_t buffer_size = 100;
         printf("Arg %d: %s Type: %c, Value: ", i,info->args[i].explicitType? "Explicit" : "Implicit", typeToChar(info->args[i].type));//, format_buffer);
         format_and_print_arg_value(&info->args[i]);//, format_buffer, buffer_size);
     }
