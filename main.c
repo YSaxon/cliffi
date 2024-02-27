@@ -8,34 +8,62 @@
 #include "return_formatter.h"
 #include "types_and_utils.h"
 
-
+const char* NAME = "ffitool";
+const char* VERSION = "0.4.1";
 
 int main(int argc, char* argv[]) {
-    if (strcmp(argv[1], "--help") == 0) {
-        printf("Usage: %s <library> <return_type> <function_name> [<args>...]\n", argv[0]);
-        printf("  [--help]         Print this help message\n");
-        printf("  <library>        The path to the shared library containing the function to invoke\n"
-               "                   or the name of the library if it is in the system path\n");
-        printf("  <return_type>    The type of the return value of the function to invoke\n"
-               "                   v for void, i for int, s for string, etc\n");
-        printf("  <function_name>  The name of the function to invoke\n");
-        printf("  [typeflag] <arg> The argument values to pass to the function\n"
-               "                   Types will be inferred if not prefixed with flags\n"
-               "                   Flags look like -i for int, -s for string, etc\n");
-        printf("\n"
-               "  Examples:\n"
-               "         %s libexample.so i addints 3 4\n", argv[0]);
-        printf("         %s path/to/libexample.so v dofoo\n", argv[0]);
-        printf("         %s ./libexample.so s concatstrings -s hello -s world\n", argv[0]);
-        printf("         %s libexample.so s concatstrings hello world\n", argv[0]);
-        printf("         %s libexample.so d multdoubles -d 1.5 1.5d\n", argv[0]);
-        printf("         %s libc.so i printf 'Here is a number: %%.3f' 4.5", argv[0]);
+    if (argc < 4) {
+        fprintf(stderr, "%s %s\nUsage: %s [--help] <library> <return_typeflag> <function_name> [[-typeflag] <arg>...]\n", NAME,VERSION,argv[0]);
+        return 1;
+    } else if (strcmp(argv[1], "--help") == 0) {
+        printf( "%s %s\n", NAME, VERSION);
+        printf( "Usage: %s <library> <typeflag> <function_name> [<args>...]\n", argv[0]);
+        printf( "  [--help]         Print this help message\n");
+        printf( "  <library>        The path to the shared library containing the function to invoke\n"
+                "                   or the name of the library if it is in the system path\n");
+        printf( "  <typeflag>       The type of the return value of the function to invoke\n"
+                "                   v for void, i for int, s for string, etc\n");
+        printf( "  <function_name>  The name of the function to invoke\n");
+        printf( "  [-<typeflag>] <arg> The argument values to pass to the function\n"
+                "                   Types will be inferred if not prefixed with flags\n"
+                "                   Flags look like -i for int, -s for string, etc\n");
+        printf( "\n"
+                "  Examples:\n"
+                "         %s libexample.so i addints 3 4\n", argv[0]);
+        printf( "         %s path/to/libexample.so v dofoo\n", argv[0]);
+        printf( "         %s ./libexample.so s concatstrings -s hello -s world\n", argv[0]);
+        printf( "         %s libexample.so s concatstrings hello world\n", argv[0]);
+        printf( "         %s libexample.so d multdoubles -d 1.5 1.5d\n", argv[0]);
+        printf( "         %s libc.so i printf 'Here is a number: %%.3f' 4.5", argv[0]);
+        printf( "\n");
+        printf( "  POINTERS AND ARRAYS:\n"
+                "     Typeflags can include additional flag prefixes to specify pointers and arrays:\n"
+                "     <typeflag> = [p[p..]][a<size>|t<argnum>]<primitive_type>\n"
+                "   POINTERS:\n"
+                "       p[p..]   The argument is a pointer to [an array of] specified type\n"
+                "                The number of p's indicates the pointer depth\n"
+                "   ARRAYS:\n"
+                "       Arrays can be used for both arguments and return values.\n"
+                "       In arguments, the size can be optionally inferred from the values.\n"
+                "       In return values, the size must be specified\n"
+                "            Values can be specified as unspaced comma delimitted or as a single unbroken hex value\n"
+                "       a<type> <v>,<v>,..   The argument is an array of the specified type and inferred size (only valid for arguments)\n"
+                "       a<type> 0xdeadbe..   The argument is an array of the specified type and inferred size (only valid for arguments)\n"
+                "            Sizes are given explicitly following the type character flag and can be static or dynamic\n"
+                "       a<type><size>        The array is of the following static <size>\n"
+                "       at<type><argnum>     (Notice the `t` flag!) The size of the array is dependent on the value of <argnum>\n"
+                "                            <argnum> is 0 for return value or n for the nth (1-indexed) argument \n"
+                "       In arguments, where the size is specified, the value can be given as NULL, if the function is expected to allocate the array\n"
+                "   EXAMPLES:\n");
+        printf( "       For a function: int return_buffer(char** outbuff) which returns size\n");
+        printf( "       %s libexample.so v return_buffer -past2 NULL -pi 0\n", argv[0]);
+        printf( "       Or alternatively if it were: void return_buffer(char** outbuff, size_t* outsize)\n");
+        printf( "       %s libexample.so i return_buffer -past0 NULL\n", argv[0]);
+        printf( "       For a function: int add_all_ints(int** nums, size_t size) which returns sum\n");
+        printf( "       %s libexample.so i add_all_ints -ai 1,2,3,4,5 -i 5\n", argv[0]);
         return 0;
     }
-    else if (argc < 4) {
-        fprintf(stderr, "Usage: %s [--help] <library> <return_type> <function_name> [[-typeflag] <arg>...]\n", argv[0]);
-        return 1;
-    }
+
 
 
     //print all args
