@@ -48,19 +48,19 @@ int main(int argc, char* argv[]) {
 
     // Step 2: Parse command-line arguments
     FunctionCallInfo* call_info = parse_arguments(argc, argv);
-    ArgInfo retval = {.explicitType = true, .type = call_info->return_type};
 
     // Step 2.5 (optional): Print the parsed function call info
     printf("Parsed function call info:\n");
     log_function_call_info(call_info);
 
     // Step 3: Invoke the specified function
-    int invoke_result = invoke_dynamic_function(call_info, &retval);
+    int invoke_result = invoke_dynamic_function(call_info);
     if (invoke_result != 0) {
         fprintf(stderr, "Error: Function invocation failed\n");
     }
 
-    format_and_print_return_value(&retval);
+    printf("Function returned: ");
+    format_and_print_arg_value(&call_info->return_var);
 
     // Clean up
     freeFunctionCallInfo(call_info); 

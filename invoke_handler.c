@@ -1,4 +1,5 @@
 #include "invoke_handler.h"
+#include <string.h>
 
 #if defined(__APPLE__)
     #include <ffi/ffi.h>
@@ -38,7 +39,7 @@ ffi_type* arg_type_to_ffi_type(const ArgInfo* arg) {
 }
 
 // Main function to invoke a dynamic function call
-int invoke_dynamic_function(const FunctionCallInfo* call_info, ArgInfo* out_return_value) {
+int invoke_dynamic_function(FunctionCallInfo* call_info) {
     void* lib_handle = dlopen(call_info->library_path, RTLD_LAZY);
     if (!lib_handle) {
         fprintf(stderr, "Failed to load library: %s\n", dlerror());
@@ -66,21 +67,18 @@ int invoke_dynamic_function(const FunctionCallInfo* call_info, ArgInfo* out_retu
         values[i] = &call_info->args[i].value;
     }
 
-    ArgInfo dummy_return_value = {.type = call_info->return_type, .array_size=0, .is_array=false, .pointer_depth=0, .value=0};
-    //TODO refactor returntype to actually be an arginfo
-    ffi_type* return_type = arg_type_to_ffi_type(&dummy_return_value);
+    ffi_type* return_type = arg_type_to_ffi_type(&call_info->return_var);
     if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, call_info->arg_count, return_type, args) != FFI_OK) {
         fprintf(stderr, "ffi_prep_cif failed.\n");
         dlclose(lib_handle);
         return -1;
     }
 
-    void* return_value = malloc(return_type->size);
-    ffi_call(&cif, func, return_value, values);
+    ffi_call(&cif, func, &call_info->return_var.value, values);
 
-    setArgInfoValue(out_return_value, return_value); //maybe add size to this function for pointer types and then do memcpy?
-
-    free(return_value); //TODO can we safely do this? What if the return value is a pointer?
+    if (call_info->return_var.type == TYPE_STRING && call_info->return_var.is_array == false && call_info->return_var.pointer_depth == 0) {
+        call_info->return_var.value.str_val = strdup(call_info->return_var.value.str_val);
+    }
     dlclose(lib_handle);
     return 0;
 }

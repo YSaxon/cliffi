@@ -52,8 +52,7 @@ typedef struct ArgInfo {
 typedef struct FunctionCallInfo {
     char* library_path;
     char* function_name;
-    ArgType return_type;
-    size_t return_size;    // Use for pointer return types to indicate how much memory to read
+    ArgInfo return_var;
     ArgInfo* args;
     int arg_count;
 } FunctionCallInfo;
@@ -68,7 +67,6 @@ bool endsWith(const char* str, char c);
 bool isFloatingPoint(const char* str);
 ArgType infer_arg_type(const char* arg);
 void* hex_string_to_pointer(const char* hexStr);
-void setArgInfoValue(ArgInfo* arg, const void* value);
 void convert_arg_value(ArgInfo* arg, const char* argStr);
 void log_function_call_info(FunctionCallInfo* info);
 size_t typeToSize(ArgType type);

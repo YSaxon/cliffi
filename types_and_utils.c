@@ -339,57 +339,6 @@ ArgType charToType(char c) {
     }
 }
 
- void setArgInfoValue(ArgInfo* arg, const void* value){
-    switch(arg->type){
-        case TYPE_CHAR:
-            arg->value.c_val = *(char*)value;
-            break;
-        case TYPE_SHORT:
-            arg->value.s_val = *(short*)value;
-            break;
-        case TYPE_INT:
-            arg->value.i_val = *(int*)value;
-            break;
-        case TYPE_LONG:
-            arg->value.l_val = *(long*)value;
-            break;
-        case TYPE_UCHAR:
-            arg->value.uc_val = *(unsigned char*)value;
-            break;
-        case TYPE_USHORT:
-            arg->value.us_val = *(unsigned short*)value;
-            break;
-        case TYPE_UINT:
-            arg->value.ui_val = *(unsigned int*)value;
-            break;
-        case TYPE_ULONG:
-            arg->value.ul_val = *(unsigned long*)value;
-            break;
-        case TYPE_FLOAT:
-            arg->value.f_val = *(float*)value;
-            break;
-        case TYPE_DOUBLE:
-            arg->value.d_val = *(double*)value;
-            break;
-        case TYPE_STRING:
-            arg->value.str_val = strdup(*(char**)value);
-            break;
-        case TYPE_POINTER:
-            arg->value.ptr_val = *(void**)value;
-            break;
-        case TYPE_VOID:
-            if (value) {
-                fprintf(stderr, "Error: Cannot set value for void type\n");
-                exit(1);
-            }
-            // fprintf(stderr, "Error: Cannot set value for void type\n");
-            // exit(1);
-        default:
-            fprintf(stderr, "Error: Unsupported type\n");
-            exit(1);
-    }
-}
-
 void log_function_call_info(FunctionCallInfo* info){
     //this should all be fprintf(stderr, ...)
     if (!info) {
@@ -399,7 +348,7 @@ void log_function_call_info(FunctionCallInfo* info){
     printf("FunctionCallInfo:\n");
     printf("\tLibrary Path: %s\n", info->library_path);
     printf("\tFunction Name: %s\n", info->function_name);
-    printf("\tReturn Type: %c\n", typeToChar(info->return_type));
+    printf("\tReturn Type: %c\n", typeToChar(info->return_var.type));
     printf("\tArg Count: %d\n", info->arg_count);
     for (int i = 0; i < info->arg_count; i++) {
         char* format_buffer = malloc(100);

@@ -52,12 +52,12 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     }
 
     // arg[2] is the return type
-    info->return_type = charToType(argv[2][0]);
-    if (info->return_type == TYPE_UNKNOWN) {
+    info->return_var.type = charToType(argv[2][0]);
+    if (info->return_var.type == TYPE_UNKNOWN) {
         fprintf(stderr, "Error: Unsupported return type\n");
         return NULL;
     } else {
-        printf("Return type: %c\n", info->return_type);
+        printf("Return type: %c\n", info->return_var.type);
     }
 
     // arg[3] is the function name
