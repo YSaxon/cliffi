@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
                 "       a<type> 0xdeadbe..   The argument is an array of the specified type and inferred size (only valid for arguments)\n"
                 "            Sizes are given explicitly following the type character flag and can be static or dynamic\n"
                 "       a<type><size>        The array is of the following static <size>\n"
-                "       at<type><argnum>     (Notice the `t` flag!) The size of the array is dependent on the value of <argnum>\n"
+                "       a<type>t<argnum>     (Notice the `t` flag!) The size of the array is dependent on the value of <argnum>\n"
                 "                            <argnum> is 0 for return value or n for the nth (1-indexed) argument \n"
                 "       In arguments, where the size is specified, the value can be given as NULL, if the function is expected to allocate the array\n"
                 "   EXAMPLES:\n");
