@@ -187,40 +187,70 @@ for (int i = 0; i < arg->pointer_depth; i++) {
 void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
 
 
+    // multiple scenarios to deal with:
+    // sizing:
+        // static size was set by appending a number to the flag
+        // size was set to argnum by appending a t to the flag
+        // size was not set, and we need to parse the string to determine the size
+    // value:
+        // value was set to NULL, and we need to allocate the array
+        // value was set to a hex string, and we need to convert it to the array
+        // value was set to a comma delimitted list of values, and we need to parse it into the array
+        // todo: value was set to a string, and we need to parse it into the array (if it's a char or uchar array)
+
+    // we need to deal with each combination of these scenarios
+    // essentially the rule should be that if the value is nonnull and therefore implies a size:
+        // if no explicit size was given has not already been set then we should set that as size and allocate and copy that exact array of values
+        // if an explicit size has already been set then we should check that the size is consistent with the value
+            // if the explicit size is smaller than the actual value implies then emit a warning and truncate the value
+            // if the explicit size is greater than the actual value implies then emit a warning and fill the rest of the array with 0s
+        // if the size was given as an argnum then we should just assume that the value is the correct size and allocate and copy that exact array of values 
+            //(for the moment just emit a warning that we aren't checking that the size is consistent with the value, but we should add that check later)
+    // if the value is null (or the size is not implied by the value) then we should do the following:
+        // if an explicit size was given then allocate an empty array of that size
+        // if the size was given as an argnum then we'll need to allocate an empty array of that size sometime later, after we've parsed the rest of the args
+            //(for the moment just emit a warning that we aren't allocating arrays for null values that are sized by argnum, but we should add that later)
+        // if the size is not given statically or by argnum then we should emit an error that we cannot initialize a null array with no sizing info and if they want a null pointer they should use the pointer flag instead
+
+        // if (arg->is_array==ARRAY_STATIC_SIZE) {
+
+
+
+    if ((strcmp(argStr, "0") == 0 || strcmp(argStr, "NULL") == 0 || strcmp(argStr, "null") == 0)){
+        if (arg->is_array==ARRAY_STATIC_SIZE) {
+            arg->value.ptr_val = calloc(arg->array_size.static_size, typeToSize(arg->type));
+            return;
+        } else if (arg->is_array==ARRAY_SIZE_AT_ARGNUM) {
+            fprintf(stderr, "Warning: We have not yet implemented initializing null arrays of size pointed to by another argument, so this will be a null pointer for now\n");
+            arg->value.ptr_val = NULL;
+            return;
+        } else {
+            fprintf(stderr, "Error: Argstr %s is interpreted as NULL. We cannot initialize a null array with no sizing info. If you WANT a null pointer you should use the pointer flag instead\n", argStr);
+            exit(1);
+        }
+    }
+
+
+
     // three different cases for array argStr
-    // 1. single value that is a number, which is the count of the array
+    // 1. single value that is a number, which is the count of the array <-- removed on account of being duplicative with the unspace syntax we use for return values
     // 2. single value that is a hex string, which is the raw values for the array
     // 3. comma delimitted list of values for the array
 
     // Step 1: Split string by commas and count substrings
     int count = 1;
-    size_t array_size;
+    size_t array_size_implicit;
+    void* array_values;
     size_t size_of_type = typeToSize(arg->type);
+    
+
     for (const char* p = argStr; *p; p++) {
         if (*p == ',') count++;
     }
 
-    if (arg->is_array==ARRAY_STATIC_SIZE){
-        // it has already been set presumably by appending a number to the flag
-        if (!(strcmp(argStr, "0") == 0 || strcmp(argStr, "NULL") == 0 || strcmp(argStr, "null") == 0)){
-            fprintf(stderr, "Error: Array size already set to %zu, but a size was also at least implicitly specified in the argument after the flag %s\n", arg->array_size.static_size, argStr);
-            exit(1);
-        }
-    }
 
     if (count == 1){
-        if (isAllDigits(argStr))
-        {
-        // consider argstr to be the count for a null array we need to allocate
-        array_size = atoi(argStr);
-        if (array_size <= 0) {
-            fprintf(stderr, "Error: array sizing failed using as count the single value after array flag %s\n", argStr);
-            exit(1);
-        }
-            //allocate a null array of the appropriate type and size
-            arg->value.ptr_val = calloc(array_size, size_of_type);
-        }
-        else if (isHexFormat(argStr))
+        if (isHexFormat(argStr))
         {
             //consider argstr to be a hex string containing the raw values for the array (mostly only useful for char arrays)
             int hexstring_bytes = (strlen(argStr) - 2) / 2;
@@ -232,20 +262,17 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
                 fprintf(stderr, "Error: Hex string bytes length %d is not a multiple of the size of the type %zu\n in hex string being converted to array %s", hexstring_bytes, size_of_type, argStr);
                 exit(1);
             }
-            array_size = hexstring_bytes / size_of_type;
-            arg->value.ptr_val = hex_string_to_pointer(argStr);
+            array_size_implicit = hexstring_bytes / size_of_type;
+            array_values = hex_string_to_pointer(argStr);
         }
         else
         {
-            fprintf(stderr, "Error: Unsupported array flag %s. There's no point in having a single element array, just use a pointer\n", argStr);
-            // should we actually throw an error, or just let things flow down to the next case?
-            exit(1);
+            fprintf(stderr, "Warning: In argstr %s, no valid hex value found, no static or dynamic size found, and no commas found to delimit values. We'll attempt to parse it as a single element array, but that's probably not what you intended.\n", argStr);
+            goto parseascommadelimited; 
         }
-    }
-    else // we have more than one comma delimitted array value
-    {
-        array_size = count;
-        arg->value.ptr_val = malloc(count * size_of_type);
+    } else parseascommadelimited: { // if we didn't already parse it as a hex string, then we'll parse it as a comma delimitted list of values
+        array_size_implicit = count;
+        array_values = calloc(count, size_of_type);
         char* rest = strdup(argStr);
         for (int i = 0; i < count; i++) {
             char* token = strtok_r(rest, ",", &rest);
@@ -254,13 +281,38 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
                 exit(1);
             }
             void* convertedValue = convert_to_type(arg->type, token);
-            memcpy(arg->value.ptr_val + (i * size_of_type), convertedValue, size_of_type);
+            memcpy(array_values + (i * size_of_type), convertedValue, size_of_type);
             free(convertedValue);
         }
     }
     if (arg->is_array==ARRAY_STATIC_SIZE_UNSET){
         arg->is_array = ARRAY_STATIC_SIZE;
-        arg->array_size.static_size = array_size;
+        arg->array_size.static_size = array_size_implicit;
+        arg->value.ptr_val = array_values;
+    } else if (arg->is_array==ARRAY_STATIC_SIZE){
+        size_t explicit_size = arg->array_size.static_size;
+        size_t implicit_size = array_size_implicit;
+        if (explicit_size < implicit_size){
+            fprintf(stderr, "Warning: Array was specified to have size %zu, but the value implies a size of %zu. Setting array size to the explicit size (values may be truncated)\n", explicit_size, implicit_size);
+            arg->value.ptr_val = array_values;
+            arg->array_size.static_size = explicit_size;
+        } else if (explicit_size > implicit_size){
+            fprintf(stderr, "Warning: Array was specified to have size %zu, but the value implies a size of %zu. Filling the rest of the array with 0s\n", explicit_size, implicit_size);
+            arg->value.ptr_val = calloc(explicit_size, size_of_type);
+            memcpy(arg->value.ptr_val, array_values, implicit_size * size_of_type);
+            free(array_values);
+        } else {
+            arg->value.ptr_val = array_values;
+            arg->array_size.static_size = explicit_size;
+        }
+    } else if (arg->is_array==ARRAY_SIZE_AT_ARGNUM){
+        fprintf(stderr, "Warning: We have not yet implemented initializing arrays of size pointed to by another argument, so we will just use the size derived from the value for the array\n");
+        arg->value.ptr_val = array_values;
+        arg->array_size.static_size = array_size_implicit;
+    }
+    else {
+        fprintf(stderr, "Error: Unsupported array size mode %d\n", arg->is_array);
+        exit(1);
     }
 }
 
