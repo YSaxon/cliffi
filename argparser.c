@@ -95,7 +95,7 @@ void parse_arg_from_flag(ArgInfo* arg, const char* argStr){
 }
  
 FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
-    FunctionCallInfo* info = malloc(sizeof(FunctionCallInfo));
+    FunctionCallInfo* info = calloc(1, sizeof(FunctionCallInfo)); // using calloc to zero out the struct
     int opt;
     char* argStr;
 
