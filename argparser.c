@@ -81,7 +81,7 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
     }
 
     if (explicitType == TYPE_UNKNOWN) {
-        fprintf(stderr, "Error: Unsupported argument type flag in flags %sn", argStr);
+        fprintf(stderr, "Error: Unsupported argument type flag in flags %s\n", argStr);
         exit(1);
     }
     else if (explicitType == TYPE_ARRAY || explicitType == TYPE_POINTER) {
@@ -123,7 +123,7 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     } else {
         printf("Return type: %c\n", info->return_var.type);
     }
-    
+
     // arg[3] is the function name
     info->function_name = strdup(argv[3]);
     if (!info->function_name) {
@@ -139,7 +139,7 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         ArgInfo arg = {0};
         int pointer_depth = 0;
 
-        if (argStr[0] == '-') {
+        if (argStr[0] == '-' && !isAllDigits(argStr+1) && !isHexFormat(argStr+1)) {
             parse_arg_type_from_flag(&arg, argStr+1);
             argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
         

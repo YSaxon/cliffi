@@ -56,6 +56,9 @@ bool isFloatingPoint(const char* str) {
 }
 
 ArgType infer_arg_type_single(const char* argval){
+    bool is_negative = argval[0] == '-';
+    if (is_negative) argval++;
+    
     if (!argval || strlen(argval) == 0) return TYPE_UNKNOWN;
     if (argval[0] == '"' || argval[0] == '\'') return TYPE_STRING;
     if (isFloatingPoint(argval)){
@@ -71,10 +74,17 @@ ArgType infer_arg_type_single(const char* argval){
         }
     if (isHexFormat(argval)) {
         size_t length = strlen(argval);
-        if (length <= 4) return TYPE_UCHAR;
-        if (length <= 6) return TYPE_USHORT;
-        if (length <= 10) return TYPE_UINT;
-        return TYPE_ULONG;
+        if (argval[0] == '0' && (argval[1] == 'x' || argval[1] == 'X')) length-=2; // Skip 0x (if present) 
+        length /= 2; // Two hex characters per byte
+        if (length <= 1) return is_negative ? TYPE_CHAR : TYPE_UCHAR;
+        if (length <= 2) return is_negative ? TYPE_SHORT : TYPE_USHORT;
+        if (length <= 4) return is_negative ? TYPE_INT : TYPE_UINT;
+        if (length <= 8) return is_negative ? TYPE_LONG : TYPE_ULONG;
+        else {
+            if (is_negative) argval--; // Move back to the start of the string
+            fprintf(stderr, "Error: Hex string %s is %zu bytes, which is too long to fit into a single type. If you meant to specify an array or a string, flag it as such.\n", argval, length);
+            exit(1);
+        }
     }
 
     // Add more rules as needed

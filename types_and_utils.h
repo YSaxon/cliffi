@@ -7,6 +7,7 @@
 
 
 typedef enum {
+    //note that we can't use number chars (eg '1') as flags without conflicting with implicit representation of negative numbers
     TYPE_CHAR = 'c',
     TYPE_SHORT = 'h',
     TYPE_INT = 'i',
