@@ -9,13 +9,10 @@
 #include "types_and_utils.h"
 
 const char* NAME = "ffitool";
-const char* VERSION = "0.4.1";
+const char* VERSION = "0.4.7";
 
 int main(int argc, char* argv[]) {
-    if (argc < 4) {
-        fprintf(stderr, "%s %s\nUsage: %s [--help] <library> <return_typeflag> <function_name> [[-typeflag] <arg>...]\n", NAME,VERSION,argv[0]);
-        return 1;
-    } else if (strcmp(argv[1], "--help") == 0) {
+    if (argc > 1 && strcmp(argv[1], "--help") == 0) {
         printf( "%s %s\n", NAME, VERSION);
         printf( "Usage: %s <library> <typeflag> <function_name> [<args>...]\n", argv[0]);
         printf( "  [--help]         Print this help message\n");
@@ -36,6 +33,21 @@ int main(int argc, char* argv[]) {
         printf( "         %s libexample.so d multdoubles -d 1.5 1.5d\n", argv[0]);
         printf( "         %s libc.so i printf 'Here is a number: %%.3f' 4.5", argv[0]);
         printf( "\n");
+        printf( "  TYPES:\n"
+                "     The primitive typeflags are:\n");
+        printf( "       %c for void, only allowed as a return type, and does not accept prefixes\n", TYPE_VOID);
+        printf( "       %c for char\n", TYPE_CHAR);
+        printf( "       %c for short\n", TYPE_SHORT);
+        printf( "       %c for int\n", TYPE_INT);
+        printf( "       %c for long\n", TYPE_LONG);
+        printf( "       %c for unsigned char\n", TYPE_UCHAR);
+        printf( "       %c for unsigned short\n", TYPE_USHORT);
+        printf( "       %c for unsigned int\n", TYPE_UINT);
+        printf( "       %c for unsigned long\n", TYPE_ULONG);
+        printf( "       %c for float, can also be specified by suffixing the value with f\n", TYPE_FLOAT);
+        printf( "       %c for double, can also be specified by suffixing the value with d\n", TYPE_DOUBLE);
+        printf( "       %c for cstring (ie null terminated char*)\n", TYPE_STRING);
+        printf("\n");
         printf( "  POINTERS AND ARRAYS:\n"
                 "     Typeflags can include additional flag prefixes to specify pointers and arrays:\n"
                 "     <typeflag> = [p[p..]][a<size>|t<argnum>]<primitive_type>\n"
@@ -62,6 +74,10 @@ int main(int argc, char* argv[]) {
         printf( "       For a function: int add_all_ints(int** nums, size_t size) which returns sum\n");
         printf( "       %s libexample.so i add_all_ints -ai 1,2,3,4,5 -i 5\n", argv[0]);
         return 0;
+    }
+    else if (argc < 4) {
+        fprintf(stderr, "%s %s\nUsage: %s [--help] <library> <return_typeflag> <function_name> [[-typeflag] <arg>...]\n", NAME,VERSION,argv[0]);
+        return 1;
     }
 
 
