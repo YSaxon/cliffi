@@ -87,3 +87,23 @@ set_tests_properties(TestIncrementAtPointerPointer PROPERTIES PASS_REGULAR_EXPRE
 add_test(NAME TestReturnArrayDoubles
          COMMAND ffitool ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}ffitool_test${CMAKE_SHARED_LIBRARY_SUFFIX} adt1 get_array_of_doubles 5)
 set_tests_properties(TestReturnArrayDoubles PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:.*\{ 0.00*, 0.50*, 1.00*, 1.50*, 2.00* \}")
+
+add_test(NAME TestConcatStringArray
+         COMMAND ffitool ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}ffitool_test${CMAKE_SHARED_LIBRARY_SUFFIX} s concat_str_array -as aa,bb,cc,dd 4)
+set_tests_properties(TestConcatStringArray PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?aabbccdd\"?")
+
+add_test(NAME TestImplicitStringArray
+COMMAND ffitool ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}ffitool_test${CMAKE_SHARED_LIBRARY_SUFFIX} s concat_str_array aa,bb,cc,dd 4)
+set_tests_properties(TestImplicitStringArray PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?aabbccdd\"?")
+
+add_test(NAME TestImplicitIntArray
+COMMAND ffitool ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}ffitool_test${CMAKE_SHARED_LIBRARY_SUFFIX} i sum_array 1,2,3 3)
+set_tests_properties(TestImplicitIntArray PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 6")
+
+add_test(NAME TestExplicitStringTypeOverridesArray
+COMMAND ffitool ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}ffitool_test${CMAKE_SHARED_LIBRARY_SUFFIX} s concat -s 1,2,3 -s aa,bb,cc)
+set_tests_properties(TestExplicitStringTypeOverridesArray PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?1,2,3aa,bb,cc\"?")
+
+add_test(NAME TestStringInQuotesAllowedSpacesAndDashes
+COMMAND ffitool ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}ffitool_test${CMAKE_SHARED_LIBRARY_SUFFIX} s concat -s "1,2,3 -s aa,bb,cc" -s abc)
+set_tests_properties(TestStringInQuotesAllowedSpacesAndDashes PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?1,2,3 -s aa,bb,ccabc\"?")

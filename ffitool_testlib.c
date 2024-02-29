@@ -84,6 +84,15 @@ double* get_array_of_doubles(size_t size) {
     return arr;
 }
 
+const char* concat_str_array(const char** strs, int count) {
+    static char result[1024];
+    result[0] = '\0'; // Initialize the string
+    for(int i = 0; i < count; i++) {
+        strncat(result, strs[i], sizeof(result) - strlen(result) - 1);
+    }
+    return result;
+}
+
 
 // Entry point to prevent the compiler from complaining when compiling as a shared library
 // This function will not be called; it's just to satisfy the linker.
