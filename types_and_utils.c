@@ -55,22 +55,22 @@ bool isFloatingPoint(const char* str) {
     return hasDigit && (hasDecimal || hasExponent);
 }
 
-ArgType infer_arg_type(const char* arg) {
-    if (!arg || strlen(arg) == 0) return TYPE_UNKNOWN;
-    if (arg[0] == '"' || arg[0] == '\'') return TYPE_STRING;
-    if (isFloatingPoint(arg)){
-            if (endsWith(arg, 'D') || endsWith(arg, 'd')) return TYPE_DOUBLE;
-            if (endsWith(arg, 'F') || endsWith(arg, 'f')) return TYPE_FLOAT;
+ArgType infer_arg_type_single(const char* argval){
+    if (!argval || strlen(argval) == 0) return TYPE_UNKNOWN;
+    if (argval[0] == '"' || argval[0] == '\'') return TYPE_STRING;
+    if (isFloatingPoint(argval)){
+            if (endsWith(argval, 'D') || endsWith(argval, 'd')) return TYPE_DOUBLE;
+            if (endsWith(argval, 'F') || endsWith(argval, 'f')) return TYPE_FLOAT;
          return TYPE_FLOAT;
          }
-    if (isAllDigits(arg)) {
-            if (endsWith(arg, 'L') || endsWith(arg, 'l')) return TYPE_LONG;
-            if (endsWith(arg, 'U') || endsWith(arg, 'u')) return TYPE_UINT;
-            if (endsWith(arg, 'I') || endsWith(arg, 'i')) return TYPE_INT;
+    if (isAllDigits(argval)) {
+            if (endsWith(argval, 'L') || endsWith(argval, 'l')) return TYPE_LONG;
+            if (endsWith(argval, 'U') || endsWith(argval, 'u')) return TYPE_UINT;
+            if (endsWith(argval, 'I') || endsWith(argval, 'i')) return TYPE_INT;
         return TYPE_INT;
         }
-    if (isHexFormat(arg)) {
-        size_t length = strlen(arg);
+    if (isHexFormat(argval)) {
+        size_t length = strlen(argval);
         if (length <= 4) return TYPE_UCHAR;
         if (length <= 6) return TYPE_USHORT;
         if (length <= 10) return TYPE_UINT;
@@ -79,6 +79,35 @@ ArgType infer_arg_type(const char* arg) {
 
     // Add more rules as needed
     return TYPE_STRING; // Default fallback
+}
+
+void infer_arg_type_from_value(ArgInfo* arg, const char* argval) {
+    arg->explicitType = false;
+    arg->pointer_depth = 0;
+    
+    // infer array type by presence of commas
+        // check that for every substring, infer_arg_type returns the same? or just use the first type?
+    if (strchr(argval, ',') != NULL) {
+        char* rest = strdup(argval);
+        char* token = strtok_r(rest, ",", &rest);
+        ArgType first_type = infer_arg_type_single(token);
+        while (token != NULL) {
+            ArgType next_type = infer_arg_type_single(token);
+            if (next_type != first_type) {
+                fprintf(stderr, "Warning: In argstr %s, multiple types found in comma delimitted list. We'll use the first type %c\n", argval, typeToChar(first_type));
+                break;
+            }
+            token = strtok_r(rest, ",", &rest);
+        }
+        arg->type=first_type;
+        arg->is_array = ARRAY_STATIC_SIZE_UNSET; // we'll set the size later anyway, just as if it were specified as an array, but with size unspecified
+    } else {
+        arg->type = infer_arg_type_single(argval);
+        arg->is_array = NOT_ARRAY;
+    }
+
+   
+
 }
 
 void* hex_string_to_pointer(const char* hexStr) {
@@ -580,7 +609,7 @@ void freeArgInfo(ArgInfo* arg){
             free(((char**)temp)[i]);
         }
     }
-    
+
     if (arg->is_array || arg->type==TYPE_STRING /*|| arg->type==TYPE_STRUCT*/ ){
         free(temp);
     }

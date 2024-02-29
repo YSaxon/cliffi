@@ -35,7 +35,7 @@ void addArgToFunctionCallInfo(FunctionCallInfo* info, ArgInfo* arg) {
     }
 }
 
-void parse_arg_from_flag(ArgInfo* arg, const char* argStr){
+void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
     int pointer_depth = 0;
     ArgType explicitType = charToType(argStr[0]); // Convert flag to type
     while (explicitType == TYPE_POINTER) {
@@ -109,7 +109,7 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         printf("Library path: %s\n", info->library_path);
     }
 
-    parse_arg_from_flag(&info->return_var, argv[2]);
+    parse_arg_type_from_flag(&info->return_var, argv[2]);
     //check if return is an array without a specified size
     if (info->return_var.is_array==ARRAY_STATIC_SIZE_UNSET) {
         fprintf(stderr, "Error: Array return types must have a specified size. Put a number at the end of the flag with no spaces, eg %s4 for a static size, or t and a number to specify an argnumber that will represent size_t for it eg %st1 for the first arg, since 0=return\n", argv[2],argv[2]);
@@ -123,7 +123,7 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     } else {
         printf("Return type: %c\n", info->return_var.type);
     }
-
+    
     // arg[3] is the function name
     info->function_name = strdup(argv[3]);
     if (!info->function_name) {
@@ -140,15 +140,11 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         int pointer_depth = 0;
 
         if (argStr[0] == '-') {
-            parse_arg_from_flag(&arg, argStr+1);
+            parse_arg_type_from_flag(&arg, argStr+1);
             argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
         
         } else {
-            ArgType implicitType = infer_arg_type(argStr);
-            arg.type = implicitType;
-            arg.is_array = NOT_ARRAY;
-            arg.pointer_depth = 0;
-            arg.explicitType = false;
+            infer_arg_type_from_value(&arg, argStr);
         }
         printf("Converting Arg %d: %s\n", i - 3, argStr);
         convert_arg_value(&arg, argStr);
