@@ -66,6 +66,25 @@ int sum_array(int* arr, int size) {
     return sum;
 }
 
+// Function that demonstrates deeper pointer depths
+int increment_at_pointer_pointer(int** pp) {
+    if(pp && *pp) {
+        (**pp)++;
+        return **pp;
+    }
+    return -1;
+}
+
+// Function returning a dynamically allocated array of doubles
+double* get_array_of_doubles(size_t size) {
+    double* arr = (double*) malloc(size * sizeof(double));
+    for(size_t i = 0; i < size; ++i) {
+        arr[i] = i * 0.5;  // Arbitrary values
+    }
+    return arr;
+}
+
+
 // Entry point to prevent the compiler from complaining when compiling as a shared library
 // This function will not be called; it's just to satisfy the linker.
 int main() {
