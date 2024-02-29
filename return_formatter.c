@@ -19,8 +19,8 @@
             value = *(void**)value;
             size_t array_size = get_size_for_arginfo_sized_array(arg);
             printf("Array Size: %zu, ", array_size);
-            char* format_specifier = typeToFormatSpecifier(arg->type);
-            int format_specifier_len = strlen(format_specifier);
+            // char* format_specifier = typeToFormatSpecifier(arg->type);
+            // int format_specifier_len = strlen(format_specifier);
 
             // size_t format_string_len = 7 + // for the "{}" and the null terminator
             //                            (format_specifier_len * arg->array_size) + // for the format specifiers
