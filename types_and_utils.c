@@ -144,8 +144,8 @@ void* convert_to_type(ArgType type, const char* argStr) {
     }
 
     switch (type) {
-        case TYPE_INT: *(int*)result = atoi(argStr); break;
-        case TYPE_FLOAT: *(float*)result = atof(argStr); break;
+        case TYPE_INT: *(int*)result = (int)strtol(argStr, NULL, 0); break;
+        case TYPE_FLOAT: *(float*)result = strtof(argStr, NULL); break;
         case TYPE_DOUBLE: *(double*)result = strtod(argStr, NULL); break;
         case TYPE_CHAR: 
             if (isHexFormat(argStr)) {
