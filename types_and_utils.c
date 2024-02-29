@@ -567,28 +567,23 @@ void log_function_call_info(FunctionCallInfo* info){
 }
 
 void freeArgInfo(ArgInfo* arg){
-    void* temp = &arg->value.ptr_val; 
+    void* temp = arg->value.ptr_val; 
 
     for (int i = 0; i < arg->pointer_depth; i++) {
+        void* this_level = temp;
         temp = *(void**)temp;
+        free(this_level);
     }
 
     if (arg->is_array && (arg->type==TYPE_STRING /* || arg->type==TYPE_STRUCT */)){
         for (int i = 0; i < arg->array_size.static_size; i++) { // we are assuming we've already made the array be of static size
-            free((*((char***)temp))[i]);
+            free(((char**)temp)[i]);
         }
     }
+    
     if (arg->is_array || arg->type==TYPE_STRING /*|| arg->type==TYPE_STRUCT*/ ){
-        free(*((void**)temp));
-    }
-
-    //now free them in reverse order
-    for (int i = 0; i < arg->pointer_depth; i++) {
-        void* parent = &temp;
         free(temp);
-        temp = parent;
     }
-    //it's possible that the last layer of free will fail since the address is not malloced, if so then just subtract one iteration from the final for loop
 
 }
 
