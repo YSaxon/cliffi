@@ -9,7 +9,7 @@
 #include "types_and_utils.h"
 
 const char* NAME = "ffitool";
-const char* VERSION = "0.4.10";
+const char* VERSION = "0.4.11";
 
 int main(int argc, char* argv[]) {
     if (argc > 1 && strcmp(argv[1], "--help") == 0) {

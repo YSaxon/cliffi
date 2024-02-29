@@ -110,26 +110,28 @@ void infer_arg_type_from_value(ArgInfo* arg, const char* argval) {
 
 }
 
-void* hex_string_to_pointer(const char* hexStr) {
+void* hex_string_to_bytes(const char* hexStr) {
     if (!hexStr) return NULL;
+    if (hexStr[0] == '0' && (hexStr[1] == 'x' || hexStr[1] == 'X')) hexStr += 2; // Skip 0x (if present)
 
     size_t len = strlen(hexStr);
-    if (len % 2 != 0) return NULL; // Hex string length must be even
+    if (len == 0 || len % 2 != 0) return NULL; // Hex string length must be non-zero and even
 
     size_t finalLen = len / 2;
     unsigned char* output = malloc(finalLen);
     if (!output) return NULL;
 
     for (size_t i = 0, j = 0; i < len; i += 2, j++) {
-        int val1 = isdigit(hexStr[i]) ? hexStr[i] - '0' : toupper(hexStr[i]) - 'A' + 10;
-        int val2 = isdigit(hexStr[i + 1]) ? hexStr[i + 1] - '0' : toupper(hexStr[i + 1]) - 'A' + 10;
+        int val1 = isxdigit(hexStr[i]) ? (isdigit(hexStr[i]) ? hexStr[i] - '0' : toupper(hexStr[i]) - 'A' + 10) : -1;
+        int val2 = isxdigit(hexStr[i + 1]) ? (isdigit(hexStr[i + 1]) ? hexStr[i + 1] - '0' : toupper(hexStr[i + 1]) - 'A' + 10) : -1;
 
-        if (val1 < 0 || val1 > 15 || val2 < 0 || val2 > 15) {
+        if (val1 < 0 || val2 < 0) {
             free(output); // Cleanup on error
-            return NULL;
+            fprintf(stderr, "Error: Invalid hex character in string: %s\n", hexStr);
+            exit(1);
         }
 
-        output[j] = (val1 << 4) + val2;
+        output[j] = (unsigned char)((val1 << 4) + val2);
     }
 
     return output;
@@ -149,7 +151,7 @@ void* convert_to_type(ArgType type, const char* argStr) {
         case TYPE_DOUBLE: *(double*)result = strtod(argStr, NULL); break;
         case TYPE_CHAR: 
             if (isHexFormat(argStr)) {
-                *(char*)result = ((char *) hex_string_to_pointer(argStr))[0];
+                *(char*)result = ((char *) hex_string_to_bytes(argStr))[0];
             } else {
                 *(char*)result = argStr[0]; 
             }
@@ -273,12 +275,11 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
     // 3. comma delimitted list of values for the array
 
     // Step 1: Split string by commas and count substrings
-    int count = 1;
     size_t array_size_implicit;
     void* array_values;
     size_t size_of_type = typeToSize(arg->type);
     
-
+    int count = 1;
     for (const char* p = argStr; *p; p++) {
         if (*p == ',') count++;
     }
@@ -298,7 +299,7 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
                 exit(1);
             }
             array_size_implicit = hexstring_bytes / size_of_type;
-            array_values = hex_string_to_pointer(argStr);
+            array_values = hex_string_to_bytes(argStr);
         }
         else
         {
