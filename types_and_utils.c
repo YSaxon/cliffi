@@ -184,6 +184,11 @@ for (int i = 0; i < arg->pointer_depth; i++) {
 
 }
 
+typedef struct {
+                size_t temp_array_size;
+                void* array;
+                } ArgnumSizedButAlsoImplicitlySizedArray;
+
 void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
 
 
@@ -221,7 +226,8 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
             arg->value.ptr_val = calloc(arg->array_size.static_size, typeToSize(arg->type));
             return;
         } else if (arg->is_array==ARRAY_SIZE_AT_ARGNUM) {
-            fprintf(stderr, "Warning: We have not yet implemented initializing null arrays of size pointed to by another argument, so this will be a null pointer for now\n");
+            // fprintf(stderr, "Warning: We have not yet implemented initializing null arrays of size pointed to by another argument, so this will be a null pointer for now\n");
+            // we've now implemented this in second_pass_arginfo_ptr_sized_null_array_initialization, so we can just return
             arg->value.ptr_val = NULL;
             return;
         } else {
@@ -306,13 +312,68 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
             arg->array_size.static_size = explicit_size;
         }
     } else if (arg->is_array==ARRAY_SIZE_AT_ARGNUM){
-        fprintf(stderr, "Warning: We have not yet implemented initializing arrays of size pointed to by another argument, so we will just use the size derived from the value for the array\n");
-        arg->value.ptr_val = array_values;
-        arg->array_size.static_size = array_size_implicit;
+        // fprintf(stderr, "Warning: we are initializing an argnum size_t sized array with the implicit size %zu implied by the value it is being initialized with. On the second pass of the parser, we will reallocate the array, but this may lead to truncation or \n");
+        ArgnumSizedButAlsoImplicitlySizedArray *temp_array = malloc(sizeof(ArgnumSizedButAlsoImplicitlySizedArray));
+        temp_array->temp_array_size = array_size_implicit;
+        temp_array->array = array_values;
+        arg->value.ptr_val = temp_array;
+        // arg->array_size.static_size = array_size_implicit; <-- DONT DO THAT, IT WILL OVERWRITE THE ARGNUM!
+        // alternatively we could add a field to the arginfo to store the implicit size
     }
     else {
         fprintf(stderr, "Error: Unsupported array size mode %d\n", arg->is_array);
         exit(1);
+    }
+}
+
+
+void second_pass_arginfo_ptr_sized_null_array_initialization_inner(ArgInfo* arg){
+        // first we have to traverse the pointer_depths to get to the actual array
+        void* value = arg->value.ptr_val;
+        void* parent = &arg->value;
+        for (int j = 0; j < arg->pointer_depth; j++) {
+            parent = value;
+            value = *(void**)value;
+        }
+        if (value==NULL){
+            size_t size = get_size_for_arginfo_sized_array(arg);
+            * (void**) parent = calloc(size, typeToSize(arg->type));
+        } else {
+            // fprintf(stderr, "Warning: Array was specified to have its size be at arginfo ptr, but the array was already initialized with a non-null value. We will not reallocate the array, but this may lead to unexpected behavior\n");
+            // realloc the array to the correct size?
+            // but no way to be sure that the array will end with zeros then
+            // size_t size = get_size_for_arginfo_sized_array(arg);
+            // * (void**) parent = realloc(value, size);
+
+            ArgnumSizedButAlsoImplicitlySizedArray temp_array = *(ArgnumSizedButAlsoImplicitlySizedArray*) value;
+
+            size_t implicit_size = temp_array.temp_array_size;
+            size_t explicit_size = get_size_for_arginfo_sized_array(arg);
+
+
+            if (explicit_size < implicit_size){
+                fprintf(stderr, "Warning: Array was specified by its size_t arg to have size %zu, but the value implies a size of %zu. Setting array size to the explicit size (values may be truncated)\n", explicit_size, implicit_size);
+                * (void**) parent = temp_array.array;
+            } else if (explicit_size > implicit_size){
+                fprintf(stderr, "Warning: Array was specified by its size_t arg to have size %zu, but the value implies a size of %zu. Filling the rest of the array with 0s\n", explicit_size, implicit_size);
+                * (void**) parent = calloc(explicit_size, typeToSize(arg->type));
+                memcpy(* (void**) parent, temp_array.array, implicit_size * typeToSize(arg->type));
+                free(temp_array.array);
+            } else {
+                * (void**) parent = temp_array.array;
+            }
+            free(value);
+        }
+}
+
+void second_pass_arginfo_ptr_sized_null_array_initialization(FunctionCallInfo* info){
+    for (int i = 0; i < info->arg_count; i++) {
+        if (info->args[i].is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
+        second_pass_arginfo_ptr_sized_null_array_initialization_inner(&info->args[i]);
+        }
+    }
+    if (info->return_var.is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
+        second_pass_arginfo_ptr_sized_null_array_initialization_inner(&info->return_var);
     }
 }
 

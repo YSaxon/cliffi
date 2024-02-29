@@ -154,9 +154,13 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         convert_arg_value(&arg, argStr);
         addArgToFunctionCallInfo(info, &arg);
     }
+
+    convert_all_arrays_to_arginfo_ptr_sized_after_parsing(info);
+
+    second_pass_arginfo_ptr_sized_null_array_initialization(info);
+
     printf("Done parsing arguments\n");
-
     
-
+    
     return info;
 }

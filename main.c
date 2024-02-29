@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
 
     // Step 2: Parse command-line arguments
     FunctionCallInfo* call_info = parse_arguments(argc, argv);
-    convert_all_arrays_to_arginfo_ptr_sized_after_parsing(call_info);
+    // convert_all_arrays_to_arginfo_ptr_sized_after_parsing(call_info); <-- handled inside parse_arguments now
     
 
     // Step 2.5 (optional): Print the parsed function call call_info
