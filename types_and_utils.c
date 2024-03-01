@@ -616,6 +616,10 @@ void freeArgInfo(ArgInfo* arg){
         free(this_level);
     }
 
+    // The problem with freeing arrays and strings is we cannot tell if they were memalloc'ed on the heap or if they were literals in global / static, eg .data or .rodata
+    // We can choose to assume they are probably on the heap, and free them, but it will cause a segfault if they were not
+    // Or we can just decided to not free them, and let the OS clean up after the program ends
+
     if (arg->is_array && (arg->type==TYPE_STRING /* || arg->type==TYPE_STRUCT */)){
         for (int i = 0; i < arg->array_size.static_size; i++) { // we are assuming we've already made the array be of static size
             free(((char**)temp)[i]);

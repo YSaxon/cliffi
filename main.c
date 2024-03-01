@@ -133,7 +133,10 @@ int main(int argc, char* argv[]) {
     }
 
     // Clean up
-    freeFunctionCallInfo(call_info); 
+
+    // free() introduces problems with functions returning literals that cannot be freed, which cannot be distinguished from heap-allocated memory
+    // and we are anyway exiting the program, so we don't actually need to free memory
+    // freeFunctionCallInfo(call_info); 
 
     // Wait to close the library until after we're done with everything in case it returns pointers to literals stored in the library
     dlclose(lib_handle);
