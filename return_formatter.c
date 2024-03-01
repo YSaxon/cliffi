@@ -6,7 +6,55 @@
 #include <stdlib.h>
 #include <string.h>
 
-void print_arg_value(const void* value, ArgType type, size_t offset) {
+void print_char_buffer(const char *buffer, size_t length) {
+    for (size_t i = 0; i < length; i++) {
+        unsigned char c = buffer[i];
+        if (c == '\0') {
+            printf("\\x00");
+        } else {
+            if (!isprint(c)) {
+                printf("\\x%02x", c);
+            } else {
+                printf("%c", c);
+            }
+    }
+    printf("\n");
+    }
+}
+
+void hexdump(const void *data, size_t size) {
+    const unsigned char *byte = (const unsigned char *)data;
+    size_t i, j;
+    bool multiline = size > 16;
+    if (multiline) printf("(Hexvalue)\nOffset      ");
+
+    for (i = 0; i < size; i += 16) {
+        if (multiline) printf("%08zx  ", i); // Offset
+
+        // Hex bytes
+        for (j = 0; j < 16; j++) {
+            if (i + j < size) {
+                printf("%02x ", byte[i + j]);
+            } else {
+                printf("   "); // Fill space if less than 16 bytes in the line
+            }
+        }
+
+        printf(" ");
+
+        // ASCII characters
+        for (j = 0; j < 16; j++) {
+            if (i + j < size) {
+                printf("%c", isprint(byte[i + j]) ? byte[i + j] : '.');
+            }
+        }
+
+        printf("\n");
+    }
+}
+
+
+    void print_arg_value(const void* value, ArgType type, size_t offset) {
     switch (type) {
         case TYPE_CHAR:
             printf("%c", ((char*)value)[offset]);
@@ -77,10 +125,15 @@ void print_arg_value(const void* value, ArgType type, size_t offset) {
         else {
             value = *(void**)value;
             size_t array_size = get_size_for_arginfo_sized_array(arg);
+            if (arg->type == TYPE_CHAR){
+                print_char_buffer((const char*)value, array_size);
+                // print it as a string, with escape characters
+            } else if (arg->type == TYPE_UCHAR) {
+                hexdump(value, array_size);
+            } else 
             {
                 printf("{ ");
                 for (size_t i = 0; i < array_size; i++) {
-                    // void* array_element = (void*)value + (i * typeToSize(arg->type));
                     print_arg_value(value, arg->type,i);
                     if (i < array_size - 1) {
                         printf(", ");
