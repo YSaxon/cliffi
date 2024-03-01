@@ -1,3 +1,4 @@
+#include <dlfcn.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,7 +10,7 @@
 #include "types_and_utils.h"
 
 const char* NAME = "ffitool";
-const char* VERSION = "0.4.12";
+const char* VERSION = "0.4.13";
 
 int main(int argc, char* argv[]) {
     if (argc > 1 && strcmp(argv[1], "--help") == 0) {
@@ -102,9 +103,19 @@ int main(int argc, char* argv[]) {
 
     // Step 3: Invoke the specified function
     int invoke_result = invoke_dynamic_function(call_info);
+    void* lib_handle = dlopen(call_info->library_path, RTLD_LAZY);
+    if (!lib_handle) {
+        fprintf(stderr, "Failed to load library: %s\n", dlerror());
+        return -1;
+    }
+
+    void (*func)(void);
+    *(void**)(&func) = dlsym(lib_handle, call_info->function_name);
+
+    int invoke_result = invoke_dynamic_function(call_info,func);
     if (invoke_result != 0) {
         fprintf(stderr, "Error: Function invocation failed\n");
-    }
+    } else {
 
     // Step 4: Print the return value and any modified arguments
 
@@ -121,12 +132,15 @@ int main(int argc, char* argv[]) {
         if (call_info->args[i].is_array || call_info->args[i].pointer_depth > 0) {
             printf("Arg %d after function return: ", i);
             format_and_print_arg_value(&call_info->args[i]);
-            printf("\n");
+            }
         }
     }
 
     // Clean up
     freeFunctionCallInfo(call_info); 
+
+    // Wait to close the library until after we're done with everything in case it returns pointers to literals stored in the library
+    dlclose(lib_handle);
 
     return invoke_result;
 }

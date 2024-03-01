@@ -39,18 +39,9 @@ ffi_type* arg_type_to_ffi_type(const ArgInfo* arg) {
 }
 
 // Main function to invoke a dynamic function call
-int invoke_dynamic_function(FunctionCallInfo* call_info) {
-    void* lib_handle = dlopen(call_info->library_path, RTLD_LAZY);
-    if (!lib_handle) {
-        fprintf(stderr, "Failed to load library: %s\n", dlerror());
-        return -1;
-    }
-
-    void (*func)(void);
-    *(void**)(&func) = dlsym(lib_handle, call_info->function_name);
+int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
     if (!func) {
         fprintf(stderr, "Failed to find function %s in library: %s\n", call_info->function_name, dlerror());
-        dlclose(lib_handle);
         return -1;
     }
 
@@ -61,7 +52,6 @@ int invoke_dynamic_function(FunctionCallInfo* call_info) {
         args[i] = arg_type_to_ffi_type(&call_info->args[i]);
         if (!args[i]) {
             fprintf(stderr, "Failed to convert arg[%d].type = %c to ffi_type.\n", i, call_info->args[i].type);
-            dlclose(lib_handle);
             return -1;
         }
         values[i] = &call_info->args[i].value;
@@ -70,7 +60,6 @@ int invoke_dynamic_function(FunctionCallInfo* call_info) {
     ffi_type* return_type = arg_type_to_ffi_type(&call_info->return_var);
     if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, call_info->arg_count, return_type, args) != FFI_OK) {
         fprintf(stderr, "ffi_prep_cif failed.\n");
-        dlclose(lib_handle);
         return -1;
     }
 
@@ -79,6 +68,5 @@ int invoke_dynamic_function(FunctionCallInfo* call_info) {
     if (call_info->return_var.type == TYPE_STRING && call_info->return_var.is_array == false && call_info->return_var.pointer_depth == 0) {
         call_info->return_var.value.str_val = strdup(call_info->return_var.value.str_val);
     }
-    dlclose(lib_handle);
     return 0;
 }
