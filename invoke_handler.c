@@ -65,8 +65,5 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
 
     ffi_call(&cif, func, &call_info->return_var.value, values);
 
-    if (call_info->return_var.type == TYPE_STRING && call_info->return_var.is_array == false && call_info->return_var.pointer_depth == 0) {
-        call_info->return_var.value.str_val = strdup(call_info->return_var.value.str_val);
-    }
     return 0;
 }
