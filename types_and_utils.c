@@ -571,20 +571,7 @@ size_t get_size_for_arginfo_sized_array(const ArgInfo* arg){
     }
 }
 
-void convert_all_arrays_to_static_sized_after_function_return(FunctionCallInfo* call_info){
-    // First, for simplicity, lets convert any size_t referenced arrays to their actual size
-    for (int i = 0; i < call_info->arg_count; i++) { // get final sizes for any arrays before freeing, although TODO we should just make them static on function return for simplicity
-    if (call_info->args[i].is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
-        call_info->args[i].array_size.static_size = get_size_for_arginfo_sized_array(&call_info->args[i]);
-        call_info->args[i].is_array=ARRAY_STATIC_SIZE;
-    }
-    }
-    // do the same for the return value
-    if (call_info->return_var.is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
-        call_info->return_var.array_size.static_size = get_size_for_arginfo_sized_array(&call_info->return_var);
-        call_info->return_var.is_array=ARRAY_STATIC_SIZE;
-    }
-}
+
 
 
 
@@ -603,6 +590,20 @@ void log_function_call_info(FunctionCallInfo* info){
     for (int i = 0; i < info->arg_count; i++) {
         printf("Arg %d: %s Type: %c, Value: ", i,info->args[i].explicitType? "Explicit" : "Implicit", typeToChar(info->args[i].type));//, format_buffer);
         format_and_print_arg_value(&info->args[i]);//, format_buffer, buffer_size);
+    }
+}
+
+void convert_all_arrays_to_static_sized_after_function_return(FunctionCallInfo* call_info){
+    for (int i = 0; i < call_info->arg_count; i++) {
+    if (call_info->args[i].is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
+        call_info->args[i].array_size.static_size = get_size_for_arginfo_sized_array(&call_info->args[i]);
+        call_info->args[i].is_array=ARRAY_STATIC_SIZE;
+    }
+    }
+    // do the same for the return value
+    if (call_info->return_var.is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
+        call_info->return_var.array_size.static_size = get_size_for_arginfo_sized_array(&call_info->return_var);
+        call_info->return_var.is_array=ARRAY_STATIC_SIZE;
     }
 }
 
@@ -631,6 +632,7 @@ void freeFunctionCallInfo(FunctionCallInfo* info) {
     if (info) {
         free(info->library_path); // Assuming this was dynamically allocated
         free(info->function_name);
+        convert_all_arrays_to_static_sized_after_function_return(info); // get final sizes for any arrays before freeing
         for (int i = 0; i < info->arg_count; i++) {
             freeArgInfo(&info->args[i]);
         }

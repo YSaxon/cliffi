@@ -117,13 +117,9 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "Error: Function invocation failed\n");
     } else {
 
-    // Step 4: Print the return value and any modified arguments
+        // Step 4: Print the return value and any modified arguments
 
-
-
-    convert_all_arrays_to_static_sized_after_function_return(call_info);
-
-    printf("Function returned: ");
+        printf("Function returned: ");
 
     format_and_print_arg_value(&call_info->return_var);
 

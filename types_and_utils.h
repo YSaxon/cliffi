@@ -86,7 +86,6 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr);
 
 size_t get_size_for_arginfo_sized_array(const ArgInfo* arg);
 void convert_all_arrays_to_arginfo_ptr_sized_after_parsing(FunctionCallInfo* functionInfo);
-void convert_all_arrays_to_static_sized_after_function_return(FunctionCallInfo* call_info);
 void second_pass_arginfo_ptr_sized_null_array_initialization(FunctionCallInfo* call_info);
 
 #endif /* ARG_TOOLS_H */
