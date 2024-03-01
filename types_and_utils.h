@@ -70,6 +70,7 @@ typedef struct FunctionCallInfo {
 
 // Function declarations
 char typeToChar(ArgType type);
+char* typeToString(ArgType type);
 ArgType charToType(char c);
 void freeFunctionCallInfo(FunctionCallInfo* info);
 bool isAllDigits(const char* str);

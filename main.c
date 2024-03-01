@@ -10,7 +10,7 @@
 #include "types_and_utils.h"
 
 const char* NAME = "ffitool";
-const char* VERSION = "0.4.13";
+const char* VERSION = "0.4.14";
 
 int main(int argc, char* argv[]) {
     if (argc > 1 && strcmp(argv[1], "--help") == 0) {
@@ -121,12 +121,15 @@ int main(int argc, char* argv[]) {
 
         printf("Function returned: ");
 
+        // format_and_print_arg_type(&call_info->return_var);
     format_and_print_arg_value(&call_info->return_var);
 
     for (int i = 0; i < call_info->arg_count; i++) {
         // if it could have been modified, print it
+            // TODO keep track of the original value and compare
         if (call_info->args[i].is_array || call_info->args[i].pointer_depth > 0) {
             printf("Arg %d after function return: ", i);
+                format_and_print_arg_type(&call_info->args[i]);
             format_and_print_arg_value(&call_info->args[i]);
             }
         }

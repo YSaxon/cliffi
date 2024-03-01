@@ -428,13 +428,13 @@ char* typeToString(ArgType type) {
         case TYPE_SHORT: return "short";
         case TYPE_INT: return "int";
         case TYPE_LONG: return "long";
-        case TYPE_UCHAR: return "unsigned char";
-        case TYPE_USHORT: return "unsigned short";
-        case TYPE_UINT: return "unsigned int";
-        case TYPE_ULONG: return "unsigned long";
+        case TYPE_UCHAR: return "uchar";
+        case TYPE_USHORT: return "ushort";
+        case TYPE_UINT: return "uint";
+        case TYPE_ULONG: return "ulong";
         case TYPE_FLOAT: return "float";
         case TYPE_DOUBLE: return "double";
-        case TYPE_STRING: return "string";
+        case TYPE_STRING: return "cstring";
         case TYPE_POINTER: return "pointer";
         case TYPE_VOID: return "void";
         case TYPE_ARRAY: return "array";
@@ -585,10 +585,14 @@ void log_function_call_info(FunctionCallInfo* info){
     printf("FunctionCallInfo:\n");
     printf("\tLibrary Path: %s\n", info->library_path);
     printf("\tFunction Name: %s\n", info->function_name);
-    printf("\tReturn Type: %c\n", typeToChar(info->return_var.type));
+    printf("\tReturn type: ");
+    format_and_print_arg_type(&info->return_var);
+    printf("\n");
     printf("\tArg Count: %d\n", info->arg_count);
     for (int i = 0; i < info->arg_count; i++) {
-        printf("Arg %d: %s Type: %c, Value: ", i,info->args[i].explicitType? "Explicit" : "Implicit", typeToChar(info->args[i].type));//, format_buffer);
+        printf("Arg %d: %s ", i,info->args[i].explicitType? "Explicit" : "Implicit");
+        format_and_print_arg_type(&info->args[i]);//, format_buffer, buffer_size);
+        printf(" = ");
         format_and_print_arg_value(&info->args[i]);//, format_buffer, buffer_size);
     }
 }
@@ -629,7 +633,6 @@ void freeArgInfo(ArgInfo* arg){
     if (arg->is_array || arg->type==TYPE_STRING /*|| arg->type==TYPE_STRUCT*/ ){
         free(temp);
     }
-
 }
 
 void freeFunctionCallInfo(FunctionCallInfo* info) {
