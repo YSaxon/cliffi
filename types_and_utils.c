@@ -3,6 +3,8 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <errno.h>
+#include <limits.h>
 #include "types_and_utils.h"
 #include "return_formatter.h"
 
@@ -56,32 +58,53 @@ bool isFloatingPoint(const char* str) {
 }
 
 ArgType infer_arg_type_single(const char* argval){
+    if (!argval) return TYPE_UNKNOWN;
+    if (argval[0] == '"' || argval[0] == '\'' || strlen(argval) == 0) return TYPE_STRING; // if it starts with a quote or is empty, it's probably a string
+    if (strchr(argval, ' ') != NULL) return TYPE_STRING; // if there is a space in the value, it's probably a string
+
     bool is_negative = argval[0] == '-';
-    if (is_negative) argval++;
-    
-    if (!argval || strlen(argval) == 0) return TYPE_UNKNOWN;
-    if (argval[0] == '"' || argval[0] == '\'') return TYPE_STRING;
-    if (isFloatingPoint(argval)){
+    const char* without_negative_sign = is_negative ? argval+1 : argval;
+    if (isFloatingPoint(without_negative_sign)){
             if (endsWith(argval, 'D') || endsWith(argval, 'd')) return TYPE_DOUBLE;
             if (endsWith(argval, 'F') || endsWith(argval, 'f')) return TYPE_FLOAT;
-         return TYPE_FLOAT;
+         return TYPE_DOUBLE; // probably the most common
          }
-    if (isAllDigits(argval)) {
+    if (isAllDigits(without_negative_sign)) {
             if (endsWith(argval, 'L') || endsWith(argval, 'l')) return TYPE_LONG;
             if (endsWith(argval, 'U') || endsWith(argval, 'u')) return TYPE_UINT;
             if (endsWith(argval, 'I') || endsWith(argval, 'i')) return TYPE_INT;
-        return TYPE_INT;
+            //test if value is too big for int
+            long long int test = strtoll(argval, NULL, 0);
+            if (errno == ERANGE) {
+                fprintf(stderr, "Error: Value %s is out of range even for long long\n", argval);
+                exit(1);
+            }
+            if (test > ULONG_MAX){
+                //todo implement longlong?
+                fprintf(stderr, "Error: Value %s is too large to fit into an unsigned long, and we haven't implemented longlong yet\n", argval);
+                exit(1);
+            } else if (test > LONG_MAX){
+                return TYPE_ULONG; // no alternative so long as we don't have longlong
+            } else if (test > UINT_MAX){
+                return TYPE_LONG; // it COULD still be ULONG but we'll assume it's just long if it fits in long
+            } else if (test > INT_MAX){
+                return TYPE_UINT; // should we infer a long instead? What's more common?
+            } else if (test < INT_MIN){
+                return TYPE_LONG; // no alternative so long as we don't have longlong
+            } else { 
+                return TYPE_INT; // if it fits in an int we'll just use that since that's most common
+            }
+
         }
-    if (isHexFormat(argval)) {
-        size_t length = strlen(argval);
-        if (argval[0] == '0' && (argval[1] == 'x' || argval[1] == 'X')) length-=2; // Skip 0x (if present) 
+    if (isHexFormat(without_negative_sign)) {
+        size_t length = strlen(without_negative_sign);
+        if (without_negative_sign[0] == '0' && (without_negative_sign[1] == 'x' || without_negative_sign[1] == 'X')) length-=2; // Skip 0x (if present) 
         length /= 2; // Two hex characters per byte
         if (length <= 1) return is_negative ? TYPE_CHAR : TYPE_UCHAR;
         if (length <= 2) return is_negative ? TYPE_SHORT : TYPE_USHORT;
         if (length <= 4) return is_negative ? TYPE_INT : TYPE_UINT;
         if (length <= 8) return is_negative ? TYPE_LONG : TYPE_ULONG;
         else {
-            if (is_negative) argval--; // Move back to the start of the string
             fprintf(stderr, "Error: Hex string %s is %zu bytes, which is too long to fit into a single type. If you meant to specify an array or a string, flag it as such.\n", argval, length);
             exit(1);
         }
