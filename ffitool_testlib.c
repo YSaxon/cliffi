@@ -1,3 +1,4 @@
+#include <malloc/_malloc.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,11 +9,12 @@ int add(int a, int b) {
 }
 
 // Function that concatenates two strings
-// Note: This function returns a pointer to a static buffer for simplicity. Not thread-safe.
 const char* concat(const char* a, const char* b) {
-    static char result[256];
-    strncpy(result, a, sizeof(result) - 1);
-    strncat(result, b, sizeof(result) - strlen(result) - 1);
+    int total_length = strlen(a) + strlen(b);
+    char* result = malloc(total_length + 1);
+    result[0] = '\0'; // Initialize the string
+    strcpy(result, a);
+    strcat(result, b);
     return result;
 }
 
@@ -39,8 +41,8 @@ int* get_array_of_int(int a, size_t size) {
 }
 
 // A function that returns a static string
-const char* get_message() {
-    return "Hello, ffitool!";
+char* get_message() {
+    return "Hello, ffitool!"; // this maybe shows us we need to handle string literals in data?
 }
 
 // Struct for demonstration
@@ -85,12 +87,22 @@ double* get_array_of_doubles(size_t size) {
 }
 
 const char* concat_str_array(const char** strs, int count) {
-    static char result[1024];
+    int total_length = 0;
+    for(int i = 0; i < count; i++) {
+        total_length += strlen(strs[i]);
+    }
+    char* result = (char*) malloc(total_length + 1);
     result[0] = '\0'; // Initialize the string
     for(int i = 0; i < count; i++) {
-        strncat(result, strs[i], sizeof(result) - strlen(result) - 1);
+        strcat(result, strs[i]);
     }
     return result;
+}
+
+const char* buffer_as_return(const char* buffer, size_t size) {
+    char* retval = malloc(size);
+    memcpy(retval, buffer, size);
+    return retval;
 }
 
 

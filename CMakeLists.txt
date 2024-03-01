@@ -119,3 +119,10 @@ set_tests_properties(TestSumImplicitNegativeNumberNotInterpretedAsFlag PROPERTIE
 add_test(NAME TestConcatWithHexBuffers # aC and ac buffers should both work as strings if parsed properly
          COMMAND ffitool ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}ffitool_test${CMAKE_SHARED_LIBRARY_SUFFIX} s concat -ac 0x3232656800 -aC 0x34353600)
 set_tests_properties(TestConcatWithHexBuffers PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?22eh456\"?")
+
+add_test(NAME TestReturningBuffer # aC and ac buffers should both work to contain strings
+         COMMAND ffitool ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}ffitool_test${CMAKE_SHARED_LIBRARY_SUFFIX} ac8 get_message)
+set_tests_properties(TestReturningBuffer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: .*H.*e.*l.*l.*o.*,")
+
+add_test(NAME TestReturningBufferWithSize # aC and ac buffers should both work to contain strings
+            COMMAND ffitool ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}ffitool_test${CMAKE_SHARED_LIBRARY_SUFFIX} act2 buffer_as_return -act2 a,b,c,d 4)
