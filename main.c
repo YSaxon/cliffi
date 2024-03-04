@@ -84,9 +84,13 @@ int main(int argc, char* argv[]) {
 
 
     //print all args
+    #ifdef DEBUG
     for (int i = 0; i < argc; i++) {
         printf("argv[%d] = %s\n", i, argv[i]);
     }
+    setbuf(stdout, NULL); // disable buffering for stdout
+    setbuf(stderr, NULL); // disable buffering for stderr
+    #endif
 
     // Step 1: Resolve the library path
     // For now we've delegated that call to parse_arguments
@@ -98,7 +102,6 @@ int main(int argc, char* argv[]) {
     
 
     // Step 2.5 (optional): Print the parsed function call call_info
-    printf("Parsed function call call_info:\n");
     log_function_call_info(call_info);
 
     // Step 3: Invoke the specified function

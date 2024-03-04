@@ -105,9 +105,6 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         fprintf(stderr, "Error: Unable to resolve library path for %s\n", argv[1]);
         return NULL;
     }
-    else {
-        printf("Library path: %s\n", info->library_path);
-    }
 
     parse_arg_type_from_flag(&info->return_var, argv[2]);
     //check if return is an array without a specified size
@@ -115,13 +112,10 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         fprintf(stderr, "Error: Array return types must have a specified size. Put a number at the end of the flag with no spaces, eg %s4 for a static size, or t and a number to specify an argnumber that will represent size_t for it eg %st1 for the first arg, since 0=return\n", argv[2],argv[2]);
         exit(1);
     }
-    else
 
     if (info->return_var.type == TYPE_UNKNOWN) {
         fprintf(stderr, "Error: Unsupported return type\n");
         return NULL;
-    } else {
-        printf("Return type: %c\n", info->return_var.type);
     }
 
     // arg[3] is the function name
@@ -129,8 +123,6 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     if (!info->function_name) {
         fprintf(stderr, "Error: Unable to allocate memory for function name\n");
         return NULL;
-    } else {
-        printf("Function name: %s\n", info->function_name);
     }
     //TODO: maybe at some point we should be able to take a hex offset instead of a function name
 
@@ -153,10 +145,7 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
 
     convert_all_arrays_to_arginfo_ptr_sized_after_parsing(info);
 
-    second_pass_arginfo_ptr_sized_null_array_initialization(info);
-
-    printf("Done parsing arguments\n");
-    
+    second_pass_arginfo_ptr_sized_null_array_initialization(info);    
     
     return info;
 }
