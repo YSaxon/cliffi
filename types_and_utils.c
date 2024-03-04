@@ -613,11 +613,13 @@ void log_function_call_info(FunctionCallInfo* info){
     printf("\n");
     printf("\tArg Count: %d\n", info->arg_count);
     for (int i = 0; i < info->arg_count; i++) {
-        printf("Arg %d: %s ", i,info->args[i].explicitType? "Explicit" : "Implicit");
+        printf("\tArg %d: %s ", i,info->args[i].explicitType? "(explicit)" : "(inferred)");
         format_and_print_arg_type(&info->args[i]);//, format_buffer, buffer_size);
         printf(" = ");
         format_and_print_arg_value(&info->args[i]);//, format_buffer, buffer_size);
+        printf("\n");
     }
+
 }
 
 void convert_all_arrays_to_static_sized_after_function_return(FunctionCallInfo* call_info){

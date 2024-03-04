@@ -18,7 +18,6 @@ void print_char_buffer(const char *buffer, size_t length) {
                 printf("%c", c);
             }
     }
-    printf("\n");
     }
 }
 
@@ -36,11 +35,12 @@ void hexdump(const void *data, size_t size) {
             if (i + j < size) {
                 printf("%02x ", byte[i + j]);
             } else {
-                printf("   "); // Fill space if less than 16 bytes in the line
+                 if (multiline) printf("   "); // Fill space if less than 16 bytes in the line
             }
         }
 
-        printf(" ");
+        if (multiline) printf(" ");
+        if (!multiline) printf("= ");
 
         // ASCII characters
         for (j = 0; j < 16; j++) {
@@ -120,7 +120,7 @@ void hexdump(const void *data, size_t size) {
         }
         if (!arg->is_array) {
             print_arg_value(value, arg->type, 0);
-            printf("\n");
+            // printf("\n");
         }
         else {
             value = *(void**)value;
@@ -139,7 +139,8 @@ void hexdump(const void *data, size_t size) {
                         printf(", ");
                     }
                 }
-                printf(" }\n");
+                printf(" }");
+                // printf(" }\n");
             }
         }
     }
