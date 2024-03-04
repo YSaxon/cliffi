@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
     log_function_call_info(call_info);
 
     // Step 3: Invoke the specified function
-    int invoke_result = invoke_dynamic_function(call_info);
+
     void* lib_handle = dlopen(call_info->library_path, RTLD_LAZY);
     if (!lib_handle) {
         fprintf(stderr, "Failed to load library: %s\n", dlerror());
