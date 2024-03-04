@@ -25,13 +25,14 @@ void hexdump(const void *data, size_t size) {
     const unsigned char *byte = (const unsigned char *)data;
     size_t i, j;
     bool multiline = size > 16;
-    if (multiline) printf("(Hexvalue)\nOffset      ");
+    if (multiline) printf("(Hexvalue)\nOffset\n");
 
     for (i = 0; i < size; i += 16) {
         if (multiline) printf("%08zx  ", i); // Offset
 
         // Hex bytes
         for (j = 0; j < 16; j++) {
+            if (j==8) printf(" "); // Add space between the two halves of the hexdump
             if (i + j < size) {
                 printf("%02x ", byte[i + j]);
             } else {
