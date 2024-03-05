@@ -1,0 +1,5 @@
+{
+    "cmake.buildDirectory": "${workspaceFolder}/build_cmake",
+    "ctest-lab.buildDirectory": "${workspaceFolder}/build_cmake",
+    "ctest-lab.buildBeforeRun": true,
+}

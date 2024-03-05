@@ -1,0 +1,241 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "gdb",
+            "request": "attach",
+            "name": "Attach to gdbserver",
+            // "executable": "/data/test/ffitool",
+            "executable": "${workspaceFolder}/build_cmake_android/ffitool",
+            "target": "192.168.0.92:4608",
+            "remote": true,
+            "cwd": "${workspaceRoot}",
+            "valuesFormatting": "parseText",
+            "printCalls": true,
+            "showDevDebugOutput": true,
+            "gdbpath": "/opt/homebrew/bin/arm-none-eabi-gdb"
+        },
+        // {
+        //     "name": "attach to gdbserver",
+        //     "type": "cppdbg",
+        //     // "request": "attach",
+        //     "miDebuggerServerAddress": "192.168.0.92:4608",
+        //     "MIMode": "gdb"
+        // },
+        // {
+        //     "name": "attach to gdbserver",
+        //     "type": "powercpp",
+        //     "miDebuggerServerAddress": "192.168.0.92:4608",
+
+        //     // "request": "attach",
+            
+        // },
+        {
+            "name": "build_cmake_debug",
+            "type": "shell",
+            "request": "launch",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "${workspaceFolder}/build_cmake",
+                "--target",
+                "ffitool",
+                "--config",
+                "Debug"
+            ],
+        },
+        {
+            "name": "Debug concat hex",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            // concat -aC 0x3232656800 -aC 0x34353600
+            "args": ["${workspaceFolder}/build_cmake/libffitool_test.dylib", "s", "concat", "-aC", "0x3232656800", "-aC", "0x34353600"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_cmake_debug"
+        },
+        {
+            "name": "Debug get_message as char array",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            // concat -aC 0x3232656800 -aC 0x34353600
+            "args": ["${workspaceFolder}/build_cmake/libffitool_test.dylib", "ac10", "get_message"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_cmake_debug"
+        },
+        {
+            "name": "Debug get_array_of_doubles adt1",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["${workspaceFolder}/build_cmake/libffitool_test.dylib", "adt1", "get_array_of_doubles", "5"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_cmake_debug"
+        },
+        {
+            "name": "act2 buffer_as_return -act2 a,b,c,d 4",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["${workspaceFolder}/build_cmake/libffitool_test.dylib", "act2", "buffer_as_return", "-act2","a,b,c,d", "4"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_cmake_debug"
+        },
+        {
+            "name": "Debug add 1 2",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["/Users/ysaxon/Desktop/adhoc/ffitool/build_cmake/libffitool_test.dylib","i","add", "1", "2"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_cmake_debug",
+        },
+        {
+            "name": "Debug add -i 0x10 0x10",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["/Users/ysaxon/Desktop/adhoc/ffitool/build_cmake/libffitool_test.dylib","i","add", "-i","0x10", "0x10"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_cmake_debug",
+        },
+        {
+            "name": "Debug concat first second",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["/Users/ysaxon/Desktop/adhoc/ffitool/build_cmake/libffitool_test.dylib","s","concat", "first", "second"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_cmake_debug",
+        },
+        {
+            "name": "Debug concat -s first \"sec ond\"",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["/Users/ysaxon/Desktop/adhoc/ffitool/build_cmake/libffitool_test.dylib","s","concat","-s","first", "sec ond"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_cmake_debug",
+        },
+        {
+            "name": "Debug concat -s first -s \"second part\"",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["/Users/ysaxon/Desktop/adhoc/ffitool/build_cmake/libffitool_test.dylib","s","concat","-s","first", "-s","second part"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_cmake_debug",
+        },
+        {
+            "name": "Debug d multiply 2.5d 3.5d",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["/Users/ysaxon/Desktop/adhoc/ffitool/build_cmake/libffitool_test.dylib","d","multiply","2.5d","3.5d"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_cmake_debug",
+        },
+        {
+            "name": "Debug i sum_array -ai 1,2,3 -i 3",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["/Users/ysaxon/Desktop/adhoc/ffitool/build_cmake/libffitool_test.dylib","i", "sum_array", "-ai", "1,2,3", "-i","3"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_cmake_debug",
+        },
+        {
+            "name": "Debug i increment_at_pointer -pi 5",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["/Users/ysaxon/Desktop/adhoc/ffitool/build_cmake/libffitool_test.dylib","i", "increment_at_pointer", "-pi", "5"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_cmake_debug",
+        },
+        {
+            "name": "Debug increment_at_pointer_pointer -ppi 5",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["${workspaceFolder}/build_cmake/libffitool_test.dylib", "i", "increment_at_pointer_pointer", "-ppi", "5"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_cmake_debug"
+        },
+        {
+            "name": "Debug i get_x -S: 5 2.2 :S",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["${workspaceFolder}/build_cmake/libffitool_test.dylib", "i", "get_x", "-S:", "5", "2.2", ":S"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_cmake_debug"
+        },
+        // v print_two_points_ptr -pS: 4 4.4 :S -pS: 5 5.5 :S
+        {
+            "name": "Debug v print_two_points_ptr -S: -pS: 4 4.4 :S -pS: 5 5.5 :S :S",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["${workspaceFolder}/build_cmake/libffitool_test.dylib", "v", "print_two_points_ptr", "-S:","-pS:", "4", "4.4", ":S", "-pS:", "5", "5.5", ":S",":S"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_cmake_debug"
+        },
+        {
+            "name": "Debug v print_two_points -S: 4 4.4 :S -S: 5 5.5 :S :S",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["${workspaceFolder}/build_cmake/libffitool_test.dylib", "v", "print_two_points", "-S:", "-S:", "4", "4.4", ":S", "-S:", "5", "5.5", ":S",":S"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_cmake_debug"
+        },
+        {
+            "name": "Debug v modify_point -S: -S: 5 2.2 :S 1 .1 :S :S",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["${workspaceFolder}/build_cmake/libffitool_test.dylib", "v", "modify_point", "-S:","-pS:", "5", "2.2", ":S", "1", ".1",":S",":S"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_cmake_debug"
+        },
+        {
+            "name": "v test_complex_struct -S: -c a 4 1.1 0x33 -S: 8 2.2 :S -i 54 7.7 -pS: 7 9.9 :S :S",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["${workspaceFolder}/build_cmake/libffitool_test.dylib", "v", "test_complex_struct", "-S:","-c", "a", "4", "1.1", "0x33", "-S:", "8", "2.2", ":S", "-i", "54", "7.7", "-pS:", "7", "9.9", ":S",":S"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_cmake_debug"
+        },
+
+        {
+            "name": "Debug get_message",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["/Users/ysaxon/Desktop/adhoc/ffitool/build_cmake/libffitool_test.dylib","s","get_message"],
+            // "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            // "environment": [],
+            // "externalConsole": false,
+        },
+        {
+            "name": "(lldb) Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["/Users/ysaxon/Desktop/adhoc/ffitool/build_cmake/libffitool_test.dylib","i","add", "1", "2"],
+            "stopAtEntry": true,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb"
+        }
+
+    ]
+}
