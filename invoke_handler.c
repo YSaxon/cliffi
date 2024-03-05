@@ -139,8 +139,7 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
         if (call_info->info.args[i].type != TYPE_STRUCT){//|| call_info->info.args[i].pointer_depth == 0) {
             values[i] = &call_info->info.args[i].value;
         } else {
-            //structs have to be handled with one level of indirection since they can be arbitrarily large
-            values[i] = call_info->info.args[i].value.ptr_val;
+            values[i] = make_raw_value_for_struct(&call_info->info.args[i]);
         }
     }
 
