@@ -5,6 +5,6 @@
 
 // Parses command-line arguments into a FunctionCallInfo struct
 FunctionCallInfo* parse_arguments(int argc, char* argv[]);
-void addArgToFunctionCallInfo(FunctionCallInfo* info, ArgInfo* arg);
+void addArgToFunctionCallInfo(ArgInfoContainer* info, ArgInfo* arg);
 
 #endif // ARGPARSER_H

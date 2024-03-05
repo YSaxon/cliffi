@@ -1,4 +1,5 @@
 #include "argparser.h"
+#include "invoke_handler.h"
 #include "library_path_resolver.h"
 #include "types_and_utils.h"
 #include <stdbool.h>
@@ -15,7 +16,7 @@
 //     return arg;
 // }
 
-void addArgToFunctionCallInfo(FunctionCallInfo* info, ArgInfo* arg) {
+void addArgToFunctionCallInfo(ArgInfoContainer* info, ArgInfo* arg) {
     if (!info || !arg) return;
     if (!info->args) {
         // Allocate memory for a single ArgInfo struct
@@ -42,7 +43,7 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
         pointer_depth++;
         explicitType = charToType(argStr[pointer_depth]);
     }
-    if (explicitType == TYPE_ARRAY) {
+        if (explicitType == TYPE_ARRAY) {
         // We'll need to figure out how to move forward argv past the array values
         // For now we'll just say that the array values can't have a space in them
         // So the entire array will just be one argv
@@ -70,6 +71,11 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
                 fprintf(stderr, "Error: Array size flag t must be followed by a number in flags %s\n", argStr);
                 exit(1);
             }
+        } else if (explicitType == TYPE_STRUCT){
+            if (argStr[2 + pointer_depth] != ':') {
+                fprintf(stderr, "Error: Struct flag must be followed by a colon (and then the struct fields and then :S ) %s\n", argStr);
+                exit(1);
+            }
         }
         else {
             arg->is_array = ARRAY_STATIC_SIZE_UNSET;
@@ -80,11 +86,12 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
 
     }
 
+
     if (explicitType == TYPE_UNKNOWN) {
         fprintf(stderr, "Error: Unsupported argument type flag in flags %s\n", argStr);
         exit(1);
     }
-    else if (explicitType == TYPE_ARRAY || explicitType == TYPE_POINTER) {
+    else if (/*explicitType == TYPE_ARRAY ||*/ explicitType == TYPE_POINTER) {
         fprintf(stderr, "Error: Array or Pointer flag in unsupported position in flags %s. Order must be -[p[p..]][a][primitive type flag]\n", argStr);
         exit(1);
     }
@@ -93,6 +100,56 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
     arg->explicitType = true;
     arg->pointer_depth = pointer_depth;
 }
+
+
+void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *args_used) {
+    // ArgInfoContainer* arginfo = info->type == FUNCTION_INFO ? &info->function_info->info : &info->struct_info->info;
+    for (int i = 0; i < argc; i++) {
+        char* argStr = argv[i];
+        ArgInfo arg = {0};
+        int pointer_depth = 0;
+
+        if (strcmp(argStr, ":S") == 0){ // this terminates a struct flag
+            *args_used = i; // not including the close tag, that will be handled by the caller
+            break;
+        }
+
+        if (argStr[0] == '-' && !isAllDigits(argStr+1) && !isHexFormat(argStr+1)) {
+            parse_arg_type_from_flag(&arg, argStr+1);
+            // parse_struct_from_flag(&info->return_var, argv[2]);
+
+            argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
+        
+        } else {
+            infer_arg_type_from_value(&arg, argStr);
+        }
+        if (arg.type!=TYPE_STRUCT) {
+            convert_arg_value(&arg, argStr);
+        } else {
+            StructInfo* struct_info = calloc(1, sizeof(StructInfo));
+            int struct_args_used;
+            // i++; // skip the S: open tag
+            parse_all_from_argvs(&struct_info->info, argc-i, argv+i, &struct_args_used);
+
+            i+=struct_args_used;
+            arg.struct_info = struct_info;
+            // memcpy(&arg.value, ptr_to_struct_val, sizeof(void*));
+
+            // this works but we're moving it
+            void* ptr_to_struct_val=make_raw_value_for_struct(&arg);
+            arg.value.ptr_val = ptr_to_struct_val;
+
+            //not necessary to loop through the pointer depth here, that will be handled by the make_raw_value_for_struct function
+
+        }
+        addArgToFunctionCallInfo(info, &arg);
+    }
+
+    convert_all_arrays_to_arginfo_ptr_sized_after_parsing(info);
+
+    second_pass_arginfo_ptr_sized_null_array_initialization(info);    
+}
+
  
 FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     FunctionCallInfo* info = calloc(1, sizeof(FunctionCallInfo)); // using calloc to zero out the struct
@@ -106,14 +163,24 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         return NULL;
     }
 
-    parse_arg_type_from_flag(&info->return_var, argv[2]);
+    parse_arg_type_from_flag(&info->info.return_var, argv[2]);
+
+    if (info->info.return_var.type == TYPE_UNKNOWN) {
+        fprintf(stderr, "Error: Unknown Return Type\n");
+        exit(1);
+        return NULL;
+    } else if (info->info.return_var.type == TYPE_STRUCT) {
+        fprintf(stderr, "Error: Struct Parsing for Return types is not implemented yet\n");
+        exit(1);
+    }
+    // parse_struct_from_flag(&info->return_var, argv[2]);
     //check if return is an array without a specified size
-    if (info->return_var.is_array==ARRAY_STATIC_SIZE_UNSET) {
+    if (info->info.return_var.is_array==ARRAY_STATIC_SIZE_UNSET) {
         fprintf(stderr, "Error: Array return types must have a specified size. Put a number at the end of the flag with no spaces, eg %s4 for a static size, or t and a number to specify an argnumber that will represent size_t for it eg %st1 for the first arg, since 0=return\n", argv[2],argv[2]);
         exit(1);
     }
 
-    if (info->return_var.type == TYPE_UNKNOWN) {
+    if (info->info.return_var.type == TYPE_UNKNOWN) {
         fprintf(stderr, "Error: Unsupported return type\n");
         return NULL;
     }
@@ -125,27 +192,11 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         return NULL;
     }
     //TODO: maybe at some point we should be able to take a hex offset instead of a function name
-
-    for (int i = 4; i < argc; i++) {
-        char* argStr = argv[i];
-        ArgInfo arg = {0};
-        int pointer_depth = 0;
-
-        if (argStr[0] == '-' && !isAllDigits(argStr+1) && !isHexFormat(argStr+1)) {
-            parse_arg_type_from_flag(&arg, argStr+1);
-            argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
-        
-        } else {
-            infer_arg_type_from_value(&arg, argStr);
-        }
-        printf("Converting Arg %d: %s\n", i - 3, argStr);
-        convert_arg_value(&arg, argStr);
-        addArgToFunctionCallInfo(info, &arg);
+    int args_used;
+    parse_all_from_argvs(&info->info, argc-4, argv+4, &args_used);
+    if (args_used != 0) {
+        fprintf(stderr, "Warning: Unexpected early return from function parsing. There seems to be an errant :S close struct tag\n");
     }
-
-    convert_all_arrays_to_arginfo_ptr_sized_after_parsing(info);
-
-    second_pass_arginfo_ptr_sized_null_array_initialization(info);    
     
     return info;
 }

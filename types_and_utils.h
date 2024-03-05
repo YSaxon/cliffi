@@ -22,7 +22,8 @@ typedef enum {
     TYPE_POINTER = 'p', // For parsing pointers only, not an actual type
     TYPE_ARRAY = 'a',   // For parsing only, not an actual type
     TYPE_VOID = 'v',    // For parsing return types only
-    TYPE_UNKNOWN = -1   // For representing unknown types when parsing
+    TYPE_UNKNOWN = -1,   // For representing unknown types when parsing
+    TYPE_STRUCT = 'S'  
 } ArgType;
 
 
@@ -58,14 +59,25 @@ typedef struct ArgInfo {
         int argnum_of_size_t_to_be_replaced; // For array types, indicates which argument to use as the size_t, -1 = RETURN VAL, 0 = FIRST ARG, 1 = SECOND ARG, etc.
         struct ArgInfo* arginfo_of_size_t;
     } array_size; // For array types, indicates which argument to use as the size_t, as an alternative to array_size
+    struct StructInfo* struct_info; // For struct types, contains the struct info, since we can't set the ptr_val until we calculate the raw memory for the struct later
 } ArgInfo;
 
-typedef struct FunctionCallInfo {
-    char* library_path;
-    char* function_name;
-    ArgInfo return_var;
+
+typedef struct ArgInfoContainer {
     ArgInfo* args;
     int arg_count;
+    ArgInfo return_var;
+} ArgInfoContainer;
+
+typedef struct StructInfo {
+    struct ArgInfoContainer info;
+    bool is_packed;
+} StructInfo;
+typedef struct FunctionCallInfo {
+    struct ArgInfoContainer info;
+    char* library_path;
+    char* function_name;
+    // ArgInfo return_var;
 } FunctionCallInfo;
 
 // Function declarations
@@ -86,7 +98,7 @@ char* typeToFormatSpecifier(ArgType type);
 void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr);
 
 size_t get_size_for_arginfo_sized_array(const ArgInfo* arg);
-void convert_all_arrays_to_arginfo_ptr_sized_after_parsing(FunctionCallInfo* functionInfo);
-void second_pass_arginfo_ptr_sized_null_array_initialization(FunctionCallInfo* call_info);
+void convert_all_arrays_to_arginfo_ptr_sized_after_parsing(ArgInfoContainer* functionInfo);
+void second_pass_arginfo_ptr_sized_null_array_initialization(ArgInfoContainer* call_info);
 
 #endif /* ARG_TOOLS_H */

@@ -239,8 +239,8 @@ void convert_arg_value(ArgInfo* arg, const char* argStr) {
 
 
 for (int i = 0; i < arg->pointer_depth; i++) {
-    void* temp = malloc(sizeof(arg->value));
-    memcpy(temp, &arg->value, sizeof(arg->value));
+    void* temp = malloc(sizeof(arg->value.ptr_val)); // meaning size of a pointer
+    memcpy(temp, &arg->value, sizeof(arg->value.ptr_val));
     arg->value.ptr_val = temp; //TODO we should free it at the end
     // arg->value.ptr_val = &arg->value; this doesn't work because it just ends up pointing to itself
     //don't make the mistake of setting type to POINTER. type is the type of the value being pointed to, not the pointer itself
@@ -429,7 +429,7 @@ void second_pass_arginfo_ptr_sized_null_array_initialization_inner(ArgInfo* arg)
         }
 }
 
-void second_pass_arginfo_ptr_sized_null_array_initialization(FunctionCallInfo* info){
+void second_pass_arginfo_ptr_sized_null_array_initialization(ArgInfoContainer* info){
     for (int i = 0; i < info->arg_count; i++) {
         if (info->args[i].is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
         second_pass_arginfo_ptr_sized_null_array_initialization_inner(&info->args[i]);
@@ -462,6 +462,7 @@ char* typeToString(ArgType type) {
         case TYPE_VOID: return "void";
         case TYPE_ARRAY: return "array";
         case TYPE_UNKNOWN: return "unknown";
+        case TYPE_STRUCT: return "struct";
         default: return "other?";
     }
 }
@@ -483,7 +484,7 @@ size_t typeToSize(ArgType type) {
         case TYPE_VOID: return 0;
         case TYPE_ARRAY: return sizeof(void*);
         case TYPE_UNKNOWN: return 0;
-        default: return 0;
+        default: fprintf(stderr, "Error: Unsupported type %c\n", typeToChar(type)); exit(1);
     }
 }
 
@@ -522,35 +523,36 @@ ArgType charToType(char c) {
         case 'p': return TYPE_POINTER;
         case 'v': return TYPE_VOID;
         case 'a': return TYPE_ARRAY;
+        case 'S': return TYPE_STRUCT;
         default: return TYPE_UNKNOWN; // Default or error handling
     }
 }
 
-void convert_argnum_sized_array_to_arginfo_ptr(ArgInfo* arg,FunctionCallInfo* functionInfo){
+void convert_argnum_sized_array_to_arginfo_ptr(ArgInfo* arg,ArgInfoContainer* info){
     if (arg->is_array==ARRAY_SIZE_AT_ARGNUM){
-        if (arg->array_size.argnum_of_size_t_to_be_replaced > functionInfo->arg_count){
-            fprintf(stderr, "Error: array was specified to have its size_t be at argnum %d, but there are only %d args\n", arg->array_size.argnum_of_size_t_to_be_replaced, functionInfo->arg_count);
+        if (arg->array_size.argnum_of_size_t_to_be_replaced > info->arg_count){
+            fprintf(stderr, "Error: array was specified to have its size_t be at argnum %d, but there are only %d args\n", arg->array_size.argnum_of_size_t_to_be_replaced, info->arg_count);
             exit(1);
         }
         else if (arg->array_size.argnum_of_size_t_to_be_replaced < 0){
             fprintf(stderr, "Error: array was specified to have its size_t be at argnum %d, but argnums must be positive\n", arg->array_size.argnum_of_size_t_to_be_replaced);
             exit(1);
         } else {
-            arg->is_array = ARRAY_SIZE_AT_ARGINFO_PTR;
-            if (arg->array_size.argnum_of_size_t_to_be_replaced==0) arg->array_size.arginfo_of_size_t = (ArgInfo*)&functionInfo->return_var; // 0 is the return value
-            else arg->array_size.arginfo_of_size_t= &functionInfo->args[arg->array_size.argnum_of_size_t_to_be_replaced-1]; // -1 because the argnums are 1 indexed
+            arg->is_array = ARRAY_SIZE_AT_ARGINFO_PTR; //TODO maybe we should replace 0 with R for return value?
+            if (arg->array_size.argnum_of_size_t_to_be_replaced==0) arg->array_size.arginfo_of_size_t = (ArgInfo*)&info->return_var; // 0 is the return value
+            else arg->array_size.arginfo_of_size_t= &info->args[arg->array_size.argnum_of_size_t_to_be_replaced-1]; // -1 because the argnums are 1 indexed
         }
     }
 }
 
-void convert_all_arrays_to_arginfo_ptr_sized_after_parsing(FunctionCallInfo* functionInfo){
-    for (int i = 0; i < functionInfo->arg_count; i++) {
-        if (functionInfo->args[i].is_array==ARRAY_SIZE_AT_ARGNUM){
-            convert_argnum_sized_array_to_arginfo_ptr(&functionInfo->args[i], functionInfo);
+void convert_all_arrays_to_arginfo_ptr_sized_after_parsing(ArgInfoContainer* info){
+    for (int i = 0; i < info->arg_count; i++) {
+        if (info->args[i].is_array==ARRAY_SIZE_AT_ARGNUM){
+            convert_argnum_sized_array_to_arginfo_ptr(&info->args[i], info);
         }
     }
-    if (functionInfo->return_var.is_array==ARRAY_SIZE_AT_ARGNUM){
-        convert_argnum_sized_array_to_arginfo_ptr(&functionInfo->return_var, functionInfo);
+    if (info->return_var.is_array == ARRAY_SIZE_AT_ARGNUM) { // will always be false if the return value is NULL
+        convert_argnum_sized_array_to_arginfo_ptr(&info->return_var, info);
     }
 }
 
@@ -609,67 +611,68 @@ void log_function_call_info(FunctionCallInfo* info){
     printf("\tLibrary Path: %s\n", info->library_path);
     printf("\tFunction Name: %s\n", info->function_name);
     printf("\tReturn type: ");
-    format_and_print_arg_type(&info->return_var);
+    format_and_print_arg_type(&info->info.return_var);
     printf("\n");
-    printf("\tArg Count: %d\n", info->arg_count);
-    for (int i = 0; i < info->arg_count; i++) {
-        printf("\tArg %d: %s ", i,info->args[i].explicitType? "(explicit)" : "(inferred)");
-        format_and_print_arg_type(&info->args[i]);//, format_buffer, buffer_size);
+    printf("\tArg Count: %d\n", info->info.arg_count);
+    for (int i = 0; i < info->info.arg_count; i++) {
+        printf("\tArg %d: %s ", i,info->info.args[i].explicitType? "(explicit)" : "(inferred)");
+        format_and_print_arg_type(&info->info.args[i]);//, format_buffer, buffer_size);
         printf(" = ");
-        format_and_print_arg_value(&info->args[i]);//, format_buffer, buffer_size);
+        format_and_print_arg_value(&info->info.args[i]);//, format_buffer, buffer_size);
         printf("\n");
     }
 
+
 }
 
-void convert_all_arrays_to_static_sized_after_function_return(FunctionCallInfo* call_info){
-    for (int i = 0; i < call_info->arg_count; i++) {
-    if (call_info->args[i].is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
-        call_info->args[i].array_size.static_size = get_size_for_arginfo_sized_array(&call_info->args[i]);
-        call_info->args[i].is_array=ARRAY_STATIC_SIZE;
-    }
-    }
-    // do the same for the return value
-    if (call_info->return_var.is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
-        call_info->return_var.array_size.static_size = get_size_for_arginfo_sized_array(&call_info->return_var);
-        call_info->return_var.is_array=ARRAY_STATIC_SIZE;
-    }
-}
+// void convert_all_arrays_to_static_sized_after_function_return(FunctionCallInfo* call_info){
+//     for (int i = 0; i < call_info->arg_count; i++) {
+//     if (call_info->args[i].is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
+//         call_info->args[i].array_size.static_size = get_size_for_arginfo_sized_array(&call_info->args[i]);
+//         call_info->args[i].is_array=ARRAY_STATIC_SIZE;
+//     }
+//     }
+//     // do the same for the return value
+//     if (call_info->return_var.is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
+//         call_info->return_var.array_size.static_size = get_size_for_arginfo_sized_array(&call_info->return_var);
+//         call_info->return_var.is_array=ARRAY_STATIC_SIZE;
+//     }
+// // }
 
-void freeArgInfo(ArgInfo* arg){
-    void* temp = arg->value.ptr_val; 
+// void freeArgInfo(ArgInfo* arg){
+//     void* temp = arg->value.ptr_val; 
 
-    for (int i = 0; i < arg->pointer_depth; i++) {
-        void* this_level = temp;
-        temp = *(void**)temp;
-        free(this_level);
-    }
+//     for (int i = 0; i < arg->pointer_depth; i++) {
+//         void* this_level = temp;
+//         temp = *(void**)temp;
+//         free(this_level);
+//     }
 
-    // The problem with freeing arrays and strings is we cannot tell if they were memalloc'ed on the heap or if they were literals in global / static, eg .data or .rodata
-    // We can choose to assume they are probably on the heap, and free them, but it will cause a segfault if they were not
-    // Or we can just decided to not free them, and let the OS clean up after the program ends
+//     // The problem with freeing arrays and strings is we cannot tell if they were memalloc'ed on the heap or if they were literals in global / static, eg .data or .rodata
+//     // We can choose to assume they are probably on the heap, and free them, but it will cause a segfault if they were not
+//     // Or we can just decided to not free them, and let the OS clean up after the program ends
 
-    if (arg->is_array && (arg->type==TYPE_STRING /* || arg->type==TYPE_STRUCT */)){
-        for (int i = 0; i < arg->array_size.static_size; i++) { // we are assuming we've already made the array be of static size
-            free(((char**)temp)[i]);
-        }
-    }
+//     if (arg->is_array && (arg->type==TYPE_STRING /* || arg->type==TYPE_STRUCT */)){
+//         for (int i = 0; i < arg->array_size.static_size; i++) { // we are assuming we've already made the array be of static size
+//             free(((char**)temp)[i]);
+//         }
+//     }
 
-    if (arg->is_array || arg->type==TYPE_STRING /*|| arg->type==TYPE_STRUCT*/ ){
-        free(temp);
-    }
-}
+//     if (arg->is_array || arg->type==TYPE_STRING /*|| arg->type==TYPE_STRUCT*/ ){
+//         free(temp);
+//     }
+// }
 
-void freeFunctionCallInfo(FunctionCallInfo* info) {
-    if (info) {
-        free(info->library_path); // Assuming this was dynamically allocated
-        free(info->function_name);
-        convert_all_arrays_to_static_sized_after_function_return(info); // get final sizes for any arrays before freeing
-        for (int i = 0; i < info->arg_count; i++) {
-            freeArgInfo(&info->args[i]);
-        }
-        freeArgInfo(&info->return_var);
-        free(info->args);
-        free(info);
-        }
-    }
+// void freeFunctionCallInfo(FunctionCallInfo* info) {
+//     if (info) {
+//         free(info->library_path); // Assuming this was dynamically allocated
+//         free(info->function_name);
+//         convert_all_arrays_to_static_sized_after_function_return(info); // get final sizes for any arrays before freeing
+//         for (int i = 0; i < info->arg_count; i++) {
+//             freeArgInfo(&info->args[i]);
+//         }
+//         freeArgInfo(&info->return_var);
+//         free(info->args);
+//         free(info);
+//         }
+//     }

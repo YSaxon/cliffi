@@ -1,4 +1,5 @@
-#include <malloc/_malloc.h>
+#include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,18 +47,149 @@ char* get_message() {
 }
 
 // Struct for demonstration
-typedef struct {
+typedef struct Point {
     int x;
     double y;
 } Point;
 
-// Function that modifies a struct
-void modify_point(Point* p, int x, double y) {
-    if (p) {
-        p->x = x;
-        p->y = y;
+
+void hexdump(const void *data, size_t size) {
+    const unsigned char *byte = (const unsigned char *)data;
+    size_t i, j;
+    bool multiline = size > 16;
+    if (multiline) printf("(Hexvalue)\nOffset\n");
+
+    for (i = 0; i < size; i += 16) {
+        if (multiline) printf("%08zx  ", i); // Offset
+
+        // Hex bytes
+        for (j = 0; j < 16; j++) {
+            if (j==8) printf(" "); // Add space between the two halves of the hexdump
+            if (i + j < size) {
+                printf("%02x ", byte[i + j]);
+            } else {
+                 if (multiline) printf("   "); // Fill space if less than 16 bytes in the line
+            }
+        }
+
+        if (multiline) printf(" ");
+        if (!multiline) printf("= ");
+
+        // ASCII characters
+        for (j = 0; j < 16; j++) {
+            if (i + j < size) {
+                printf("%c", isprint(byte[i + j]) ? byte[i + j] : '.');
+            }
+        }
+
+        printf("\n");
     }
 }
+
+int get_x(Point p) {
+    //print a hexdump of the struct
+    hexdump(&p, sizeof(Point));
+    printf("p->x: %d\n", p.x);
+    printf("p->y: %f\n", p.y);
+    return p.x;
+}
+
+int get_x_from_structpointer(Point* p) {
+    hexdump(p, sizeof(Point));
+    printf("p->x: %d\n", p->x);
+    printf("p->y: %f\n", p->y);
+    if (p) {
+        return p->x;
+    }
+    return 0;
+}
+
+// Function that modifies a struct
+void modify_point(Point* p, int x, double y) {
+    hexdump(p, sizeof(Point));
+    printf("p->x: %d\n", p->x);
+    printf("p->y: %f\n", p->y);
+    printf("Adding %d to x and %f to y\n", x, y);
+    // if (p) {
+        p->x += x;
+        p->y += y;
+
+    printf("p->x: %d\n", p->x);
+    printf("p->y: %f\n", p->y);
+    // }
+}
+typedef struct ComplexStruct {
+    unsigned char c;
+    int x;
+    double y;
+    unsigned char c2;
+    Point p;
+    int x2;
+    double y2;
+    Point* p2;
+} ComplexStruct;
+
+void test_complex_struct(ComplexStruct s){
+    hexdump(&s, sizeof(ComplexStruct));
+    printf("s.c: %c\n", s.c);
+    printf("s.x: %d\n", s.x);
+    printf("s.y: %f\n", s.y);
+    printf("s.c2: %c\n", s.c2);
+    // printf("s.p->x: %d\n", (*s.p)->x);
+    // printf("s.p->y: %f\n", (*s.p)->y);
+    // hexdump(*s.p, sizeof(Point));
+    printf("s.p->x: %d\n", s.p.x);
+    printf("s.p->y: %f\n", s.p.y);
+    hexdump(&s.p, sizeof(Point));
+    printf("s.x2: %d\n", s.x2);
+    printf("s.y2: %f\n", s.y2);
+    printf("s.p2.x: %d\n", s.p2->x);
+    printf("s.p2.y: %f\n", s.p2->y);
+    hexdump(s.p2, sizeof(Point));
+}
+
+void test_p_complex_struct(ComplexStruct* s){
+    hexdump(&s, sizeof(ComplexStruct));
+    printf("s->c: %c\n", s->c);
+    printf("s->x: %d\n", s->x);
+    printf("s->y: %f\n", s->y);
+    printf("s->c2: %c\n", s->c2);
+    // printf("s->p->x: %d\n", (*s->p)->x);
+    // printf("s->p->y: %f\n", (*s->p)->y);
+    // hexdump(*s->p, sizeof(Point));
+    printf("s->p->x: %d\n", s->p.x);
+    printf("s->p->y: %f\n", s->p.y);
+    hexdump(&s->p, sizeof(Point));
+    printf("s->x2: %d\n", s->x2);
+    printf("s->y2: %f\n", s->y2);
+    printf("s->p2.x: %d\n", s->p2->x);
+    printf("s->p2.y: %f\n", s->p2->y);
+    hexdump(s->p2, sizeof(Point));
+}
+
+struct larger_struct{
+    int x;
+    double y;
+    char c;
+    char* s;
+};
+
+struct struct_containing_larger_struct{
+    char c;
+    struct larger_struct s;
+    int x;
+};
+
+void test_nested_large_struct(struct struct_containing_larger_struct s){
+    hexdump(&s, sizeof(struct struct_containing_larger_struct));
+    printf("s.c: %c\n", s.c);
+    printf("s.s.x: %d\n", s.s.x);
+    printf("s.s.y: %f\n", s.s.y);
+    printf("s.s.c: %c\n", s.s.c);
+    printf("s.s.s: %s\n", s.s.s);
+    printf("s.x: %d\n", s.x);
+}
+
 
 //Function that takes an array of integers and returns the sum
 int sum_array(int* arr, int size) {

@@ -96,6 +96,9 @@ void hexdump(const void *data, size_t size) {
         case TYPE_VOID:
             printf("(void)");
             break;
+        case TYPE_STRUCT:
+            fprintf(stderr, "Should not be printing struct values directly");
+            exit(1);
         default:
             printf("Unsupported type");
             break;
@@ -119,10 +122,23 @@ void hexdump(const void *data, size_t size) {
                 value = *(void**)value;
             }
         }
-        if (!arg->is_array) {
+        if (arg->type==TYPE_STRUCT){
+            printf("{ ");
+            StructInfo* struct_info = arg->struct_info;
+            for (int i = 0; i < struct_info->info.arg_count; i++) {
+                format_and_print_arg_type(&struct_info->info.args[i]);
+                printf(" ");
+                format_and_print_arg_value(&struct_info->info.args[i]);
+                if (i < struct_info->info.arg_count - 1) {
+                    printf(", ");
+                }
+            }
+            printf(" }");
+        }
+        else if (!arg->is_array) {
             print_arg_value(value, arg->type, 0);
             // printf("\n");
-        }
+        } 
         else {
             value = *(void**)value;
             size_t array_size = get_size_for_arginfo_sized_array(arg);
