@@ -106,12 +106,12 @@ void hexdump(const void *data, size_t size) {
 }
 
     void format_and_print_arg_type(const ArgInfo* arg) {
+        printf("%s", typeToString(arg->type));
         for (int i = 0; i < arg->pointer_depth; i++) {
             printf("*");
         }
-        printf("%s", typeToString(arg->type));
         if (arg->is_array) {
-            printf("[%zu]", get_size_for_arginfo_sized_array(arg));
+            printf(" [%zu]", get_size_for_arginfo_sized_array(arg));
         }
     }
 
