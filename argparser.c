@@ -101,9 +101,9 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
     arg->pointer_depth = pointer_depth;
 }
 
-
-void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *args_used) {
+void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *args_used, bool parse_values) {
     // ArgInfoContainer* arginfo = info->type == FUNCTION_INFO ? &info->function_info->info : &info->struct_info->info;
+    printf("Beginning to parse args (%d remaining)\n", argc);
     for (int i = 0; i < argc; i++) {
         char* argStr = argv[i];
         ArgInfo arg = {0};
@@ -114,7 +114,11 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
             break;
         }
 
-        if (argStr[0] == '-' && !isAllDigits(argStr+1) && !isHexFormat(argStr+1)) {
+        if (!parse_values){ // is a return type, so we don't need to parse values or check for the - flag
+            parse_arg_type_from_flag(&arg, argStr);
+            // addArgToFunctionCallInfo(info, &arg);
+            // continue;
+        } else if (argStr[0] == '-' && !isAllDigits(argStr+1) && !isHexFormat(argStr+1)) {
             parse_arg_type_from_flag(&arg, argStr+1);
             // parse_struct_from_flag(&info->return_var, argv[2]);
 
@@ -123,13 +127,14 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
         } else {
             infer_arg_type_from_value(&arg, argStr);
         }
-        if (arg.type!=TYPE_STRUCT) {
+        if (parse_values && arg.type!=TYPE_STRUCT) {
             convert_arg_value(&arg, argStr);
-        } else {
+        } else if (arg.type==TYPE_STRUCT){
             StructInfo* struct_info = calloc(1, sizeof(StructInfo));
             int struct_args_used;
             // i++; // skip the S: open tag
-            parse_all_from_argvs(&struct_info->info, argc-i, argv+i, &struct_args_used);
+            printf("-S tag encountered, parsing struct from args\n");
+            parse_all_from_argvs(&struct_info->info, argc-i, argv+i, &struct_args_used, parse_values);
 
             i+=struct_args_used;
             arg.struct_info = struct_info;
@@ -164,8 +169,17 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         exit(1);
         return NULL;
     } else if (info->info.return_var.type == TYPE_STRUCT) {
-        fprintf(stderr, "Error: Struct Parsing for Return types is not implemented yet\n");
-        exit(1);
+        StructInfo* struct_info = calloc(1, sizeof(StructInfo));
+        int struct_args_used;
+        // i++; // skip the S: open tag
+        printf("S tag encountered, parsing struct from args\n");
+        parse_all_from_argvs(&struct_info->info, argc-3, argv+3, &struct_args_used, false);
+
+        info->info.return_var.struct_info = struct_info;
+
+        argc-=struct_args_used + 1;
+        argv+=struct_args_used + 1;
+        //not necessary to loop through the pointer depth here, that will be handled by the make_raw_value_for_struct function
     }
     // parse_struct_from_flag(&info->return_var, argv[2]);
     //check if return is an array without a specified size
@@ -187,7 +201,7 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     }
     //TODO: maybe at some point we should be able to take a hex offset instead of a function name
     int args_used;
-    parse_all_from_argvs(&info->info, argc-4, argv+4, &args_used);
+    parse_all_from_argvs(&info->info, argc-4, argv+4, &args_used, true);
     if (args_used != 0) {
         fprintf(stderr, "Warning: Unexpected early return from function parsing. There seems to be an errant :S close struct tag\n");
     }

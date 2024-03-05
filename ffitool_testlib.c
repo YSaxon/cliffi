@@ -118,6 +118,18 @@ void modify_point(Point* p, int x, double y) {
     printf("p->y: %f\n", p->y);
     // }
 }
+
+Point get_point(int x, double y) {
+    Point p = {x,y};
+    return p;
+}
+
+Point* get_p_point(int x, double y) {
+    Point* p = malloc(sizeof(Point));
+    p->x = x;
+    p->y = y;
+    return p;
+}
 typedef struct ComplexStruct {
     unsigned char c;
     int x;

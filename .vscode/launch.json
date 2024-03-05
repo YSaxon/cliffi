@@ -212,6 +212,16 @@
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "build_cmake_debug"
         },
+        {
+            "name": "build_cmake/ffitool ./build_cmake/libffitool_test.dylib S: i d :S get_point 4 2.2",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["${workspaceFolder}/build_cmake/libffitool_test.dylib", "S:", "i", "d", ":S", "get_point", "4", "2.2"],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_cmake_debug"
+
+        },
 
         {
             "name": "Debug get_message",
