@@ -43,9 +43,11 @@ add_library(ffitooltest SHARED ffitool_testlib.c)
 
 # Set the output name of the library to match the platform conventions
 set_target_properties(ffitooltest PROPERTIES OUTPUT_NAME "ffitool_test")
+
 # Set the output directory for executables and libraries
 set_target_properties(ffitool PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 set_target_properties(ffitooltest PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+
 
 #===============================================================================
 add_test(NAME TestAddFunction
@@ -126,6 +128,7 @@ set_tests_properties(TestReturningBuffer PROPERTIES PASS_REGULAR_EXPRESSION "Fun
 
 add_test(NAME TestReturningBufferWithSize # aC and ac buffers should both work to contain strings
             COMMAND ffitool ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}ffitool_test${CMAKE_SHARED_LIBRARY_SUFFIX} act2 buffer_as_return -act2 a,b,c,d 4)
+
 add_test(NAME TestGetX # 
             COMMAND ffitool ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}ffitool_test${CMAKE_SHARED_LIBRARY_SUFFIX} i get_x -S: 5 2.2 :S )
 set_tests_properties(TestGetX PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 5")

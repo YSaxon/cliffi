@@ -7,7 +7,7 @@ if [ -f "CMakeLists.txt" ]; then
     -DCMAKE_TOOLCHAIN_FILE=$NDK/build/cmake/android.toolchain.cmake \
     -DANDROID_ABI=$ABI \
     -DANDROID_PLATFORM=android-$MINSDKVERSION \
-    $OTHER_ARGS ..
+    $OTHER_ARGS .. -DCMAKE_BUILD_TYPE=Debug
     make VERBOSE=1
     cd ..
 else
