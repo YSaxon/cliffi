@@ -10,3 +10,7 @@ libffi-3.4.6-android-27-armeabi-v7a/
 build/
 
 android_ffi/libffi/
+
+Makefile
+
+cmake_install.cmake
