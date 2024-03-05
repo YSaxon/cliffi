@@ -622,7 +622,16 @@ void log_function_call_info(FunctionCallInfo* info){
         printf("\n");
     }
 
-
+    // print as function signature
+    format_and_print_arg_type(&info->info.return_var);
+    printf(" %s(", info->function_name);
+    for (int i = 0; i < info->info.arg_count; i++) {
+        format_and_print_arg_type(&info->info.args[i]);
+        printf(" ");
+        format_and_print_arg_value(&info->info.args[i]);
+        if (i < info->info.arg_count - 1) printf(", ");
+    }
+    printf(")\n");
 }
 
 // void convert_all_arrays_to_static_sized_after_function_return(FunctionCallInfo* call_info){
