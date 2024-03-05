@@ -14,7 +14,7 @@
 #include <dlfcn.h>
 #include "types_and_utils.h"
 
-
+ffi_type* arg_type_to_ffi_type(const ArgInfo* arg); // putting this declaration here instead of header since it's only used in this file
 
 ffi_type* make_ffi_type_for_struct(const ArgInfo* arg){
     StructInfo* struct_info = arg->struct_info;
@@ -60,10 +60,7 @@ ffi_type* arg_type_to_ffi_type(const ArgInfo* arg) {
         case TYPE_STRING: return &ffi_type_pointer;
         case TYPE_POINTER: return &ffi_type_pointer;
         case TYPE_VOID: return &ffi_type_void;
-        ffi_type* return_type; // Declare the variable return_type
-        case TYPE_STRUCT: 
-        return_type = make_ffi_type_for_struct(arg);
-        return return_type;
+        case TYPE_STRUCT: return make_ffi_type_for_struct(arg);
         // Add mappings for other types
         default:
             fprintf(stderr, "Unsupported argument type.\n");

@@ -133,13 +133,7 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
 
             i+=struct_args_used;
             arg.struct_info = struct_info;
-            // memcpy(&arg.value, ptr_to_struct_val, sizeof(void*));
-
-            // this works but we're moving it
-            void* ptr_to_struct_val=make_raw_value_for_struct(&arg);
-            arg.value.ptr_val = ptr_to_struct_val;
-
-            //not necessary to loop through the pointer depth here, that will be handled by the make_raw_value_for_struct function
+            // not setting a value here, that will be handled by the make_raw_value_for_struct function in the invoke handler module
 
         }
         addArgToFunctionCallInfo(info, &arg);
