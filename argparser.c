@@ -122,7 +122,7 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
             parse_arg_type_from_flag(&arg, argStr+1);
             // parse_struct_from_flag(&info->return_var, argv[2]);
 
-            argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
+            if (arg.type != TYPE_STRUCT) argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
         
         } else {
             infer_arg_type_from_value(&arg, argStr);
@@ -132,7 +132,7 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
         } else if (arg.type==TYPE_STRUCT){
             StructInfo* struct_info = calloc(1, sizeof(StructInfo));
             int struct_args_used;
-            // i++; // skip the S: open tag
+            i++; // skip the S: open tag
             printf("-S tag encountered, parsing struct from args\n");
             parse_all_from_argvs(&struct_info->info, argc-i, argv+i, &struct_args_used, parse_values);
 
