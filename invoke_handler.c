@@ -83,10 +83,18 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo){//, ffi_type* struct_ty
         fprintf(stderr, "Failed to allocate memory for struct.\n");
         exit(1);
     }
+
+    struct_info->value_ptrs = calloc(struct_info->info.arg_count, sizeof(void*));
+    if (!struct_info->value_ptrs) {
+        fprintf(stderr, "Failed to allocate memory for struct value pointers.\n");
+        exit(1);
+    }
+
     for (int i = 0; i < struct_info->info.arg_count; i++) {
         if (struct_info->info.args[i].type != TYPE_STRUCT) {
             size_t size = typeToSize(struct_info->info.args[i].type);
             memcpy(raw_memory+offsets[i], &struct_info->info.args[i].value, size);
+            struct_info->value_ptrs[i] = raw_memory+offsets[i];
         } else { // is TYPE_STRUCT
             size_t inner_size;
             if (struct_info->info.args[i].pointer_depth == 0) {
@@ -97,7 +105,7 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo){//, ffi_type* struct_ty
                 inner_size = sizeof(void*);
             }
 
-
+            // not necessary to set the value_ptr for a struct
 
             void* inner_struct_address = make_raw_value_for_struct(&struct_info->info.args[i]);//, struct_type->elements[i]);
             memcpy(raw_memory+offsets[i], inner_struct_address, inner_size);

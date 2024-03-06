@@ -10,7 +10,7 @@
 #include "types_and_utils.h"
 
 const char* NAME = "ffitool";
-const char* VERSION = "0.5.0";
+const char* VERSION = "0.5.1";
 
 int main(int argc, char* argv[]) {
     if (argc > 1 && strcmp(argv[1], "--help") == 0) {
@@ -132,13 +132,11 @@ int main(int argc, char* argv[]) {
             // if it could have been modified, print it
             // TODO keep track of the original value and compare
             if (call_info->info.args[i].is_array || call_info->info.args[i].pointer_depth > 0) {
-                if (call_info->info.args[i].type != TYPE_STRUCT) {
                 printf("Arg %d after function return: ", i);
                 format_and_print_arg_type(&call_info->info.args[i]);
+                printf(" ");
                 format_and_print_arg_value(&call_info->info.args[i]);
-                } else {
-                    printf("Arg %d is a struct pointer, printing its value after return is not yet implemented\n", i);
-                }
+                printf("\n");
             }
         }
     }

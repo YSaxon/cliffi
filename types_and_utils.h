@@ -71,6 +71,7 @@ typedef struct ArgInfoContainer {
 
 typedef struct StructInfo {
     struct ArgInfoContainer info;
+    void** value_ptrs; // this is a pointer to an array of pointers to the values of the struct members, set when the struct is packed
     bool is_packed;
 } StructInfo;
 typedef struct FunctionCallInfo {

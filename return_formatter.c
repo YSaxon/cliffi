@@ -115,8 +115,10 @@ void hexdump(const void *data, size_t size) {
         }
     }
 
-    void format_and_print_arg_value(const ArgInfo* arg) {  //, char* buffer, size_t buffer_size) {
-        const void* value = &(arg->value);
+
+    //this contains an optional override for the value, which is used for printing struct fields
+    void format_and_print_arg_value_with_override(const ArgInfo* arg, void* optional_value_override) {  //, char* buffer, size_t buffer_size) {
+        const void* value = optional_value_override==NULL ? &(arg->value) : optional_value_override;
         if (arg->pointer_depth > 0) {
             for (int j = 0; j < arg->pointer_depth; j++) {
                 value = *(void**)value;
@@ -128,7 +130,8 @@ void hexdump(const void *data, size_t size) {
             for (int i = 0; i < struct_info->info.arg_count; i++) {
                 format_and_print_arg_type(&struct_info->info.args[i]);
                 printf(" ");
-                format_and_print_arg_value(&struct_info->info.args[i]);
+                void* override = struct_info->value_ptrs==NULL ? NULL : struct_info->value_ptrs[i];
+                format_and_print_arg_value_with_override(&struct_info->info.args[i], override);
                 if (i < struct_info->info.arg_count - 1) {
                     printf(", ");
                 }
@@ -160,4 +163,8 @@ void hexdump(const void *data, size_t size) {
                 // printf(" }\n");
             }
         }
+    }
+
+    void format_and_print_arg_value(const ArgInfo* arg) {
+        format_and_print_arg_value_with_override(arg, NULL);
     }
