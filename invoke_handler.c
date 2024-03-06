@@ -16,7 +16,7 @@
 
 ffi_type* arg_type_to_ffi_type(const ArgInfo* arg); // putting this declaration here instead of header since it's only used in this file
 
-ffi_type* make_ffi_type_for_struct(const ArgInfo* arg){
+ffi_type* make_ffi_type_for_struct(const ArgInfo* arg){ // does not handle pointer_depth
     StructInfo* struct_info = arg->struct_info;
     ffi_type* struct_type = malloc(sizeof(ffi_type));
     //Where do I set whether it is packed or not?
@@ -152,12 +152,42 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
     }
 
     ffi_type* return_type = arg_type_to_ffi_type(&call_info->info.return_var);
+
+    void* rvalue;
+    if (call_info->info.return_var.type == TYPE_STRUCT) {
+        rvalue = make_raw_value_for_struct(&call_info->info.return_var); // this also handles pointer_depth
+    } else {
+        rvalue = &call_info->info.return_var.value;
+    }
+
     if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, call_info->info.arg_count, return_type, args) != FFI_OK) {
         fprintf(stderr, "ffi_prep_cif failed.\n");
         return -1;
     }
 
-    ffi_call(&cif, func, &call_info->info.return_var.value, values);
+    ffi_call(&cif, func, rvalue, values);
+
+    if (call_info->info.return_var.type == TYPE_STRUCT) {
+
+        ArgInfo* return_arg = &call_info->info.return_var;
+
+        for (int i = 0; i < return_arg->pointer_depth; i++) {
+            rvalue = *(void**)rvalue;
+        }
+
+        ffi_type* struct_type = make_ffi_type_for_struct(return_arg);
+        size_t* offsets = calloc(return_arg->struct_info->info.arg_count, sizeof(size_t));
+        ffi_get_struct_offsets(FFI_DEFAULT_ABI, struct_type, offsets);
+
+        size_t size = struct_type->size;
+        void* new_rvalue = calloc(1, size);
+        memcpy(new_rvalue, rvalue, size);
+        free(rvalue);
+        
+        for (int i = 0; i < return_arg->struct_info->info.arg_count; i++) {
+            return_arg->struct_info->value_ptrs[i] = new_rvalue+offsets[i];
+        }
+    }
 
     return 0;
 }

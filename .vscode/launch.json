@@ -234,18 +234,45 @@
             // "environment": [],
             // "externalConsole": false,
         },
+
         {
-            "name": "(lldb) Launch",
-            "type": "cppdbg",
+            "name": "S: i d :S get_point 4 2.2",
+            "type": "powercpp",
             "request": "launch",
             "program": "${workspaceFolder}/build_cmake/ffitool",
-            "args": ["/Users/ysaxon/Desktop/adhoc/ffitool/build_cmake/libffitool_test.dylib","i","add", "1", "2"],
-            "stopAtEntry": true,
-            "cwd": "${fileDirname}",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "lldb"
+            "args": ["${workspaceFolder}/build_cmake/libffitool_test.dylib", "S:", "i", "d", ":S", "get_point", "4", "2.2"],
+            "cwd": "${workspaceFolder}",
+        },
+        {
+            "name": "pS: i d :S get_p_point 4 2.2",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["${workspaceFolder}/build_cmake/libffitool_test.dylib", "pS:", "i", "d", ":S", "get_p_point", "4", "2.2"],
+            "cwd": "${workspaceFolder}",
+        },
+        {
+            "name": " pS: i d c s :S get_p_larger_struct 4 2.2 -c q thisisastring",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["${workspaceFolder}/build_cmake/libffitool_test.dylib", "pS:", "i", "d", "c", "s", ":S", "get_p_larger_struct", "4", "2.2", "-c", "q", "thisisastring"],
+            "cwd": "${workspaceFolder}",
         }
+        // {
+        //     "name": "(lldb) Launch",
+        //     "type": "cppdbg",
+        //     "request": "launch",
+        //     "program": "${workspaceFolder}/build_cmake/ffitool",
+        //     "args": ["/Users/ysaxon/Desktop/adhoc/ffitool/build_cmake/libffitool_test.dylib","i","add", "1", "2"],
+        //     "stopAtEntry": true,
+        //     "cwd": "${fileDirname}",
+        //     "environment": [],
+        //     "externalConsole": false,
+        //     "MIMode": "lldb"
+        // }
+
+
 
     ]
 }

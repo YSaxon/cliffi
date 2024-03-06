@@ -192,6 +192,27 @@ struct struct_containing_larger_struct{
     int x;
 };
 
+struct larger_struct get_larger_struct(int x, double y, char c, const char* s){
+    struct larger_struct larger_struct;
+    larger_struct.x = x;
+    larger_struct.y = y;
+    larger_struct.c = c;
+    larger_struct.s = malloc(strlen(s) + 1);
+    strcpy(larger_struct.s, s);
+    return larger_struct;
+}
+
+struct larger_struct* get_p_larger_struct(int x, double y, char c, const char* s){
+    struct larger_struct* larger_struct_ptr = malloc(sizeof(struct larger_struct));
+    larger_struct_ptr->x = x;
+    larger_struct_ptr->y = y;
+    larger_struct_ptr->c = c;
+    larger_struct_ptr->s = malloc(strlen(s) + 1);
+    strcpy(larger_struct_ptr->s, s);
+    return larger_struct_ptr;
+}
+
+
 void test_nested_large_struct(struct struct_containing_larger_struct s){
     hexdump(&s, sizeof(struct struct_containing_larger_struct));
     printf("s.c: %c\n", s.c);
