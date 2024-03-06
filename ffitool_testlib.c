@@ -179,6 +179,42 @@ void test_p_complex_struct(ComplexStruct* s){
     hexdump(s->p2, sizeof(Point));
 }
 
+ComplexStruct get_complex_struct(unsigned char c, int x, double y, unsigned char c2, int x2, double y2, int x3, double y3, int x4, double y4){
+    ComplexStruct s = {};
+    // typedef struct ComplexStruct {
+//     unsigned char c;
+//     int x;
+//     double y;
+//     unsigned char c2;
+//     Point p;
+//     int x2;
+//     double y2;
+//     Point* p2;
+// } ComplexStruct;
+    s.c = c;
+    s.x = x;
+    s.y = y;
+    s.c2 = c2;
+    s.p = get_point(x2, y2);
+    s.x2 = x3;
+    s.y2 = y3;
+    s.p2 = get_p_point(x4, y4);
+    return s;
+}
+
+ComplexStruct* get_p_complex_struct(unsigned char c, int x, double y, unsigned char c2, int x2, double y2, int x3, double y3, int x4, double y4){
+    ComplexStruct* s = malloc(sizeof(ComplexStruct));
+    s->c = c;
+    s->x = x;
+    s->y = y;
+    s->c2 = c2;
+    s->p = get_point(x2, y2);
+    s->x2 = x3;
+    s->y2 = y3;
+    s->p2 = get_p_point(x4, y4);
+    return s;
+}
+
 struct larger_struct{
     int x;
     double y;
@@ -221,6 +257,28 @@ void test_nested_large_struct(struct struct_containing_larger_struct s){
     printf("s.s.c: %c\n", s.s.c);
     printf("s.s.s: %s\n", s.s.s);
     printf("s.x: %d\n", s.x);
+}
+
+struct struct_containing_larger_struct get_nested_larger_struct(char c, int x, double y, char c2, const char* s, int x2){
+    struct struct_containing_larger_struct my_struct = {};
+    my_struct.c = c;
+    my_struct.s.x = x;
+    my_struct.s.y = y;
+    my_struct.s.c = c2;
+    my_struct.s.s = strdup(s);
+    my_struct.x = x2;
+    return my_struct;
+}
+
+struct struct_containing_larger_struct* get_p_nested_larger_struct(char c, int x, double y, char c2, const char* s, int x2){
+    struct struct_containing_larger_struct* my_struct = malloc(sizeof(struct struct_containing_larger_struct));
+    my_struct->c = c;
+    my_struct->s.x = x;
+    my_struct->s.y = y;
+    my_struct->s.c = c2;
+    my_struct->s.s = strdup(s);
+    my_struct->x = x2;
+    return my_struct;
 }
 
 

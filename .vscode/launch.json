@@ -258,6 +258,14 @@
             "program": "${workspaceFolder}/build_cmake/ffitool",
             "args": ["${workspaceFolder}/build_cmake/libffitool_test.dylib", "pS:", "i", "d", "c", "s", ":S", "get_p_larger_struct", "4", "2.2", "-c", "q", "thisisastring"],
             "cwd": "${workspaceFolder}",
+        },
+        {
+            "name": "S: c S: i d c s :S i :S get_nested_larger_struct -c a 5 3.3 -c b thisisastring 77",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/ffitool",
+            "args": ["${workspaceFolder}/build_cmake/libffitool_test.dylib", "S:", "c", "S:", "i", "d", "c", "s", ":S", "i", ":S", "get_nested_larger_struct", "-c", "a", "5", "3.3", "-c", "b", "thisisastring", "77"],
+            "cwd": "${workspaceFolder}",
         }
         // {
         //     "name": "(lldb) Launch",

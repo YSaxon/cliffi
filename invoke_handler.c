@@ -128,6 +128,32 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo){//, ffi_type* struct_ty
     return address_to_return; // if no pointers this is a pointer to the actual bytes
 }
 
+
+void fix_struct_pointers(ArgInfo* struct_arg, void* raw_memory) {
+    StructInfo* struct_info = struct_arg->struct_info;
+    size_t offsets[struct_info->info.arg_count];
+
+    for (int i = 0; i < struct_arg->pointer_depth; i++) {
+        raw_memory = *(void**)raw_memory;
+    }
+
+    ffi_type* struct_type = make_ffi_type_for_struct(struct_arg);
+    ffi_status struct_status = ffi_get_struct_offsets(FFI_DEFAULT_ABI, struct_type, offsets);
+    if (struct_status != FFI_OK) {
+        fprintf(stderr, "Failed to get struct offsets.\n");
+        exit(1);
+    }
+
+    for (int i = 0; i < struct_info->info.arg_count; i++) {
+        if (struct_info->info.args[i].type == TYPE_STRUCT) {
+            fix_struct_pointers(&struct_info->info.args[i], raw_memory+offsets[i]);
+        } else {
+            struct_info->value_ptrs[i] = raw_memory+offsets[i];
+        }
+    }
+}
+
+
 // Main function to invoke a dynamic function call
 int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
     if (!func) {
@@ -168,25 +194,7 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
     ffi_call(&cif, func, rvalue, values);
 
     if (call_info->info.return_var.type == TYPE_STRUCT) {
-
-        ArgInfo* return_arg = &call_info->info.return_var;
-
-        for (int i = 0; i < return_arg->pointer_depth; i++) {
-            rvalue = *(void**)rvalue;
-        }
-
-        ffi_type* struct_type = make_ffi_type_for_struct(return_arg);
-        size_t* offsets = calloc(return_arg->struct_info->info.arg_count, sizeof(size_t));
-        ffi_get_struct_offsets(FFI_DEFAULT_ABI, struct_type, offsets);
-
-        size_t size = struct_type->size;
-        void* new_rvalue = calloc(1, size);
-        memcpy(new_rvalue, rvalue, size);
-        free(rvalue);
-        
-        for (int i = 0; i < return_arg->struct_info->info.arg_count; i++) {
-            return_arg->struct_info->value_ptrs[i] = new_rvalue+offsets[i];
-        }
+        fix_struct_pointers(&call_info->info.return_var, rvalue);
     }
 
     return 0;
