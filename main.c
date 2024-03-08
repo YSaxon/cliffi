@@ -9,7 +9,7 @@
 #include "return_formatter.h"
 #include "types_and_utils.h"
 
-const char* NAME = "ffitool";
+const char* NAME = "cliffi";
 const char* VERSION = "0.5.4";
 
 int main(int argc, char* argv[]) {

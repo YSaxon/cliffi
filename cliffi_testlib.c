@@ -43,7 +43,7 @@ int* get_array_of_int(int a, size_t size) {
 
 // A function that returns a static string
 char* get_message() {
-    return "Hello, ffitool!"; // this maybe shows us we need to handle string literals in data?
+    return "Hello, cliffi!"; // this maybe shows us we need to handle string literals in data?
 }
 
 // Struct for demonstration

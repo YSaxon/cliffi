@@ -20,7 +20,7 @@
 				"--build",
 				"${workspaceFolder}/build_cmake",
 				"--target",
-				"ffitool",
+				"cliffi",
 				"--config",
 				"Debug"
 			],
