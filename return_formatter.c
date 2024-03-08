@@ -142,7 +142,7 @@ void hexdump(const void *data, size_t size) {
             print_arg_value(value, arg->type, 0);
             // printf("\n");
         } 
-        else {
+        else { // is an array
             value = *(void**)value;
             size_t array_size = get_size_for_arginfo_sized_array(arg);
             if (arg->type == TYPE_CHAR){

@@ -282,6 +282,92 @@ struct struct_containing_larger_struct* get_p_nested_larger_struct(char c, int x
 }
 
 
+void test_fixed_buffer_10_chars_arg_then_double_arg(char* arr, double d){
+    hexdump(arr, 10);
+    printf("s: %s\n", arr);
+    printf("d: %f\n", d);
+}
+
+struct simple_struct_embedded_array_10_chars_then_double{
+    char s[10];
+    double d;
+};
+
+void test_simple_struct_embedded_array_10_chars_then_double(struct simple_struct_embedded_array_10_chars_then_double s){
+    hexdump(&s, sizeof(struct simple_struct_embedded_array_10_chars_then_double));
+    printf("s.s: %s\n", s.s);
+    printf("s.d: %f\n", s.d);
+}
+
+struct even_simpler_struct_embedded_array_10_chars{
+    char s[10];
+};
+
+void test_even_simpler_struct_embedded_array_10_chars(struct even_simpler_struct_embedded_array_10_chars s){
+    hexdump(&s, sizeof(struct even_simpler_struct_embedded_array_10_chars));
+    printf("s.s: %s\n", s.s);
+}
+
+struct struct_with_embedded_array_pointer{
+    char* s;
+};
+
+void test_struct_with_char_pointer(struct struct_with_embedded_array_pointer s){
+    hexdump(&s.s, sizeof(struct struct_with_embedded_array_pointer));
+    printf("s: %s\n", s.s);
+    for (int i = 0; i < 10; i++){
+        printf("s.s[%d]: %c\n", i, s.s[i]);
+    }
+}
+
+struct struct_with_embedded_array_pointer return_struct_with_embedded_array_pointer(){
+    struct struct_with_embedded_array_pointer s = {};
+    s.s = malloc(10);
+    strcpy(s.s, "hello");
+    return s;
+}
+
+struct struct_with_embedded_array{
+    int x;
+    char s[10];
+    int a[3];
+    int y;
+};
+
+void test_struct_with_embedded_array(struct struct_with_embedded_array s){
+    hexdump(&s, sizeof(struct struct_with_embedded_array));
+    printf("s.x: %d\n", s.x);
+    printf("s.s: %s\n", s.s);
+    hexdump(s.s, 10);
+    printf("s.a[0]: %d\n", s.a[0]);
+    printf("s.a[1]: %d\n", s.a[1]);
+    printf("s.a[2]: %d\n", s.a[2]);
+    printf("s.y: %d\n", s.y);
+}
+
+void test_p_struct_with_embedded_array(struct struct_with_embedded_array* s){
+    hexdump(s, sizeof(struct struct_with_embedded_array));
+    printf("s->x: %d\n", s->x);
+    printf("s->s: %s\n", s->s);
+    hexdump(s->s, 10);
+    printf("s->a[0]: %d\n", s->a[0]);
+    printf("s->a[1]: %d\n", s->a[1]);
+    printf("s->a[2]: %d\n", s->a[2]);
+    printf("s->y: %d\n", s->y);
+}
+
+struct struct_with_embedded_array return_struct_with_embedded_array(){
+    struct struct_with_embedded_array s = {};
+    s.x = 1;
+    strcpy(s.s, "hello");
+    s.a[0] = 2;
+    s.a[1] = 3;
+    s.a[2] = 4;
+    s.y = 5;
+    return s;
+}
+
+
 //Function that takes an array of integers and returns the sum
 int sum_array(int* arr, int size) {
     int sum = 0;

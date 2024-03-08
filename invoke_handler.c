@@ -14,7 +14,43 @@
 #include <dlfcn.h>
 #include "types_and_utils.h"
 
-ffi_type* arg_type_to_ffi_type(const ArgInfo* arg); // putting this declaration here instead of header since it's only used in this file
+ffi_type* arg_type_to_ffi_type(const ArgInfo* arg, bool is_inside_struct); // putting this declaration here instead of header since it's only used in this file
+
+ffi_type* create_raw_array_type_for_use_inside_structs(size_t n, ffi_type *array_element_type) {
+    ffi_type array_type;
+    ffi_type **elements;
+    size_t i;
+
+    // Allocate memory for the elements array with an extra slot for the NULL terminator
+    elements = malloc((n + 1) * sizeof(ffi_type*));
+    if (elements == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        return NULL;
+    }
+
+    // Populate the elements array with the type of each element
+    for (i = 0; i < n; ++i) {
+        elements[i] = array_element_type;
+    }
+    elements[n] = NULL;  // NULL terminate the array
+
+    // Initialize the array_type structure
+    array_type.size = 0;  // Let libffi compute the size
+    array_type.alignment = 0;  // Let libffi compute the alignment
+    array_type.type = FFI_TYPE_STRUCT;
+    array_type.elements = elements;
+
+    // Dynamically allocate a ffi_type to hold the array_type and return it
+    ffi_type* type_ptr = malloc(sizeof(ffi_type));
+    if (type_ptr == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        free(elements);
+        return NULL;
+    }
+    *type_ptr = array_type;
+
+    return type_ptr;
+}
 
 ffi_type* make_ffi_type_for_struct(const ArgInfo* arg){ // does not handle pointer_depth
     StructInfo* struct_info = arg->struct_info;
@@ -25,7 +61,7 @@ ffi_type* make_ffi_type_for_struct(const ArgInfo* arg){ // does not handle point
     struct_type->type = FFI_TYPE_STRUCT;
     struct_type->elements = calloc((struct_info->info.arg_count + 1),sizeof(ffi_type*));
     for (int i = 0; i < struct_info->info.arg_count; i++) {
-        struct_type->elements[i] = arg_type_to_ffi_type(&struct_info->info.args[i]);
+        struct_type->elements[i] = arg_type_to_ffi_type(&struct_info->info.args[i], true);
         if (!struct_type->elements[i]) {
             fprintf(stderr, "Failed to convert struct field %d to ffi_type.\n", i);
             exit(1);
@@ -39,14 +75,9 @@ ffi_type* make_ffi_type_for_struct(const ArgInfo* arg){ // does not handle point
     return struct_type;
 }
 
-// Utility function to convert ArgType to ffi_type
-ffi_type* arg_type_to_ffi_type(const ArgInfo* arg) {
 
-    if (arg->pointer_depth > 0 || arg->is_array) {
-        return &ffi_type_pointer;
-    }
-
-    switch (arg->type) {
+ffi_type* primitive_argtype_to_ffi_type(const ArgType type) {
+    switch (type) {
         case TYPE_CHAR: return &ffi_type_schar;
         case TYPE_SHORT: return &ffi_type_sshort;
         case TYPE_INT: return &ffi_type_sint;
@@ -60,13 +91,31 @@ ffi_type* arg_type_to_ffi_type(const ArgInfo* arg) {
         case TYPE_STRING: return &ffi_type_pointer;
         case TYPE_POINTER: return &ffi_type_pointer;
         case TYPE_VOID: return &ffi_type_void;
-        case TYPE_STRUCT: return make_ffi_type_for_struct(arg);
         // Add mappings for other types
         default:
             fprintf(stderr, "Unsupported argument type.\n");
             return NULL;
     }
 }
+
+// Utility function to convert ArgType to ffi_type
+ffi_type* arg_type_to_ffi_type(const ArgInfo* arg, bool inside_struct) {
+
+    if (arg->pointer_depth > 0) {
+        return &ffi_type_pointer;
+    } else if (arg->type == TYPE_STRUCT) {
+        return make_ffi_type_for_struct(arg);
+    } else if (arg->is_array) {
+        if (inside_struct && arg->pointer_depth==0) return create_raw_array_type_for_use_inside_structs(get_size_for_arginfo_sized_array(arg), primitive_argtype_to_ffi_type(arg->type));
+        else return &ffi_type_pointer;
+    } else {
+        return primitive_argtype_to_ffi_type(arg->type);
+    }
+    
+}
+
+
+
 void* make_raw_value_for_struct(ArgInfo* struct_arginfo){//, ffi_type* struct_type){
     ffi_type* struct_type = make_ffi_type_for_struct(struct_arginfo);
     StructInfo* struct_info = struct_arginfo->struct_info;
@@ -91,11 +140,8 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo){//, ffi_type* struct_ty
     }
 
     for (int i = 0; i < struct_info->info.arg_count; i++) {
-        if (struct_info->info.args[i].type != TYPE_STRUCT) {
-            size_t size = typeToSize(struct_info->info.args[i].type);
-            memcpy(raw_memory+offsets[i], &struct_info->info.args[i].value, size);
-            struct_info->value_ptrs[i] = raw_memory+offsets[i];
-        } else { // is TYPE_STRUCT
+
+       if (struct_info->info.args[i].type == TYPE_STRUCT) {
             size_t inner_size;
             if (struct_info->info.args[i].pointer_depth == 0) {
                 fprintf(stderr, "Warning, parsing a nested struct that is not a pointer type. Are you sure you meant to do this? Otherwise add a p\n");
@@ -113,6 +159,27 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo){//, ffi_type* struct_ty
             free(inner_struct_address);
 
 
+        } else if (struct_info->info.args[i].is_array) {
+            // we need to step down one layer of pointers compared to the usual handling of arrays in functions
+            if (struct_info->info.args[i].pointer_depth > 0) {
+                fprintf(stderr, "Warning, parsing array pointers within structs is not fully tested, attempting to parse the struct pointer as one shallower pointer depth than usual\n");
+                size_t size = sizeof(void*);
+                memcpy(raw_memory+offsets[i], struct_info->info.args[i].value.ptr_val, size);
+                struct_info->value_ptrs[i] = raw_memory+offsets[i];
+            }
+            else {
+                fprintf(stderr, "Warning, parsing raw arrays within structs is not fully tested\n");
+                size_t size = typeToSize(struct_info->info.args[i].type) * get_size_for_arginfo_sized_array(&struct_info->info.args[i]);
+                memcpy(raw_memory+offsets[i], struct_info->info.args[i].value.ptr_val, size);
+                struct_info->value_ptrs[i] = raw_memory+offsets[i];
+            }
+                
+            // above are bandaid fixes for the fact that we previously decided to handle arrays as pointer types since that is how they are passed to functions as arguments
+
+        } else copy_primitive: {
+            size_t size = typeToSize(struct_info->info.args[i].type);
+            memcpy(raw_memory+offsets[i], &struct_info->info.args[i].value, size);
+            struct_info->value_ptrs[i] = raw_memory+offsets[i];
         }
     }
 
@@ -165,7 +232,7 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
     ffi_type* args[call_info->info.arg_count];
     void* values[call_info->info.arg_count];
     for (int i = 0; i < call_info->info.arg_count; ++i) {
-        args[i] = arg_type_to_ffi_type(&call_info->info.args[i]);
+        args[i] = arg_type_to_ffi_type(&call_info->info.args[i],false);
         if (!args[i]) {
             fprintf(stderr, "Failed to convert arg[%d].type = %c to ffi_type.\n", i, call_info->info.args[i].type);
             return -1;
@@ -177,7 +244,7 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
         }
     }
 
-    ffi_type* return_type = arg_type_to_ffi_type(&call_info->info.return_var);
+    ffi_type* return_type = arg_type_to_ffi_type(&call_info->info.return_var, false);
 
     void* rvalue;
     if (call_info->info.return_var.type == TYPE_STRUCT) {
