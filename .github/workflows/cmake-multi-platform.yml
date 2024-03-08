@@ -86,6 +86,12 @@ jobs:
         sudo apt-get install -y libffi-dev qemu-user-static gcc-arm-linux-gnueabi gcc-aarch64-linux-gnu gcc-riscv64-linux-gnu
         sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
+    - name: Install QEMU-RISCV
+      if: runner.os == 'Linux' && runner.arch == 'riscv'
+      run: |
+        sudo apt-get install -y qemu-system-riscv64
+
+
 
     - name: Install Dependencies (macOS)
       if: runner.os == 'macOS'
