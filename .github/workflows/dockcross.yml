@@ -45,14 +45,17 @@ jobs:
       - name: test dockcross
         run: |
             ./dockcross bash -c "echo hello world"
+            
 
       - name: install conan
         run: |
             ./dockcross pip install conan
+            ./dockcross bash -c "conan version || echo could not run conan version"
+            ./dockcross conan profile new --detect default
 
       - name: install libffi
         run: |
-            ./dockcross bash -c "conan profile detect --force && conan install . --output-folder=build --build=missing"
+            ./dockcross bash -c "conan install . --output-folder=build --build=missing"
 
 
       - name: Build with CMake
