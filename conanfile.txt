@@ -1,0 +1,7 @@
+[requires]
+libffi/3.4.4
+[generators]
+CMakeDeps
+CMakeToolchain
+[layout]
+cmake_layout
