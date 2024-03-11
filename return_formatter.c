@@ -117,8 +117,19 @@ void hexdump(const void *data, size_t size) {
 
 
     //this contains an optional override for the value, which is used for printing struct fields
-    void format_and_print_arg_value_with_override(const ArgInfo* arg, void* optional_value_override) {  //, char* buffer, size_t buffer_size) {
-        const void* value = optional_value_override==NULL ? &(arg->value) : optional_value_override;
+    void format_and_print_arg_value_with_override(const ArgInfo* arg, const void* struct_value_ptr) {  //, char* buffer, size_t buffer_size) {
+        
+        const void* value;
+        if (struct_value_ptr == NULL) {
+            value = &(arg->value);
+        } else {
+            if (arg->is_array) {
+                value = &struct_value_ptr; // we treat array types as pointers, but in structs they are raw
+            } else {
+                value = struct_value_ptr;
+            }
+        }
+
         if (arg->pointer_depth > 0) {
             for (int j = 0; j < arg->pointer_depth; j++) {
                 value = *(void**)value;
