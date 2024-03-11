@@ -45,7 +45,8 @@ jobs:
       if: runner.os == 'Windows'
       uses: lukka/run-vcpkg@v11.5
       with:
-        vcpkgArguments: 'libffi'
+        runVcpkgInstall: true
+        vcpkgJsonGlob: '**/vcpkg.json'
 
     - name: Configure CMake (Ubuntu)
       if: runner.os == 'Linux'
