@@ -1,7 +1,10 @@
 name: Cross-Platform Build and Test
 
 on:
-  workflow_dispatch
+    push:
+        branches:
+            - master
+    workflow_dispatch:
 
 jobs:
   build:
@@ -38,9 +41,14 @@ jobs:
         run: |
             docker run --rm ${{ matrix.dockcross_image }} > ./dockcross
             chmod +x ./dockcross
+
       - name: test dockcross
         run: |
-            ./dockcross "echo hello world"
+            ./dockcross bash -c "echo hello world"
+
+      - name: install conan
+        run: |
+            ./dockcross "pip install conan"
 
       - name: install libffi
         run: |
