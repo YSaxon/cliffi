@@ -1,0 +1,48 @@
+name: RISC-V Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install RISC-V Toolchain
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-riscv64-unknown-elf
+
+    - name: Install QEMU
+      run: |
+        sudo apt-get install -y qemu-system-riscv64
+
+    - name: Download and Compile libffi
+      run: |
+        wget https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz
+        tar xzf libffi-3.4.6.tar.gz
+        cd libffi-3.4.6
+        ./configure --host=riscv64-unknown-elf --prefix=/usr/riscv64-unknown-elf
+        make
+        sudo make install
+
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_TOOLCHAIN_FILE=../riscv64-toolchain.cmake
+
+    - name: Build
+      run: |
+        cd build
+        make
+
+    - name: Run Tests
+      run: |
+        cd build
+        ctest --output-on-failure
