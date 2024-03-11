@@ -34,17 +34,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install Conan
-        run: |
-          pip install conan
-          conan profile new default --detect
-
-      - name: Install libffi with Conan
-        run: conan install libffi/3.4.2@ -g cmake
-
-      - name: Pull dockcross image
-        run: docker pull 
-    
       - name: install helper script
         run: |
             docker run --rm ${{ matrix.dockcross_image }} > ./dockcross
