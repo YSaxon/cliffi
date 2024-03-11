@@ -101,20 +101,26 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
     arg->pointer_depth = pointer_depth;
 }
 
-void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *args_used, bool parse_values) {
+void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *args_used, bool is_return, bool is_struct) {
     // ArgInfoContainer* arginfo = info->type == FUNCTION_INFO ? &info->function_info->info : &info->struct_info->info;
     printf("Beginning to parse args (%d remaining)\n", argc);
-    for (int i = 0; i < argc; i++) {
+    bool hit_struct_close = false;
+    int i;
+    for (i=0; i < argc; i++) {
         char* argStr = argv[i];
         ArgInfo arg = {0};
         int pointer_depth = 0;
 
         if (strcmp(argStr, ":S") == 0){ // this terminates a struct flag
-            *args_used = i; // not including the close tag, that will be handled by the caller
+            if (!is_struct){
+                fprintf(stderr, "Error: Unexpected close struct flag :S\n");
+                exit(1);
+            }
+            hit_struct_close = true;
             break;
         }
 
-        if (!parse_values){ // is a return type, so we don't need to parse values or check for the - flag
+        if (is_return){ // is a return type, so we don't need to parse values or check for the - flag
             parse_arg_type_from_flag(&arg, argStr);
             // addArgToFunctionCallInfo(info, &arg);
             // continue;
@@ -127,14 +133,14 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
         } else {
             infer_arg_type_from_value(&arg, argStr);
         }
-        if (parse_values && arg.type!=TYPE_STRUCT) {
+        if (!is_return && arg.type!=TYPE_STRUCT) {
             convert_arg_value(&arg, argStr);
         } else if (arg.type==TYPE_STRUCT){
             StructInfo* struct_info = calloc(1, sizeof(StructInfo));
-            int struct_args_used;
+            int struct_args_used = 0;
             i++; // skip the S: open tag
             printf("-S tag encountered, parsing struct from args\n");
-            parse_all_from_argvs(&struct_info->info, argc-i, argv+i, &struct_args_used, parse_values);
+            parse_all_from_argvs(&struct_info->info, argc-i, argv+i, &struct_args_used, is_return, true);
 
             i+=struct_args_used;
             arg.struct_info = struct_info;
@@ -143,6 +149,13 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
         }
         addArgToFunctionCallInfo(info, &arg);
     }
+
+    if (is_struct && !hit_struct_close){
+        fprintf(stderr, "Error: Struct flag not closed with :S\n");
+        exit(1);
+    }
+
+    *args_used = i;
 
     convert_all_arrays_to_arginfo_ptr_sized_after_parsing(info);
 
@@ -170,10 +183,10 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         return NULL;
     } else if (info->info.return_var.type == TYPE_STRUCT) {
         StructInfo* struct_info = calloc(1, sizeof(StructInfo));
-        int struct_args_used;
+        int struct_args_used = 0;
         // i++; // skip the S: open tag
         printf("S tag encountered, parsing struct from args\n");
-        parse_all_from_argvs(&struct_info->info, argc-3, argv+3, &struct_args_used, false);
+        parse_all_from_argvs(&struct_info->info, argc-3, argv+3, &struct_args_used, true, true);
 
         info->info.return_var.struct_info = struct_info;
 
@@ -200,10 +213,11 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         return NULL;
     }
     //TODO: maybe at some point we should be able to take a hex offset instead of a function name
-    int args_used;
-    parse_all_from_argvs(&info->info, argc-4, argv+4, &args_used, true);
-    if (args_used != 0) {
-        fprintf(stderr, "Warning: Unexpected early return from function parsing. There seems to be an errant :S close struct tag\n");
+    int args_used = 0;
+    parse_all_from_argvs(&info->info, argc-4, argv+4, &args_used, false, false);
+    if (args_used != argc-4){
+        fprintf(stderr, "Error: Not all arguments were used in parsing\n");
+        exit(1);
     }
     
     return info;
