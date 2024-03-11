@@ -1,0 +1,49 @@
+name: CI
+
+on: [workflow_dispatch]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+        arch: [x86, x64]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up CMake
+      uses: jwlawson/actions-setup-cmake@v1.13
+      with:
+        cmake-version: '3.20.x'
+
+    - name: Install Dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: brew install libffi
+
+    - name: Install Dependencies (Windows)
+      if: runner.os == 'Windows'
+      uses: lukka/run-vcpkg@v11.5
+      with:
+        runVcpkgInstall: true
+        vcpkgJsonGlob: '**/vcpkg.json'
+        vcpkgGitCommitId: 'a42af01b72c28a8e1d7b48107b33e4f286a55ef6'
+
+    - name: Configure CMake (macOS)
+      if: runner.os == 'macOS'
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Configure CMake (Windows)
+      if: runner.os == 'Windows'
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+
+    - name: Build
+      run: cmake --build build --config Release
+
+    - name: Run Tests (macOS & Windows)
+      if: runner.os != 'Linux'
+      run: cd build && ctest --output-on-failure

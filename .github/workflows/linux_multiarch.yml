@@ -6,17 +6,8 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest]
         arch: [x86, x64, arm, arm64]
-        exclude:
-          - os: macos-latest
-            arch: arm
-          - os: macos-latest
-            arch: arm64
-          - os: windows-latest
-            arch: arm
-          - os: windows-latest
-            arch: arm64
 
     runs-on: ${{ matrix.os }}
 
@@ -36,18 +27,12 @@ jobs:
         sudo apt-get install -y libffi-dev gcc-arm-linux-gnueabi gcc-aarch64-linux-gnu gcc-riscv64-linux-gnu
         sudo apt-get install -y qemu-user qemu-user-static qemu-system-arm qemu-system-aarch64 qemu-system-riscv64
         sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-
-    - name: Install Dependencies (macOS)
-      if: runner.os == 'macOS'
-      run: brew install libffi
-
-    - name: Install Dependencies (Windows)
-      if: runner.os == 'Windows'
-      uses: lukka/run-vcpkg@v11.5
-      with:
-        runVcpkgInstall: true
-        vcpkgJsonGlob: '**/vcpkg.json'
-        vcpkgGitCommitId: 'a42af01b72c28a8e1d7b48107b33e4f286a55ef6'
+        
+    #   uses: lukka/run-vcpkg@v11.5
+    #   with:
+    #     runVcpkgInstall: true
+    #     vcpkgJsonGlob: '**/vcpkg.json'
+    #     vcpkgGitCommitId: 'a42af01b72c28a8e1d7b48107b33e4f286a55ef6'
 
     - name: Configure CMake (Ubuntu)
       if: runner.os == 'Linux'
@@ -59,15 +44,6 @@ jobs:
         else
           cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-${{ matrix.arch }}.cmake
         fi
-
-    - name: Configure CMake (macOS)
-      if: runner.os == 'macOS'
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
-
-    - name: Configure CMake (Windows)
-      if: runner.os == 'Windows'
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
-
 
     - name: Build
       run: cmake --build build --config Release
@@ -90,7 +66,3 @@ jobs:
           fi
           exit 1
         fi
-
-    - name: Run Tests (macOS & Windows)
-      if: runner.os != 'Linux'
-      run: cd build && ctest --output-on-failure
