@@ -10,21 +10,21 @@ jobs:
       matrix:
         dockcross_image:
             - dockcross/linux-armv7
-            - dockcross/linux-arm64
-            - dockcross/linux-ppc64le
-            - dockcross/linux-x64
-            - dockcross/linux-x86
-            - dockcross/linux-mips
+            # - dockcross/linux-arm64
+            # - dockcross/linux-ppc64le
+            # - dockcross/linux-x64
+            # - dockcross/linux-x86
+            # - dockcross/linux-mips
             - dockcross/linux-mipsel
-            - dockcross/linux-s390x
-            - dockcross/linux-armv5
-            - dockcross/linux-armv6
-            - dockcross/linux-s390x
-            - dockcross/linux-xtensa-uclibc	
+            # - dockcross/linux-s390x
+            # - dockcross/linux-armv5
+            # - dockcross/linux-armv6
+            # - dockcross/linux-s390x
+            # - dockcross/linux-xtensa-uclibc	
             - dockcross/android-arm
-            - dockcross/android-arm64
-            - dockcross/android-x86
-            - dockcross/android-x86_64
+            # - dockcross/android-arm64
+            # - dockcross/android-x86
+            # - dockcross/android-x86_64
 
             
         #   - dockcross/windows-static-x64
@@ -38,7 +38,6 @@ jobs:
         run: |
             docker run --rm ${{ matrix.dockcross_image }} > ./dockcross
             chmod +x ./dockcross
-            mv ./dockcross ~/bin/
 
       - name: install libffi
         run: |
