@@ -356,6 +356,17 @@ void test_p_struct_with_embedded_array(struct struct_with_embedded_array* s){
     printf("s->y: %d\n", s->y);
 }
 
+void test_p_struct_with_embedded_array_changed(struct struct_with_embedded_array* s){
+    hexdump(s, sizeof(struct struct_with_embedded_array));
+    s->x = 5;
+    strcpy(s->s, "changed");
+    s->a[0] = 10;
+    s->a[1] = 11;
+    s->a[2] = 12;
+    s->y = 15;
+}
+
+
 struct struct_with_embedded_array return_struct_with_embedded_array(){
     struct struct_with_embedded_array s = {};
     s.x = 1;
