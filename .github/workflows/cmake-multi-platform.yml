@@ -77,15 +77,15 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         if [ "${{ matrix.arch }}" == "x86" ] || [ "${{ matrix.arch }}" == "x64" ]; then
-          cd build && ctest -C Release
+          cd build && ctest --output-on-failure
         elif [ "${{ matrix.arch }}" == "arm" ]; then
-          cd build && qemu-arm -L /usr/arm-linux-gnueabi ctest -C Release
+          cd build && qemu-arm -L /usr/arm-linux-gnueabi ctest  --output-on-failure
         elif [ "${{ matrix.arch }}" == "arm64" ]; then
-          cd build && qemu-aarch64 -L /usr/aarch64-linux-gnu ctest -C Release
+          cd build && qemu-aarch64 -L /usr/aarch64-linux-gnu ctest  --output-on-failure
         elif [ "${{ matrix.arch }}" == "riscv64" ]; then
-          cd build && qemu-riscv64 -L /usr/riscv64-linux-gnu ctest -C Release
+          cd build && qemu-riscv64 -L /usr/riscv64-linux-gnu ctest  --output-on-failure
         fi
 
     - name: Run Tests (macOS & Windows)
       if: runner.os != 'Linux'
-      run: cd build && ctest -C Release
+      run: cd build && ctest --output-on-failure
