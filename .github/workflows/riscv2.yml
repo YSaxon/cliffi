@@ -20,7 +20,7 @@ jobs:
 
     - name: Wait for RISC-V Emulator to Start
       run: |
-        sleep 60
+        sleep 45
 
     - name: Install libffi Dependencies
       run: |
