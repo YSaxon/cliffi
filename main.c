@@ -10,7 +10,7 @@
 #include "types_and_utils.h"
 
 const char* NAME = "cliffi";
-const char* VERSION = "0.5.5";
+const char* VERSION = "0.5.7";
 
 int main(int argc, char* argv[]) {
     if (argc > 1 && strcmp(argv[1], "--help") == 0) {
