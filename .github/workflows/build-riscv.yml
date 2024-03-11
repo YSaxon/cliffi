@@ -1,0 +1,60 @@
+name: RISC-V Build and Test
+
+on:
+  workflow_dispatch
+  # push:
+  #   branches: [ master ]
+  # pull_request:
+  #   branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    # - name: Install RISC-V Toolchain
+    #   run: |
+    #     sudo apt-get update
+    #     sudo apt-get install -y gcc-riscv64-unknown-elf
+    - name: Install RISC-V Toolchain
+      run: |
+        wget https://static.dev.sifive.com/dev-tools/freedom-tools/v2020.12/riscv64-unknown-elf-toolchain-10.2.0-2020.12.8-x86_64-linux-ubuntu14.tar.gz
+        tar -xf riscv64-unknown-elf-toolchain-10.2.0-2020.12.8-x86_64-linux-ubuntu14.tar.gz
+        echo "$PWD/riscv64-unknown-elf-toolchain-10.2.0-2020.12.8-x86_64-linux-ubuntu14/bin" >> $GITHUB_PATH
+
+    - name: Install QEMU
+      run: |
+        sudo apt-get install -y qemu-system-riscv64
+
+    - name: Download and Compile libffi
+      run: |
+        wget https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz
+        tar xzf libffi-3.4.6.tar.gz
+        cd libffi-3.4.6
+        # ./configure --host=riscv64-unknown-elf --prefix=/usr/riscv64-unknown-elf
+        ./configure --host=riscv64-unknown-elf --target=riscv64-unknown-elf --prefix=/usr/riscv64-unknown-elf CC=riscv64-unknown-elf-gcc
+        make
+        sudo make install
+
+    - name: Display config.log
+      if: failure()
+      run: |
+        cat libffi-3.4.6/riscv64-unknown-elf/config.log
+
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_TOOLCHAIN_FILE=../riscv64-toolchain.cmake
+
+    - name: Build
+      run: |
+        cd build
+        make
+
+    - name: Run Tests
+      run: |
+        cd build
+        ctest --output-on-failure

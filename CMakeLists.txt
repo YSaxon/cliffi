@@ -18,6 +18,11 @@ else()
     pkg_search_module(LIBFFI REQUIRED libffi)
 endif()
 
+
+find_library(DL_LIBRARY NAMES dl)
+
+
+
 # Include directories
 include_directories(${LIBFFI_INCLUDE_DIRS})
 
@@ -36,6 +41,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 # Target executable
 add_executable(cliffi ${SOURCES})
 target_link_libraries(cliffi ${LIBFFI_LIBRARIES})
+if(DL_LIBRARY)
+  target_link_libraries(cliffi ${DL_LIBRARY})
+endif()
 target_include_directories(cliffi PRIVATE ${LIBFFI_INCLUDE_DIRS})
 
 # Compile cliffi_testlib.c into a shared library
