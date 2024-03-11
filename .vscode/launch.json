@@ -266,6 +266,14 @@
             "program": "${workspaceFolder}/build_cmake/cliffi",
             "args": ["${workspaceFolder}/build_cmake/libcliffi_test.dylib", "S:", "c", "S:", "i", "d", "c", "s", ":S", "i", ":S", "get_nested_larger_struct", "-c", "a", "5", "3.3", "-c", "b", "thisisastring", "77"],
             "cwd": "${workspaceFolder}",
+        },
+        {
+            "name": "v test_p_struct_with_embedded_array -pS: 1 -ac10 h,e,l,l,o 1,2,3 4 S:",
+            "type": "powercpp",
+            "request": "launch",
+            "program": "${workspaceFolder}/build_cmake/cliffi",
+            "args": ["${workspaceFolder}/build_cmake/libcliffi_test.dylib", "v", "test_p_struct_with_embedded_array", "-pS:", "1", "-ac10", "h,e,l,l,o", "1,2,3", "4", ":S"],
+            "cwd": "${workspaceFolder}",
         }
         // {
         //     "name": "(lldb) Launch",
