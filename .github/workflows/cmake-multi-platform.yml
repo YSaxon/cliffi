@@ -85,6 +85,12 @@ jobs:
         elif [ "${{ matrix.arch }}" == "riscv64" ]; then
           cd build && qemu-riscv64 -L /usr/riscv64-linux-gnu ctest  --output-on-failure
         fi
+        if [ $? -ne 0 ]; then
+          if [ -f "/tmp/core.*" ]; then
+            gdb -c /tmp/core.* -ex "thread apply all bt" -ex "set pagination 0" -batch
+          fi
+          exit 1
+        fi
 
     - name: Run Tests (macOS & Windows)
       if: runner.os != 'Linux'
