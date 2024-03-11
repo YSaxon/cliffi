@@ -37,10 +37,14 @@ jobs:
           make
           make install
         "
+    - name: Copy Project Files to Container
+      run: |
+        docker cp . riscv-emulator:/app
 
     - name: Configure CMake
       run: |
         docker exec riscv-emulator bash -c "
+          cd /app
           mkdir build
           cd build
           cmake ..
@@ -49,13 +53,13 @@ jobs:
     - name: Build
       run: |
         docker exec riscv-emulator bash -c "
-          cd build
+          cd /app/build
           make
         "
 
     - name: Run Tests
       run: |
         docker exec riscv-emulator bash -c "
-          cd build
+          cd /app/build
           ctest --output-on-failure
         "
