@@ -38,6 +38,9 @@ jobs:
         run: |
             docker run --rm ${{ matrix.dockcross_image }} > ./dockcross
             chmod +x ./dockcross
+      - name: test dockcross
+        run: |
+            ./dockcross "echo hello world"
 
       - name: install libffi
         run: |
