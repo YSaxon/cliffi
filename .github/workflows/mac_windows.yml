@@ -1,4 +1,4 @@
-name: CI
+name: MacWindowsx86x64
 
 on: [workflow_dispatch]
 
