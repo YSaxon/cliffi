@@ -25,7 +25,7 @@ jobs:
     - name: Install libffi Dependencies
       run: |
         docker exec riscv-emulator apt-get update
-        docker exec riscv-emulator apt-get install -y autoconf automake libtool
+        docker exec riscv-emulator apt-get install -y autoconf automake libtool cmake
 
     - name: Download and Compile libffi
       run: |
