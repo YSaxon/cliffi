@@ -1,6 +1,6 @@
 name: LinuxMultiArch
 
-on: [workflow_dispatch]
+on: workflow_dispatch
 
 jobs:
   build:
@@ -42,7 +42,26 @@ jobs:
         elif [ "${{ matrix.arch }}" == "x64" ]; then
           cmake -B build -DCMAKE_BUILD_TYPE=Release
         else
-          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-${{ matrix.arch }}.cmake
+          case "${{ matrix.arch }}" in
+            "arm")
+              cmake -B build -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_SYSTEM_NAME=Linux \
+                -DCMAKE_SYSTEM_PROCESSOR=arm \
+                -DCMAKE_C_COMPILER=arm-linux-gnueabi-gcc
+              ;;
+            "arm64")
+              cmake -B build -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_SYSTEM_NAME=Linux \
+                -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+                -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc
+              ;;
+            "riscv64")
+              cmake -B build -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_SYSTEM_NAME=Linux \
+                -DCMAKE_SYSTEM_PROCESSOR=riscv64 \
+                -DCMAKE_C_COMPILER=riscv64-linux-gnu-gcc
+              ;;
+          esac
         fi
 
     - name: Build
