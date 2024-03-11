@@ -47,9 +47,9 @@ jobs:
 
     - name: Install Dependencies (Windows)
       if: runner.os == 'Windows'
-      run: |
-        choco install -y libffi
-        echo "C:\Program Files\libffi\lib" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      uses: lukka/run-vcpkg@v11.5
+      with:
+        vcpkgArguments: 'libffi'
 
     - name: Configure CMake (Ubuntu)
       if: runner.os == 'Linux'
@@ -69,6 +69,7 @@ jobs:
     - name: Configure CMake (Windows)
       if: runner.os == 'Windows'
       run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
 
     - name: Build
       run: cmake --build build --config Release
