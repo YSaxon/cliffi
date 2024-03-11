@@ -48,7 +48,6 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
         // For now we'll just say that the array values can't have a space in them
         // So the entire array will just be one argv
         // In the future we may switch to using end delimitters eg a: 3 2 1 :a
-        explicitType = charToType(argStr[1 + pointer_depth]);
 
         if (isAllDigits(&argStr[1+pointer_depth]) || argStr[1+pointer_depth] == 't') {
             //argStr[:2+pointer_depth] is the array flag + 'i' + argStr[2+pointer_depth:]
@@ -56,12 +55,29 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
             exit(1);
         }
 
+        explicitType = charToType(argStr[1 + pointer_depth]);
+
+        if (explicitType == TYPE_STRUCT){
+            fprintf(stderr, "Error: Arrays of structs are not presently supported, in flags %s\n", argStr);
+            exit(1);
+        } else if (explicitType == TYPE_UNKNOWN) {
+            fprintf(stderr, "Error: Unsupported argument type flag in flags %s\n", argStr);
+            exit(1);
+        } else if (explicitType == TYPE_ARRAY) {
+            fprintf(stderr, "Error: Array types cannot be nested, in flags %s\n", argStr);
+            exit(1);
+        } else if (explicitType == TYPE_POINTER) {
+            fprintf(stderr, "Error: Array flag in unsupported position in flags %s. Order must be -[p[p..]][a][primitive type flag]\n", argStr);
+            exit(1);
+        } 
+
+
+
         // see if there's a size appended to the end of the array flag
         if (isAllDigits(&argStr[2 + pointer_depth])){
             arg->is_array = ARRAY_STATIC_SIZE;
             arg->array_size.static_size = atoi(argStr + 2 + pointer_depth);
-        } else if (argStr[2 + pointer_depth] == 't')
-        { 
+        } else if (argStr[2 + pointer_depth] == 't') { 
             // t is a flag indicating that the array size is specified as a size_t in another argument
             if (isAllDigits(&argStr[3 + pointer_depth])){
                 arg->is_array = ARRAY_SIZE_AT_ARGNUM;
@@ -71,13 +87,7 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
                 fprintf(stderr, "Error: Array size flag t must be followed by a number in flags %s\n", argStr);
                 exit(1);
             }
-        } else if (explicitType == TYPE_STRUCT){
-            if (argStr[2 + pointer_depth] != ':') {
-                fprintf(stderr, "Error: Struct flag must be followed by a colon (and then the struct fields and then :S ) %s\n", argStr);
-                exit(1);
-            }
-        }
-        else {
+        } else {
             arg->is_array = ARRAY_STATIC_SIZE_UNSET;
             // will be set from the values given later on if it's an argument (or will fail if it's a return)
         }
