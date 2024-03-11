@@ -48,21 +48,21 @@ jobs:
 
       - name: install conan
         run: |
-            ./dockcross "pip install conan"
+            ./dockcross pip install conan
 
       - name: install libffi
         run: |
-            ./dockcross "conan profile detect --force && conan install . --output-folder=build --build=missing"
+            ./dockcross bash -c "conan profile detect --force && conan install . --output-folder=build --build=missing"
 
 
       - name: Build with CMake
         run: |
-            ./dockcross "cd build && cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release && cmcmake --build ."
+            ./dockcross bash -c "cd build && cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release && cmcmake --build ."
 
 
       - name: Test with CTest
         run: |
-            ./dockcross "ctest --test-dir build --output-on-failure"
+            ./dockcross bash -c "ctest --test-dir build --output-on-failure"
 
       - uses: actions/upload-artifact@v3
         with:
