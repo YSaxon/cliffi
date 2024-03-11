@@ -1,0 +1,71 @@
+name: Cross-Platform Build and Test
+
+on:
+  workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dockcross_image:
+            - dockcross/linux-armv7
+            - dockcross/linux-arm64
+            - dockcross/linux-ppc64le
+            - dockcross/linux-x64
+            - dockcross/linux-x86
+            - dockcross/linux-mips
+            - dockcross/linux-mipsel
+            - dockcross/linux-s390x
+            - dockcross/linux-armv5
+            - dockcross/linux-armv6
+            - dockcross/linux-s390x
+            - dockcross/linux-xtensa-uclibc	
+            - dockcross/android-arm
+            - dockcross/android-arm64
+            - dockcross/android-x86
+            - dockcross/android-x86_64
+
+            
+        #   - dockcross/windows-static-x64
+        #   - dockcross/windows-static-x86
+        #   - dockcross/web-wasm
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Conan
+        run: |
+          pip install conan
+          conan profile new default --detect
+
+      - name: Install libffi with Conan
+        run: conan install libffi/3.4.2@ -g cmake
+
+      - name: Pull dockcross image
+        run: docker pull 
+    
+      - name: install helper script
+        run: |
+            docker run --rm ${{ matrix.dockcross_image }} > ./dockcross
+            chmod +x ./dockcross
+            mv ./dockcross ~/bin/
+
+      - name: install libffi
+        run: |
+            ./dockcross "conan profile detect --force && conan install . --output-folder=build --build=missing"
+
+
+      - name: Build with CMake
+        run: |
+            ./dockcross "cd build && cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release && cmcmake --build ."
+
+
+      - name: Test with CTest
+        run: |
+            ./dockcross "ctest --test-dir build --output-on-failure"
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: artifacts-${{ matrix.dockcross_image }}
+          path: build/
