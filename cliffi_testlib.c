@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -425,6 +426,16 @@ const char* buffer_as_return(const char* buffer, size_t size) {
     return retval;
 }
 
+
+void func_with_varargs(int count, ...) {
+    va_list args;
+    va_start(args, count);
+    for(int i = 0; i < count; i++) {
+        int arg = va_arg(args, int);
+        printf("Arg %d: %d\n", i, arg);
+    }
+    va_end(args);
+}
 
 // Entry point to prevent the compiler from complaining when compiling as a shared library
 // This function will not be called; it's just to satisfy the linker.
