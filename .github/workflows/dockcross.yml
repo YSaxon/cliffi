@@ -125,8 +125,12 @@ jobs:
     #   - name: Test with CTest
     #     run: |
     #         ./dockcross bash -c "ctest --test-dir build --output-on-failure"
+      - name: Extract Substring After Slash
+        id: extract_substring
+        run: echo "substring=${{ matrix.dockcross_image }} | sed 's|.*/||'" >> $GITHUB_OUTPUT
+
 
       - uses: actions/upload-artifact@v3
         with:
-          name: artifacts-${{ matrix.dockcross_image }}
-          path: build/
+          name: artifacts-${{ steps.extract_substring.outputs.substring }}
+          path: build/cliffi
