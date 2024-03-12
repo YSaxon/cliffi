@@ -20,7 +20,7 @@ COMPILER=$(basename ${CC} | rev | cut -d '-' -f 1 | rev)
 
 # sed in place the arch, os, and compiler
 #if powerpc is in arch, replace with ppc
-ARCH=$(echo ${ARCH} | sed -e 's/powerpc/ppc/')
+ARCH=$(echo ${ARCH} | sed -e 's/powerpc/ppc/' -e 's/i686/x86/' -e 's/i386/x86/')
 
 #capitalize the first letter of the os
 OS=$(echo ${OS} | sed -e 's/\b\(.\)/\u\1/')
