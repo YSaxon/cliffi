@@ -12,8 +12,8 @@ jobs:
     strategy:
       matrix:
         dockcross_image:
-            # - dockcross/linux-armv7
-            # - dockcross/linux-arm64
+            - dockcross/linux-armv7
+            - dockcross/linux-arm64
             # - dockcross/linux-ppc64le
             - dockcross/linux-x64
             # - dockcross/linux-x86
@@ -24,9 +24,9 @@ jobs:
             # - dockcross/linux-armv6
             # - dockcross/linux-s390x
             # - dockcross/linux-xtensa-uclibc	
-            # - dockcross/android-arm
+            - dockcross/android-arm
             # - dockcross/android-arm64
-            # - dockcross/android-x86
+            - dockcross/android-x86
             # - dockcross/android-x86_64
 
             
@@ -93,8 +93,9 @@ jobs:
 
       - name: Build with CMake
         run: |
-            ./dockcross bash -c "find . -name '*.cmake'"
-            ./dockcross bash -c "mkdir -p build && cd build && cmake .. && make" # -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
+            # ./dockcross bash -c "find . -name '*.cmake' "
+            ./dockcross bash -c "export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH
+                                 mkdir -p build && cd build && cmake .. && make"
 
 
       - name: Test with CTest
