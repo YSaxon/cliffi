@@ -129,6 +129,11 @@ jobs:
       #   run: |
       #       ./dockcross bash -c "cd build && ctest --output-on-failure"
 
+      - name: get_executable
+        id: get_executable
+        run: |
+          echo "::set-output name=executable::$(ls build/cliffi*)"
+
       - name: upload
         uses: actions/upload-release-asset@v1
         env:
@@ -136,6 +141,6 @@ jobs:
         with:
             upload_url: ${{ needs.create_release.outputs.upload_url }}
             # it could be plain cliffi or cliffi.exe
-            asset_path: build/cliffi*
+            asset_path: ${{ steps.get_executable.outputs.executable }}
             asset_name: cliffi-${{ matrix.dockcross_image }}
             asset_content_type: application/zip
