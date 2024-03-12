@@ -12,15 +12,14 @@ jobs:
     strategy:
       matrix:
         dockcross_image:
+            - linux-armv5
+            - linux-armv6
             - linux-armv7
             - linux-arm64
             - linux-ppc64le
             - linux-x64
             - linux-x86
             - linux-mips
-            - linux-s390x
-            - linux-armv5
-            - linux-armv6
             - linux-s390x
             - linux-xtensa-uclibc	
             - android-arm
