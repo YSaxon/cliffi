@@ -61,6 +61,7 @@ jobs:
             ./dockcross bash -c "conan remote update conan-center https://center.conan.io"
             ./dockcross bash -c "conan remote list"
             ./dockcross bash -c "conan remote add conan-center https://center.conan.io"
+            ./dockcross bash -c "cat /home/runner/.conan/registry.txt"
             ./dockcross bash -c "conan install . --build=missing"
 
 
