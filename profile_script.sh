@@ -13,9 +13,8 @@ if [ -z "${CC}" ]; then
 fi
 
 # Extract the architecture from the CC environment variable
-# ARCH=$(echo $CC | sed -n 's/.*-\(.*\)-gcc.*/\1/p')
 ARCH=$(basename ${CC} | cut -d '-' -f 1)
-OS=$(basename ${CC} | cut -d '-' -f 3)
+OS=$(basename ${CC} | rev | cut -d '-' -f 3 | rev)
 COMPILER=$(basename ${CC} | rev | cut -d '-' -f 1 | rev)
 
 
