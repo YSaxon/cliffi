@@ -50,7 +50,7 @@ jobs:
       - name: version
         id: version
         # parse the VERSION from main.c
-        run: echo ::set-output name=version::$(grep -oP 'VERSION = "\K[^"]+' main.c)-$(echo ${{ github.run_number }} | sed 's|.*/||')
+        run: echo ::set-output name=version::$(grep -oP 'VERSION = "\K[^"]+' main.c)-$(echo ${{ github.sha }} | cut -c1-7)
 
       - name: release
         id: release  # ID used to reference the step later
