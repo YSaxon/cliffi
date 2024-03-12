@@ -15,7 +15,7 @@ message("compiling for Android")
 else()
     message("Not Android")
     find_package(PkgConfig REQUIRED)
-    pkg_search_module(LIBFFI REQUIRED libffi)
+    pkg_search_module(LIBFFI libffi)
 endif()
 
 
