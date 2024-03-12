@@ -98,6 +98,16 @@ jobs:
                                 find /usr 2>&1 | grep libffi
                                 find /work 2>&1 | grep libffi
                                 find . 2>&1 | grep libffi
+                                export dir_with_pc=$(dirname $(find /work 2>&1 | grep libffi.pc))
+                                echo $dir_with_pc
+                                export PKG_CONFIG_PATH=$dir_with_pc:$PKG_CONFIG_PATH
+                                export LD_LIBRARY_PATH=$dir_with_pc:$LD_LIBRARY_PATH
+                                export CMAKE_PREFIX_PATH=$dir_with_pc:$CMAKE_PREFIX_PATH
+                                export CMAKE_LIBRARY_PATH=$dir_with_pc:$CMAKE_LIBRARY_PATH
+                                export CMAKE_INCLUDE_PATH=$dir_with_pc:$CMAKE_INCLUDE_PATH
+                                export CMAKE_MODULE_PATH=$dir_with_pc:$CMAKE_MODULE_PATH
+                                export CMAKE_PREFIX_PATH=$dir_with_pc:$CMAKE_PREFIX_PATH
+                                export CMAKE_LIBRARY_PATH=$dir_with_pc:$CMAKE_LIBRARY_PATH
                                  mkdir -p build && cd build && cmake .. && make"
 
 
