@@ -55,7 +55,7 @@ jobs:
 
       - name: install libffi
         run: |
-            ./dockcross bash -c "conan remote update conan-center https://center.conan.io"
+            ./dockcross bash -c "conan remote add conan-center https://center.conan.io --force"
             ./dockcross bash -c "conan install . --build=missing"
 
 
