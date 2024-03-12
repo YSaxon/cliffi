@@ -138,6 +138,7 @@ jobs:
         run: echo ::set-output name=version::$(grep -oP 'VERSION = "\K[^"]+' main.c)-$(echo ${{ github.run_number }} | sed 's|.*/||')
 
       - name: release
+        if: github.ref == 'refs/heads/master'
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -151,7 +152,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-            upload_url: ${{ needs.version.outputs.upload_url }}
-          asset_path: build/cliffi
-          asset_name: cliffi-${{ matrix.dockcross_image }}
-          asset_content_type: application/zip
+            upload_url: ${{ steps.release.outputs.upload_url }}
+            asset_path: build/cliffi
+            asset_name: cliffi-${{ matrix.dockcross_image }}
+            asset_content_type: application/zip
