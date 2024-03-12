@@ -82,7 +82,7 @@ jobs:
       - name: Build with CMake
         run: |
             ./dockcross bash -c "find . -name '*.cmake'"
-            ./dockcross bash -c "mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && cmcmake --build ." # -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
+            ./dockcross bash -c "mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && cmake --build ." # -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
 
 
       - name: Test with CTest
