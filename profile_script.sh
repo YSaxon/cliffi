@@ -24,7 +24,7 @@ COMPILER=$(basename ${CC} | rev | cut -d '-' -f 1 | rev)
 #capitalize the first letter of the os
 
 #if no commas in CC, then use the CMAKE_TOOLCHAIN_FILE
-if [[ $CC != *","* ]]; then
+if [[ $CC != *"-"* ]]; then
     ARCH=$(cat $CMAKE_TOOLCHAIN_FILE | grep -oP 'CMAKE_SYSTEM_PROCESSOR \K\w+')
     OS=$(cat $CMAKE_TOOLCHAIN_FILE | grep -oP 'CMAKE_SYSTEM_NAME \K\w+')
 else
