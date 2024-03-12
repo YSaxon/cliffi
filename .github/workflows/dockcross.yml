@@ -132,7 +132,8 @@ jobs:
       - name: get_executable
         id: get_executable
         run: |
-          echo "::set-output name=executable::$(ls build/cliffi*)"
+          echo "executable=$(ls build/cliffi*)" >> $GITHUB_OUTPUT
+
 
       - name: upload
         uses: actions/upload-release-asset@v1
