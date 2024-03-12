@@ -55,9 +55,9 @@ jobs:
 
       - name: install libffi
         run: |
-            ./dockcross bash -c "mkdir -p /home/runner/.conan/ && echo 'conan-center https://center.conan.io True' >> /home/runner/.conan/registry.txt"
-            ./dockcross bash -c "cat /home/runner/.conan/registry.txt"
-            ./dockcross bash -c "echo 'conan-center https://center.conan.io True' >> /home/runner/.conan/registry.txt && conan install . --build=missing"
+            ./dockcross bash -c "mkdir -p /home/runner/.conan/ || echo cant mkdir; echo 'conan-center https://center.conan.io True' >> /home/runner/.conan/registry.txt"
+            # ./dockcross bash -c "cat /home/runner/.conan/registry.txt"
+            ./dockcross bash -c "mkdir -p /home/runner/.conan/; echo 'conan-center https://center.conan.io True' >> /home/runner/.conan/registry.txt && conan install . --build=missing"
 
 
       - name: Build with CMake
