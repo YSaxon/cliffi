@@ -148,10 +148,10 @@ jobs:
           prerelease: true
 
       - uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
+            upload_url: ${{ needs.version.outputs.upload_url }}
           asset_path: build/cliffi
           asset_name: cliffi-${{ matrix.dockcross_image }}
           asset_content_type: application/zip
-          asset_label: cliffi-${{ matrix.dockcross_image }}
-          token: ${{ secrets.GITHUB_TOKEN }}
