@@ -46,16 +46,16 @@ jobs:
       - name: createprofile_and_install_through_conan
         run: |
             ./dockcross bash ./profile_script.sh
-            ./dockcross bash -c "conan install . --output-folder=build --build=missing -pr build"
+            sleep 3s
 
-      # - name: conaninstall
-      # # wait for previous steps to finish
-      #   needs: [createprofile]
-      #   run: |
+      - name: conaninstall
+        run: |
+            ./dockcross bash -c "conan install . --output-folder=build --build=missing -pr build"
 
       - name: updatecmake
         run: |
             ./dockcross bash ./update_cmake.sh
+            sleep 10s
 
       - name: cmake
         run: |
