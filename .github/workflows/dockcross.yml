@@ -14,20 +14,19 @@ jobs:
         dockcross_image:
             - dockcross/linux-armv7
             - dockcross/linux-arm64
-            # - dockcross/linux-ppc64le
+            - dockcross/linux-ppc64le
             - dockcross/linux-x64
-            # - dockcross/linux-x86
-            # - dockcross/linux-mips
-            # - dockcross/linux-mipsel
-            # - dockcross/linux-s390x
-            # - dockcross/linux-armv5
-            # - dockcross/linux-armv6
-            # - dockcross/linux-s390x
+            - dockcross/linux-x86
+            - dockcross/linux-mips
+            - dockcross/linux-s390x
+            - dockcross/linux-armv5
+            - dockcross/linux-armv6
+            - dockcross/linux-s390x
             # - dockcross/linux-xtensa-uclibc	
             - dockcross/android-arm
-            # - dockcross/android-arm64
+            - dockcross/android-arm64
             - dockcross/android-x86
-            # - dockcross/android-x86_64
+            - dockcross/android-x86_64
 
             
         #   - dockcross/windows-static-x64
@@ -45,83 +44,87 @@ jobs:
       - name: test dockcross
         run: |
             ./dockcross bash -c "echo hello world"
-            ./dockcross bash -c "uname -a"
-            ./dockcross bash -c "find . 2>&1"
+
+      - name: run install
+        run: |
+            ./dockcross bash ./dockcross_buildtest.sh
+    #         ./dockcross bash -c "uname -a"
+    #         ./dockcross bash -c "find . 2>&1"
     
 
-      - name: test dockcross
-        run: |
-            ./dockcross bash -c "ct-ng build 2>&1 || echo could not run ct-ng build"
+    #   - name: test dockcross
+    #     run: |
+    #         ./dockcross bash -c "ct-ng build 2>&1 || echo could not run ct-ng build"
 
             
 
-    #   - name: install conan
-    #     run: |
-    #         ./dockcross pip install conan
-    #         ./dockcross bash -c "conan version || echo could not run conan version"
-    #         ./dockcross conan profile new --detect default
+    # #   - name: install conan
+    # #     run: |
+    # #         ./dockcross pip install conan
+    # #         ./dockcross bash -c "conan version || echo could not run conan version"
+    # #         ./dockcross conan profile new --detect default
+
+    # #   - name: install libffi
+    # #     run: |
+    # #         ./dockcross bash -c "conan --version || conan version || echo could not run conan version"
+    # #         ./dockcross bash -c "conan profile detect --force && conan install . --output-folder=build --build=missing || echo notv2"
+    # #         # if conanv1 we don't really need to do a profile
+    # #         ./dockcross bash -c "(mkdir -p /home/runner/.conan/; echo 'conan-center https://center.conan.io False' >> /home/runner/.conan/registry.txt && conan install . --build=missing) || echo notv1"
+    # #         # do a v2 conan install
+    # #         ./dockcross bash -c "conan install . --output-folder=build --build=missing --name libffi --version 3.4.4 || echo notv2"
+    # #         # do a v1 conan install
+    # #         ./dockcross bash -c "conan install . --build=missing libffi/3.4.4@conan/stable || echo notv1"
+            
 
     #   - name: install libffi
     #     run: |
-    #         ./dockcross bash -c "conan --version || conan version || echo could not run conan version"
-    #         ./dockcross bash -c "conan profile detect --force && conan install . --output-folder=build --build=missing || echo notv2"
-    #         # if conanv1 we don't really need to do a profile
-    #         ./dockcross bash -c "(mkdir -p /home/runner/.conan/; echo 'conan-center https://center.conan.io False' >> /home/runner/.conan/registry.txt && conan install . --build=missing) || echo notv1"
-    #         # do a v2 conan install
-    #         ./dockcross bash -c "conan install . --output-folder=build --build=missing --name libffi --version 3.4.4 || echo notv2"
-    #         # do a v1 conan install
-    #         ./dockcross bash -c "conan install . --build=missing libffi/3.4.4@conan/stable || echo notv1"
-            
-
-      - name: install libffi
-        run: |
-            ./dockcross bash -c "
-                wget https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz
-                  tar xzf libffi-3.4.6.tar.gz
-                    cd libffi-3.4.6
-                   ./configure --prefix=/usr
-                   make
-                   make install
-                   "
+    #         ./dockcross bash -c "
+    #             wget https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz
+    #               tar xzf libffi-3.4.6.tar.gz
+    #                 cd libffi-3.4.6
+    #                ./configure --prefix=/usr
+    #                make
+    #                make install
+    #                "
 
           
 
-        #     # Conan v1 commands
-        #     ./dockcross bash -c "mkdir -p /home/runner/.conan/; echo 'conan-center https://center.conan.io False' >> /home/runner/.conan/registry.txt"
-        #   else
-        #     # Conan v2 commands
-        #     ./dockcross bash -c "conan config set general.skip_ssl_verification=True || echo could not set ssl_verify"
-        #   fi
-        #   "
-        #     # ./dockcross bash -c "conan config set general.ssl_verify=False || echo could not set ssl_verify"
-            # ./dockcross bash -c "mkdir -p /home/runner/.conan/ || echo cant mkdir; echo 'conan-center https://center.conan.io False' >> /home/runner/.conan/registry.txt"
-            # # ./dockcross bash -c "cat /home/runner/.conan/registry.txt"
-            # ./dockcross bash -c "mkdir -p /home/runner/.conan/; echo 'conan-center https://center.conan.io False' >> /home/runner/.conan/registry.txt && conan install . --build=missing"
+    #     #     # Conan v1 commands
+    #     #     ./dockcross bash -c "mkdir -p /home/runner/.conan/; echo 'conan-center https://center.conan.io False' >> /home/runner/.conan/registry.txt"
+    #     #   else
+    #     #     # Conan v2 commands
+    #     #     ./dockcross bash -c "conan config set general.skip_ssl_verification=True || echo could not set ssl_verify"
+    #     #   fi
+    #     #   "
+    #     #     # ./dockcross bash -c "conan config set general.ssl_verify=False || echo could not set ssl_verify"
+    #         # ./dockcross bash -c "mkdir -p /home/runner/.conan/ || echo cant mkdir; echo 'conan-center https://center.conan.io False' >> /home/runner/.conan/registry.txt"
+    #         # # ./dockcross bash -c "cat /home/runner/.conan/registry.txt"
+    #         # ./dockcross bash -c "mkdir -p /home/runner/.conan/; echo 'conan-center https://center.conan.io False' >> /home/runner/.conan/registry.txt && conan install . --build=missing"
 
 
-      - name: Build with CMake
-        run: |
-            # ./dockcross bash -c "find . -name '*.cmake' "
-            ./dockcross bash -c "export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH
-                                find /usr 2>&1 | grep libffi
-                                find /work 2>&1 | grep libffi
-                                find . 2>&1 | grep libffi
-                                export dir_with_pc=$(dirname $(find /work 2>&1 | grep libffi.pc))
-                                echo $dir_with_pc
-                                export PKG_CONFIG_PATH=$dir_with_pc:$PKG_CONFIG_PATH
-                                export LD_LIBRARY_PATH=$dir_with_pc:$LD_LIBRARY_PATH
-                                export CMAKE_PREFIX_PATH=$dir_with_pc:$CMAKE_PREFIX_PATH
-                                export CMAKE_LIBRARY_PATH=$dir_with_pc:$CMAKE_LIBRARY_PATH
-                                export CMAKE_INCLUDE_PATH=$dir_with_pc:$CMAKE_INCLUDE_PATH
-                                export CMAKE_MODULE_PATH=$dir_with_pc:$CMAKE_MODULE_PATH
-                                export CMAKE_PREFIX_PATH=$dir_with_pc:$CMAKE_PREFIX_PATH
-                                export CMAKE_LIBRARY_PATH=$dir_with_pc:$CMAKE_LIBRARY_PATH
-                                 mkdir -p build && cd build && cmake .. && make"
+    #   - name: Build with CMake
+    #     run: |
+    #         # ./dockcross bash -c "find . -name '*.cmake' "
+    #         ./dockcross bash -c "export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH
+    #                             find /usr 2>&1 | grep libffi
+    #                             find /work 2>&1 | grep libffi
+    #                             find . 2>&1 | grep libffi
+    #                             export dir_with_pc=$(dirname $(find /work 2>&1 | grep libffi.pc))
+    #                             echo $dir_with_pc
+    #                             export PKG_CONFIG_PATH=$dir_with_pc:$PKG_CONFIG_PATH
+    #                             export LD_LIBRARY_PATH=$dir_with_pc:$LD_LIBRARY_PATH
+    #                             export CMAKE_PREFIX_PATH=$dir_with_pc:$CMAKE_PREFIX_PATH
+    #                             export CMAKE_LIBRARY_PATH=$dir_with_pc:$CMAKE_LIBRARY_PATH
+    #                             export CMAKE_INCLUDE_PATH=$dir_with_pc:$CMAKE_INCLUDE_PATH
+    #                             export CMAKE_MODULE_PATH=$dir_with_pc:$CMAKE_MODULE_PATH
+    #                             export CMAKE_PREFIX_PATH=$dir_with_pc:$CMAKE_PREFIX_PATH
+    #                             export CMAKE_LIBRARY_PATH=$dir_with_pc:$CMAKE_LIBRARY_PATH
+    #                              mkdir -p build && cd build && cmake .. && make"
 
 
-      - name: Test with CTest
-        run: |
-            ./dockcross bash -c "ctest --test-dir build --output-on-failure"
+    #   - name: Test with CTest
+    #     run: |
+    #         ./dockcross bash -c "ctest --test-dir build --output-on-failure"
 
       - uses: actions/upload-artifact@v3
         with:
