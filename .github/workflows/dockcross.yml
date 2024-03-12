@@ -1,5 +1,8 @@
 name: Cross-Platform Build and Test
 
+permissions:
+  contents: write
+
 on:
     push:
         branches:
