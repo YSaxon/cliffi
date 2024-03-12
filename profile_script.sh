@@ -28,6 +28,9 @@ COMPILER=$(echo "${CC_BASENAME}" | rev | cut -d '-' -f 1 | rev)
 ARCH=$(echo ${ARCH} | sed -e 's/powerpc/ppc/' -e 's/i686/x86/' -e 's/i386/x86/' -e 's/aarch64/armv8/' -e 's/xtensa$/xtensalx7/' -e 's/armv5$/armv5el/') #not sure about extensa but worth a try
 
 
+#Possible values are ['Windows', 'WindowsStore', 'WindowsCE', 'Linux', 'iOS', 'watchOS', 'tvOS', 'visionOS', 'Macos', 'Android', 'FreeBSD', 'SunOS', 'AIX', 'Arduino', 'Emscripten', 'Neutrino', 'baremetal', 'VxWorks']
+OS=$(echo ${OS} | sed -e 's/Darwin/Macos/' -e 's/W64/Windows/')
+
 # if there is a var ANDROID_API
 if [ -n "${ANDROID_API}" ]; then
     OS="Android"
