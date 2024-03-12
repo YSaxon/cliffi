@@ -47,8 +47,12 @@ jobs:
             ./dockcross bash -c "echo hello world"
             ./dockcross bash -c "uname -a"
             ./dockcross bash -c "find . 2>&1"
+    
 
-       
+      - name: test dockcross
+        run: |
+            ./dockcross ct-ng build 2>&1
+
             
 
     #   - name: install conan
