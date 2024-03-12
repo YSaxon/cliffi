@@ -6,32 +6,19 @@ cp "$HOME/.conan2/profiles/default" "$HOME/.conan2/profiles/build"
 # Define the profile path
 PROFILE_PATH="$HOME/.conan2/profiles/build"
 
-# # Check if the CC variable is set
-# if [ -z "${CC}" ]; then
-#     echo "The CC environment variable is not set."
-#     exit 1
-# fi
 
-# # Extract the architecture from the CC environment variable
-ARCH=$(basename ${CC} | cut -d '-' -f 1)
-OS=$(basename ${CC} | rev | cut -d '-' -f 3 | rev)
-COMPILER=$(basename ${CC} | rev | cut -d '-' -f 1 | rev)
-
-
-# sed in place the arch, os, and compiler
-#if powerpc is in arch, replace with ppc
-
-#capitalize the first letter of the os
-
-#if no commas in CC, then use the CMAKE_TOOLCHAIN_FILE
-if [[ $CC != *"-"* ]]; then
+CC_BASENAME=$(basename "${CC}")
+#if no dashes in CC, then use the CMAKE_TOOLCHAIN_FILE method
+if [[ $CC_BASENAME != *"-"*"-"* ]]; then
+    echo "Using CMAKE_TOOLCHAIN_FILE method to set parameters"
     ARCH=$(cat $CMAKE_TOOLCHAIN_FILE | grep -oP 'CMAKE_SYSTEM_PROCESSOR \K\w+')
     OS=$(cat $CMAKE_TOOLCHAIN_FILE | grep -oP 'CMAKE_SYSTEM_NAME \K\w+')
 else
-    ARCH=$(basename ${CC} | cut -d '-' -f 1)
-    OS=$(basename ${CC} | rev | cut -d '-' -f 3 | rev)
+    echo "Using CC method to set parameters"
+    ARCH=$(echo ${CC_BASENAME} | cut -d '-' -f 1)
+    OS=$(echo ${CC_BASENAME} | rev | cut -d '-' -f 3 | rev)
     OS=$(echo ${OS} | sed -e 's/\b\(.\)/\u\1/')
-    COMPILER=$(basename ${CC} | rev | cut -d '-' -f 1 | rev)
+    COMPILER=$(echo ${CC_BASENAME} | rev | cut -d '-' -f 1 | rev)
 fi
 
 # allowed archs are ['x86', 'x86_64', 'ppc32be', 'ppc32', 'ppc64le', 'ppc64', 'armv4', 'armv4i', 'armv5el', 'armv5hf', 'armv6', 'armv7', 'armv7hf', 'armv7s', 'armv7k', 'armv8', 'armv8_32', 'armv8.3', 'arm64ec', 'sparc', 'sparcv9', 'mips', 'mips64', 'avr', 's390', 's390x', 'asm.js', 'wasm', 'sh4le', 'e2k-v2', 'e2k-v3', 'e2k-v4', 'e2k-v5', 'e2k-v6', 'e2k-v7', 'riscv64', 'riscv32', 'xtensalx6', 'xtensalx106', 'xtensalx7']
