@@ -11,7 +11,6 @@
 #endif
 #include <stdio.h>
 #include <stdlib.h>
-#include <dlfcn.h>
 #include "types_and_utils.h"
 
 ffi_type* arg_type_to_ffi_type(const ArgInfo* arg, bool is_inside_struct); // putting this declaration here instead of header since it's only used in this file
@@ -223,10 +222,6 @@ void fix_struct_pointers(ArgInfo* struct_arg, void* raw_memory) {
 
 // Main function to invoke a dynamic function call
 int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
-    if (!func) {
-        fprintf(stderr, "Failed to find function %s in library: %s\n", call_info->function_name, dlerror());
-        return -1;
-    }
 
     ffi_cif cif;
     ffi_type* args[call_info->info.arg_count];

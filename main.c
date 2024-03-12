@@ -1,4 +1,3 @@
-#include <dlfcn.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,6 +7,12 @@
 #include "invoke_handler.h"
 #include "return_formatter.h"
 #include "types_and_utils.h"
+
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <dlfcn.h>
+#endif
 
 const char* NAME = "cliffi";
 const char* VERSION = "0.5.7";
@@ -126,14 +131,45 @@ int main(int argc, char* argv[]) {
 
     // Step 3: Invoke the specified function
 
-    void* lib_handle = dlopen(call_info->library_path, RTLD_LAZY);
-    if (!lib_handle) {
-        fprintf(stderr, "Failed to load library: %s\n", dlerror());
-        return -1;
-    }
+    #ifdef _WIN32
+        HMODULE lib_handle;
+    #else
+        void* lib_handle;
+    #endif
+
+    // Loading the library
+    #ifdef _WIN32
+        lib_handle = LoadLibrary(call_info->library_path);
+        if (!lib_handle) {
+            fprintf(stderr, "Failed to load library: %lu\n", GetLastError());
+            return -1;
+        }
+    #else
+        lib_handle = dlopen(call_info->library_path, RTLD_LAZY);
+        if (!lib_handle) {
+            fprintf(stderr, "Failed to load library: %s\n", dlerror());
+            return -1;
+        }
+    #endif
 
     void (*func)(void);
-    *(void**)(&func) = dlsym(lib_handle, call_info->function_name);
+    #ifdef _WIN32
+        *(FARPROC*)&func = GetProcAddress(lib_handle, call_info->function_name);
+    #else
+        *(void**)(&func) = dlsym(lib_handle, call_info->function_name);
+    #endif
+
+    if (!func) {
+        fprintf(stderr, "Failed to load symbol: %s\n", call_info->function_name);
+        #ifdef _WIN32
+            fprintf(stderr, "Failed to find function: %lu\n", GetLastError());
+            FreeLibrary(lib_handle);
+        #else
+            fprintf(stderr, "Failed to find function: %s\n", dlerror());
+            dlclose(lib_handle);
+        #endif
+        exit(1);
+    }
 
     int invoke_result = invoke_dynamic_function(call_info,func);
     if (invoke_result != 0) {
@@ -168,7 +204,11 @@ int main(int argc, char* argv[]) {
     // freeFunctionCallInfo(call_info); 
 
     // Wait to close the library until after we're done with everything in case it returns pointers to literals stored in the library
-    dlclose(lib_handle);
+        #ifdef _WIN32
+            FreeLibrary(lib_handle);
+        #else
+            dlclose(lib_handle);
+        #endif
 
     return invoke_result;
 }
