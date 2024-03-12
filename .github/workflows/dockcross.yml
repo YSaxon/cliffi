@@ -60,9 +60,9 @@ jobs:
             # if conanv1 we don't really need to do a profile
             ./dockcross bash -c "(mkdir -p /home/runner/.conan/; echo 'conan-center https://center.conan.io False' >> /home/runner/.conan/registry.txt && conan install . --build=missing) || echo notv1"
             # do a v2 conan install
-            ./dockcross bash -c "conan install . --output-folder=build --build=missing || echo notv2"
+            ./dockcross bash -c "conan install . --output-folder=build --build=missing --name libffi --version 3.4.4 || echo notv2"
             # do a v1 conan install
-            ./dockcross bash -c "conan install . --build=missing || echo notv1"
+            ./dockcross bash -c "conan install . --build=missing libffi/3.4.4@conan/stable || echo notv1"
             
 
 
