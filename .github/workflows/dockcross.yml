@@ -12,21 +12,21 @@ jobs:
     strategy:
       matrix:
         dockcross_image:
-            - dockcross/linux-armv7
-            - dockcross/linux-arm64
-            - dockcross/linux-ppc64le
-            - dockcross/linux-x64
-            - dockcross/linux-x86
-            - dockcross/linux-mips
-            - dockcross/linux-s390x
-            - dockcross/linux-armv5
-            - dockcross/linux-armv6
-            - dockcross/linux-s390x
-            # - dockcross/linux-xtensa-uclibc	
-            - dockcross/android-arm
-            - dockcross/android-arm64
-            - dockcross/android-x86
-            - dockcross/android-x86_64
+            - linux-armv7
+            - linux-arm64
+            - linux-ppc64le
+            - linux-x64
+            - linux-x86
+            - linux-mips
+            - linux-s390x
+            - linux-armv5
+            - linux-armv6
+            - linux-s390x
+            - linux-xtensa-uclibc	
+            - android-arm
+            - android-arm64
+            - android-x86
+            - android-x86_64
 
             
         #   - dockcross/windows-static-x64
@@ -38,7 +38,7 @@ jobs:
 
       - name: install helper script
         run: |
-            docker run --rm ${{ matrix.dockcross_image }} > ./dockcross
+            docker run --rm dockcross/${{ matrix.dockcross_image }} > ./dockcross
             chmod +x ./dockcross
 
       - name: test dockcross
@@ -125,12 +125,12 @@ jobs:
     #   - name: Test with CTest
     #     run: |
     #         ./dockcross bash -c "ctest --test-dir build --output-on-failure"
-      - name: Extract Substring After Slash
-        id: extract_substring
-        run: echo "substring=${{ matrix.dockcross_image }} | sed 's|.*/||'" >> $GITHUB_OUTPUT
+      # - name: Extract Substring After Slash
+      #   id: extract_substring
+      #   run: echo "substring=${{ matrix.dockcross_image }} | sed 's|.*/||'" >> $GITHUB_OUTPUT
 
 
       - uses: actions/upload-artifact@v3
         with:
-          name: artifacts-${{ steps.extract_substring.outputs.substring }}
+          name: artifacts-${{ matrix.dockcross_image }}
           path: build/cliffi
