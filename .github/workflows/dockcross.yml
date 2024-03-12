@@ -129,8 +129,26 @@ jobs:
       #   id: extract_substring
       #   run: echo "substring=${{ matrix.dockcross_image }} | sed 's|.*/||'" >> $GITHUB_OUTPUT
 
+      - name: version
+        id: version
+        # parse the VERSION from main.c
+        run: echo ::set-output name=version::$(grep -oP 'VERSION = "\K[^"]+' main.c)-$(echo ${{ github.run_number }} | sed 's|.*/||')
 
-      - uses: actions/upload-artifact@v3
+      - name: release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: artifacts-${{ matrix.dockcross_image }}
-          path: build/cliffi
+          tag_name: ${{ steps.version.outputs.version }}
+          release_name: Release ${{ steps.version.outputs.version }}
+          draft: true
+          prerelease: true
+
+      - uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.release.outputs.upload_url }}
+          asset_path: build/cliffi
+          asset_name: cliffi-${{ matrix.dockcross_image }}
+          asset_content_type: application/zip
+          asset_label: cliffi-${{ matrix.dockcross_image }}
+          token: ${{ secrets.GITHUB_TOKEN }}
