@@ -18,7 +18,7 @@ jobs:
             - dockcross/linux-x64
             # - dockcross/linux-x86
             # - dockcross/linux-mips
-            - dockcross/linux-mipsel
+            # - dockcross/linux-mipsel
             # - dockcross/linux-s390x
             # - dockcross/linux-armv5
             # - dockcross/linux-armv6
