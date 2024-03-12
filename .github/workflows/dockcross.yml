@@ -47,15 +47,15 @@ jobs:
             ./dockcross bash -c "echo hello world"
             
 
-      - name: install conan
-        run: |
-            ./dockcross pip install conan
-            ./dockcross bash -c "conan version || echo could not run conan version"
-            ./dockcross conan profile new --detect default
+    #   - name: install conan
+    #     run: |
+    #         ./dockcross pip install conan
+    #         ./dockcross bash -c "conan version || echo could not run conan version"
+    #         ./dockcross conan profile new --detect default
 
       - name: install libffi
         run: |
-            ./dockcross bash -c "conan install . --build=missing -pr default"
+            ./dockcross bash -c "conan install . --build=missing"
 
 
       - name: Build with CMake
