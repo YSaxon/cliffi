@@ -35,22 +35,20 @@ jobs:
         #   - dockcross/web-wasm
 
     steps:
-        - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-        - name: install helper script
+      - name: install helper script
         run: |
             docker run --rm ${{ matrix.dockcross_image }} > ./dockcross
             chmod +x ./dockcross
-            
-        - name: Run a few commands
+
+      - name: test dockcross
         run: |
             ./dockcross bash -c "echo hello world"
             ./dockcross bash -c "uname -a"
             ./dockcross bash -c "find . 2>&1"
 
-        - name: setup crosstoolng
-        run: |
-            ./dockcross bash -c "apt-get update && apt-get install -y crosstool-ng"
+       
             
 
     #   - name: install conan
@@ -71,18 +69,18 @@ jobs:
     #         ./dockcross bash -c "conan install . --build=missing libffi/3.4.4@conan/stable || echo notv1"
             
 
-        - name: install libffi
+      - name: install libffi
         run: |
             ./dockcross bash -c "
                 wget https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz
-                    tar xzf libffi-3.4.6.tar.gz
+                  tar xzf libffi-3.4.6.tar.gz
                     cd libffi-3.4.6
-                    ./configure --prefix=/usr
-                    make
-                    make install
-                    "
+                   ./configure --prefix=/usr
+                   make
+                   make install
+                   "
 
-            
+          
 
         #     # Conan v1 commands
         #     ./dockcross bash -c "mkdir -p /home/runner/.conan/; echo 'conan-center https://center.conan.io False' >> /home/runner/.conan/registry.txt"
@@ -97,7 +95,7 @@ jobs:
             # ./dockcross bash -c "mkdir -p /home/runner/.conan/; echo 'conan-center https://center.conan.io False' >> /home/runner/.conan/registry.txt && conan install . --build=missing"
 
 
-        - name: Build with CMake
+      - name: Build with CMake
         run: |
             # ./dockcross bash -c "find . -name '*.cmake' "
             ./dockcross bash -c "export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH
@@ -114,14 +112,14 @@ jobs:
                                 export CMAKE_MODULE_PATH=$dir_with_pc:$CMAKE_MODULE_PATH
                                 export CMAKE_PREFIX_PATH=$dir_with_pc:$CMAKE_PREFIX_PATH
                                 export CMAKE_LIBRARY_PATH=$dir_with_pc:$CMAKE_LIBRARY_PATH
-                                    mkdir -p build && cd build && cmake .. && make"
+                                 mkdir -p build && cd build && cmake .. && make"
 
 
-        - name: Test with CTest
+      - name: Test with CTest
         run: |
             ./dockcross bash -c "ctest --test-dir build --output-on-failure"
 
-        - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v3
         with:
-            name: artifacts-${{ matrix.dockcross_image }}
-            path: build/
+          name: artifacts-${{ matrix.dockcross_image }}
+          path: build/
