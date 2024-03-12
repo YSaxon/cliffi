@@ -95,7 +95,7 @@ jobs:
         run: |
             # ./dockcross bash -c "find . -name '*.cmake' "
             ./dockcross bash -c "export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH
-                                find /usr/lib 2>&1 | grep libffi
+                                find /usr 2>&1 | grep libffi
                                  mkdir -p build && cd build && cmake .. && make"
 
 
