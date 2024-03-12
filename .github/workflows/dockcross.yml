@@ -43,14 +43,14 @@ jobs:
         run: |
             ./dockcross bash -c "echo hello world"
 
-      - name: createprofile_and_install_through_conan
-        run: |
-            ./dockcross bash ./profile_script.sh
-            sleep 3s
+      # - name: createprofile_and_install_through_conan
+      #   run: |
+      #       ./dockcross bash ./profile_script.sh
+      #       sleep 3s
 
       - name: conaninstall
         run: |
-            ./dockcross bash -c "conan install . --output-folder=build --build=missing -pr build"
+            ./dockcross bash -c "./profile_script.sh && conan install . --output-folder=build --build=missing -pr build"
 
       - name: updatecmake
         run: |
