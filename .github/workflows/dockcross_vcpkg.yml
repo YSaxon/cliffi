@@ -53,6 +53,10 @@ jobs:
     #         ./dockcross bash -c "conan version || echo could not run conan version"
     #         ./dockcross conan profile new --detect default
 
+      - name: install unzip
+        run: |
+                ./dockcross bash -c "apt-get update && apt-get install -y unzip || sudo apt-get install -y curl zip unzip tar || sudo dnf install -y curl zip unzip tar || sudo yum install -y curl zip unzip tar || sudo zypper install -y curl zip unzip tar || sudo pacman -S --noconfirm curl zip unzip tar cmake ninja || apk add --no-cache build-base cmake ninja zip unzip curl git"
+
       - name: install libffi
         run: |
             ./dockcross bash -c "git clone https://github.com/microsoft/vcpkg"
