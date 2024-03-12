@@ -43,9 +43,29 @@ jobs:
         run: |
             ./dockcross bash -c "echo hello world"
 
-      - name: run install
+      - name: createprofile
         run: |
-            ./dockcross bash ./dockcross_buildtest.sh
+            ./dockcross bash ./profile_script.sh
+
+      - name: conaninstall
+        run: |
+            ./dockcross bash -c "conan install . --output-folder=build --build=missing -pr build"
+
+      - name: updatecmake
+        run: |
+            ./dockcross bash ./update_cmake.sh
+
+      - name: cmake
+        run: |
+            ./dockcross bash -c "mkdir -p build && rm -rf build/* CMakeCache.txt CMakeFiles && cd build && cmake .."
+
+      - name: make
+        run: |
+            ./dockcross bash -c "cd build && make"
+
+      - name: ctest
+        run: |
+            ./dockcross bash -c "cd build && ctest --output-on-failure"
 
       - name: version
         id: version
