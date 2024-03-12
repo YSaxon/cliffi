@@ -70,5 +70,18 @@ fi
     echo "LD=${LD:-${CC/gcc/ld}}"
 } >> "$PROFILE_PATH"
 
+
+SETTINGS_FILE="$HOME/.conan/settings.yml"
+COMPILER_VERSION=$(grep -oP 'compiler.version=\K[^ ]+' "$HOME/.conan2/profiles/default")
+
+#if compiler == gcc and version > 13.2, set version to 13.2 in both profiles
+if [ "$COMPILER" == "gcc" ]; then
+    if [ $(echo "$COMPILER_VERSION > 13.2" | bc -l) -eq 1 ]; then
+        echo "Compiler version is greater than 13.2, setting version to 13.2"
+        sed -i "s/compiler.version=.*\$/compiler.version=13.2/" "$PROFILE_PATH"
+        sed -i "s/compiler.version=.*\$/compiler.version=13.2/" "$HOME/.conan2/profiles/default"
+    fi
+fi
+
 echo "Updated Conan profile at $PROFILE_PATH"
 
