@@ -220,6 +220,17 @@ void fix_struct_pointers(ArgInfo* struct_arg, void* raw_memory) {
     }
 }
 
+char* ffi_status_to_string(ffi_status status) {
+    switch (status) {
+        case FFI_OK: return "FFI_OK";
+        case FFI_BAD_TYPEDEF: return "FFI_BAD_TYPEDEF";
+        case FFI_BAD_ABI: return "FFI_BAD_ABI";
+        case FFI_BAD_ARGTYPE : return "FFI_BAD_ARGTYPE";
+        default: return "Unknown status";
+    }
+}
+
+
 void handle_promoting_vararg_if_necessary(ffi_type** arg_type_ptr, ArgInfo* arg, int argnum) {
 
     if (arg->pointer_depth > 0 || arg->is_array) return; // we don't need to promote pointers or arrays (which in functions are passed as pointers)
@@ -306,8 +317,8 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
     }
 
     if (status != FFI_OK) {
-        fprintf(stderr, "ffi_prep_cif failed.\n");
-        return -1;
+        fprintf(stderr, "ffi_prep_cif failed. Return status = %s\n", ffi_status_to_string(status));
+        exit(1);
     }
 
     ffi_call(&cif, func, rvalue, values);
