@@ -447,6 +447,26 @@ void my_printf(const char* format, ...) {
     va_end(args);
 }
 
+void varargs_structs(int count, ...) {
+    va_list args;
+    va_start(args, count);
+    for(int i = 0; i < count; i++) {
+        Point p = va_arg(args, Point);
+        printf("got vararg %d: %d, %f\n", i, p.x, p.y);
+    }
+    va_end(args);
+}
+
+void varargs_p_structs(int count, ...) {
+    va_list args;
+    va_start(args, count);
+    for(int i = 0; i < count; i++) {
+        Point* p = va_arg(args, Point*);
+        printf("got vararg %d: %d, %f\n", i, p->x, p->y);
+    }
+    va_end(args);
+}
+
 // Entry point to prevent the compiler from complaining when compiling as a shared library
 // This function will not be called; it's just to satisfy the linker.
 int main() {

@@ -284,6 +284,18 @@ add_test(NAME func_with_int_varargs #
 set_tests_properties(func_with_int_varargs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 0: 1")
 set_tests_properties(func_with_int_varargs PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 55")
 
+add_test(NAME varargs_structs #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v varargs_structs 3 ... -S: 1 2.2 :S -S: 3 4.4 :S -S: 5 6.6 :S )
+set_tests_properties(varargs_structs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 0: 1, 2.2.*")
+set_tests_properties(varargs_structs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 1: 3, 4.4.*")
+set_tests_properties(varargs_structs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 2: 5, 6.6.*")
+
+add_test(NAME varargs_p_structs #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v varargs_p_structs 3 ... -pS: 1 2.2 :S -pS: 3 4.4 :S -pS: 5 6.6 :S )
+set_tests_properties(varargs_p_structs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 0: 1, 2.2.*")
+set_tests_properties(varargs_p_structs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 1: 3, 4.4.*")
+set_tests_properties(varargs_p_structs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 2: 5, 6.6.*")
+
 add_test(NAME my_printf_novarargs #
     COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v my_printf -s "Hello" ...)
 set_tests_properties(my_printf_novarargs PROPERTIES PASS_REGULAR_EXPRESSION "Hello")
