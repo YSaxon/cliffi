@@ -467,6 +467,18 @@ void varargs_p_structs(int count, ...) {
     va_end(args);
 }
 
+char get_char() {
+    return 'a';
+}
+
+short get_short() {
+    return 1;
+}
+
+float get_float() {
+    return 1.5;
+}
+
 // Entry point to prevent the compiler from complaining when compiling as a shared library
 // This function will not be called; it's just to satisfy the linker.
 int main() {
