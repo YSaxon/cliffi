@@ -427,13 +427,23 @@ const char* buffer_as_return(const char* buffer, size_t size) {
 }
 
 
-void func_with_varargs(int count, ...) {
+int sum_func_with_int_varargs(int count, ...) {
     va_list args;
+    int sum = 0;
     va_start(args, count);
     for(int i = 0; i < count; i++) {
         int arg = va_arg(args, int);
-        printf("Arg %d: %d\n", i, arg);
+        sum += arg;
+        printf("got vararg %d: %d\n", i, arg);
     }
+    va_end(args);
+    return sum;
+}
+
+void my_printf(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
     va_end(args);
 }
 
