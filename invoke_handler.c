@@ -300,9 +300,6 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
 
     ffi_type* return_type = arg_type_to_ffi_type(&call_info->info.return_var, false);
 
-    if (return_type->size < ffi_type_sint.size && return_type->type != FFI_TYPE_STRUCT && return_type->type != FFI_TYPE_COMPLEX) {
-          return_type = &ffi_type_sint; // if the return type is too small then we need to promote it to int
-    }
 
     void* rvalue;
     if (call_info->info.return_var.type == TYPE_STRUCT) {
@@ -329,6 +326,19 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
 
     if (call_info->info.return_var.type == TYPE_STRUCT) {
         fix_struct_pointers(&call_info->info.return_var, rvalue);
+    } else if (return_type->size < ffi_type_sint.size && call_info->info.return_var.type != TYPE_VOID && call_info->info.return_var.type != TYPE_FLOAT) {
+        // this is really only necessary for rare architectures, but it's a good idea to do it anyway
+        if (call_info->info.return_var.type==TYPE_CHAR) {
+            call_info->info.return_var.value.c_val = (char)call_info->info.return_var.value.i_val;
+        } else if (call_info->info.return_var.type==TYPE_SHORT) {
+            call_info->info.return_var.value.s_val = (short)call_info->info.return_var.value.i_val;
+        } else if (call_info->info.return_var.type==TYPE_UCHAR) {
+            call_info->info.return_var.value.uc_val = (unsigned char)call_info->info.return_var.value.ui_val;
+        } else if (call_info->info.return_var.type==TYPE_USHORT) {
+            call_info->info.return_var.value.us_val = (unsigned short)call_info->info.return_var.value.ui_val;
+        } else {
+            fprintf(stderr, "Warning: sizeof(return type) < sizeof(int), but we couldn't automatically promote it, so on some rare (BE?) architectures it may malfunction\n");
+        }
     }
 
     return 0;
