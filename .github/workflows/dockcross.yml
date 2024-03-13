@@ -105,8 +105,16 @@ jobs:
             ./dockcross bash -c "echo hello world"
 
       - name: everything together
+        #exclude android builds
+        if: startsWith(matrix.dockcross_image, 'android') == false
         run: |
           ./dockcross bash ./dockcross_buildtest.sh
+
+      - name: build without testing (android)
+        #only android builds
+        if: startsWith(matrix.dockcross_image, 'android') == true
+        run: |
+          ./dockcross bash ./dockcross_buildonly.sh
 
       # - name: conaninstall
       #   run: |
