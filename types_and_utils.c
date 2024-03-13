@@ -615,6 +615,7 @@ void log_function_call_info(FunctionCallInfo* info){
     printf("\n");
     printf("\tArg Count: %d\n", info->info.arg_count);
     for (int i = 0; i < info->info.arg_count; i++) {
+        if (info->info.vararg_start==i) printf("\tVarargs start here\n");
         printf("\tArg %d: %s ", i,info->info.args[i].explicitType? "(explicit)" : "(inferred)");
         format_and_print_arg_type(&info->info.args[i]);//, format_buffer, buffer_size);
         printf(" = ");
