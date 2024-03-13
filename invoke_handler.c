@@ -248,7 +248,16 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
         rvalue = &call_info->info.return_var.value;
     }
 
-    if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, call_info->info.arg_count, return_type, args) != FFI_OK) {
+
+    ffi_status status;
+    if (call_info->info.vararg_start!=-1) {
+        fprintf(stderr,"vararg start: %d\n", call_info->info.vararg_start);
+        status = ffi_prep_cif_var(&cif, FFI_DEFAULT_ABI, call_info->info.vararg_start, call_info->info.arg_count, return_type, args);
+    } else {
+        status = ffi_prep_cif(&cif, FFI_DEFAULT_ABI, call_info->info.arg_count, return_type, args);
+    }
+
+    if (status != FFI_OK) {
         fprintf(stderr, "ffi_prep_cif failed.\n");
         return -1;
     }

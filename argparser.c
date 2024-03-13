@@ -115,7 +115,7 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
     // ArgInfoContainer* arginfo = info->type == FUNCTION_INFO ? &info->function_info->info : &info->struct_info->info;
     printf("Beginning to parse args (%d remaining)\n", argc);
     bool hit_struct_close = false;
-    int varargs_pos = -1;
+    info->vararg_start = -1;
     int i;
     for (i=0; i < argc; i++) {
         char* argStr = argv[i];
@@ -142,7 +142,7 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
             if (arg.type != TYPE_STRUCT) argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
         
         } else if (strcmp(argStr, "...") == 0) {
-            if (varargs_pos != -1){
+            if (info->vararg_start != -1){
                 fprintf(stderr, "Error: Multiple varargs flags encountered\n");
                 exit(1);
             } else if (is_return){
@@ -152,7 +152,7 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
                 fprintf(stderr, "Error: Varargs flag encountered in struct\n");
                 exit(1);
             }
-            varargs_pos = i;
+            info->vararg_start = i;
             continue;
         } else { // no flag, so we need to infer the type from the value
             infer_arg_type_from_value(&arg, argStr);
