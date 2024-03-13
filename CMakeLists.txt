@@ -350,6 +350,20 @@ add_test(NAME my_printf_with_p_char_and_p_uchar_and_p_short_and_p_ushort_and_p_f
 set_tests_properties(my_printf_with_p_char_and_p_uchar_and_p_short_and_p_ushort_and_p_float_and_p_int_and_p_double_and_p_struct PROPERTIES PASS_REGULAR_EXPRESSION "Hello, 0x.* 0x.* 0x.* 0x.* 0x.* 0x.* 0x.* 0x.*")
 
 
+#test that short types are okay as returns
+add_test(NAME get_char #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} c get_char)
+set_tests_properties(get_char PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: a")
+
+add_test(NAME get_short #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} h get_short)
+set_tests_properties(get_short PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 1")
+
+add_test(NAME get_float #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} f get_float)
+set_tests_properties(get_float PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 1.50*")
+
+
 # these still fail
 # add_test(NAME return_struct_with_embedded_array_complex #
 #     COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} S: i ai3 ac10 i :S return_struct_with_embedded_array )
