@@ -279,6 +279,77 @@ add_test(NAME test_struct_with_embedded_array_pointer #
     COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_struct_with_char_pointer -S: -pac10 h,e,l,l,o,0x00,q :S )
 set_tests_properties(test_struct_with_embedded_array_pointer PROPERTIES PASS_REGULAR_EXPRESSION "s: hello")
 
+add_test(NAME func_with_int_varargs #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i sum_func_with_int_varargs 10 ... 1 2 3 4 5 6 7 8 9 10)
+set_tests_properties(func_with_int_varargs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 0: 1")
+set_tests_properties(func_with_int_varargs PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 55")
+
+add_test(NAME varargs_structs #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v varargs_structs 3 ... -S: 1 2.2 :S -S: 3 4.4 :S -S: 5 6.6 :S )
+set_tests_properties(varargs_structs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 0: 1, 2.2.*")
+set_tests_properties(varargs_structs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 1: 3, 4.4.*")
+set_tests_properties(varargs_structs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 2: 5, 6.6.*")
+
+add_test(NAME varargs_p_structs #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v varargs_p_structs 3 ... -pS: 1 2.2 :S -pS: 3 4.4 :S -pS: 5 6.6 :S )
+set_tests_properties(varargs_p_structs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 0: 1, 2.2.*")
+set_tests_properties(varargs_p_structs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 1: 3, 4.4.*")
+set_tests_properties(varargs_p_structs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 2: 5, 6.6.*")
+
+add_test(NAME my_printf_novarargs #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v my_printf -s "Hello" ...)
+set_tests_properties(my_printf_novarargs PROPERTIES PASS_REGULAR_EXPRESSION "Hello")
+
+add_test(NAME my_printf_string #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v my_printf -s "Hello, %s!" ... "cliffi")
+set_tests_properties(my_printf_string PROPERTIES PASS_REGULAR_EXPRESSION "Hello, cliffi!")
+
+add_test(NAME my_printf_with_intonly #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v my_printf -s "Hello, %d" ... 7)
+set_tests_properties(my_printf_with_intonly PROPERTIES PASS_REGULAR_EXPRESSION "Hello, 7")
+
+add_test(NAME my_printf_with_int #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v my_printf -s "Hello, %s! %d" ... "cliffi" 5)
+set_tests_properties(my_printf_with_int PROPERTIES PASS_REGULAR_EXPRESSION "Hello, cliffi! 5")
+
+add_test(NAME my_printf_with_double #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v my_printf -s "Hello, %s! %f" ... "cliffi" 5.5)
+set_tests_properties(my_printf_with_double PROPERTIES PASS_REGULAR_EXPRESSION "Hello, cliffi! 5.50*")
+
+add_test(NAME my_printf_with_double_and_int #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v my_printf -s "Hello, %s! %f %d" ... "cliffi" 5.5 5)
+set_tests_properties(my_printf_with_double_and_int PROPERTIES PASS_REGULAR_EXPRESSION "Hello, cliffi! 5.50* 5")
+
+add_test(NAME my_printf_with_double_and_int_and_string #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v my_printf -s "Hello, %s! %f %d %s" ... "cliffi" 5.5 5 "cliffi")
+set_tests_properties(my_printf_with_double_and_int_and_string PROPERTIES PASS_REGULAR_EXPRESSION "Hello, cliffi! 5.50* 5 cliffi")
+
+add_test(NAME my_printf_with_double_and_int_and_string_and_int #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v my_printf -s "Hello, %s! %f %d %s %d" ... "cliffi" 5.5 5 "cliffi" 3)
+set_tests_properties(my_printf_with_double_and_int_and_string_and_int PROPERTIES PASS_REGULAR_EXPRESSION "Hello, cliffi! 5.50* 5 cliffi 3")
+
+add_test(NAME my_printf_with_char #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v my_printf -s "Hello, %c" ... -c q)
+set_tests_properties(my_printf_with_char PROPERTIES PASS_REGULAR_EXPRESSION "Hello, q")
+
+add_test(NAME my_printf_with_double_and_int_and_string_and_char #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v my_printf -s "Hello, %s! %f %d %s %c" ... "cliffi" 5.5 5 "cliffi" -c z)
+set_tests_properties(my_printf_with_double_and_int_and_string_and_char PROPERTIES PASS_REGULAR_EXPRESSION "Hello, cliffi! 5.50* 5 cliffi z")
+
+add_test(NAME my_printf_with_double_and_int_and_string_and_char_and_string #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v my_printf -s "Hello, %s! %f %d %s %c %s" ... "cliffi" 5.5 5 "cliffi" -c z "cliffi")
+set_tests_properties(my_printf_with_double_and_int_and_string_and_char_and_string PROPERTIES PASS_REGULAR_EXPRESSION "Hello, cliffi! 5.50* 5 cliffi z cliffi")
+
+add_test(NAME my_printf_with_char_and_uchar_and_short_and_ushort_and_float # test all the types that need upgrading
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v my_printf -s "Hello, %c %c %hd %hu %f" ... -c q -C 0x32 -h 3 -H 4 -f 5.5)
+set_tests_properties(my_printf_with_char_and_uchar_and_short_and_ushort_and_float PROPERTIES PASS_REGULAR_EXPRESSION "Hello, q 2 3 4 5.50*")
+
+add_test(NAME my_printf_with_p_char_and_p_uchar_and_p_short_and_p_ushort_and_p_float_and_p_int_and_p_double_and_p_struct # test with a bunch of pointers
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v my_printf -s "Hello, %p %p %p %p %p %p %p %p" ... -pc q -pC 0x32 -ph 3 -pH 4 -pf 5.5 -pi 6 -pd 7.7 -pS: 8 9.9 :S)
+# can't really test the pointers, but we can test that they are printed
+set_tests_properties(my_printf_with_p_char_and_p_uchar_and_p_short_and_p_ushort_and_p_float_and_p_int_and_p_double_and_p_struct PROPERTIES PASS_REGULAR_EXPRESSION "Hello, 0x.* 0x.* 0x.* 0x.* 0x.* 0x.* 0x.* 0x.*")
+
+
 # these still fail
 # add_test(NAME return_struct_with_embedded_array_complex #
 #     COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} S: i ai3 ac10 i :S return_struct_with_embedded_array )

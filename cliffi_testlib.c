@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -425,6 +426,46 @@ const char* buffer_as_return(const char* buffer, size_t size) {
     return retval;
 }
 
+
+int sum_func_with_int_varargs(int count, ...) {
+    va_list args;
+    int sum = 0;
+    va_start(args, count);
+    for(int i = 0; i < count; i++) {
+        int arg = va_arg(args, int);
+        sum += arg;
+        printf("got vararg %d: %d\n", i, arg);
+    }
+    va_end(args);
+    return sum;
+}
+
+void my_printf(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+}
+
+void varargs_structs(int count, ...) {
+    va_list args;
+    va_start(args, count);
+    for(int i = 0; i < count; i++) {
+        Point p = va_arg(args, Point);
+        printf("got vararg %d: %d, %f\n", i, p.x, p.y);
+    }
+    va_end(args);
+}
+
+void varargs_p_structs(int count, ...) {
+    va_list args;
+    va_start(args, count);
+    for(int i = 0; i < count; i++) {
+        Point* p = va_arg(args, Point*);
+        printf("got vararg %d: %d, %f\n", i, p->x, p->y);
+    }
+    va_end(args);
+}
 
 // Entry point to prevent the compiler from complaining when compiling as a shared library
 // This function will not be called; it's just to satisfy the linker.
