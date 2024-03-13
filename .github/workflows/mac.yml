@@ -1,0 +1,31 @@
+name: MacWindowsx86x64
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [macos-latest]
+        arch: [x86, x64]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+
+    - name: Install Dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: brew install libffi cmake
+
+    - name: Configure CMake (macOS)
+      if: runner.os == 'macOS'
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: cmake --build build --config Release
+
+    - name: Run Tests (macOS & Windows)
+      run: cd build && ctest --output-on-failure

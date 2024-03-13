@@ -1,4 +1,4 @@
-name: RISC-V Build and Test
+name: RISC-V Via Docker
 
 on:
   workflow_dispatch

@@ -16,3 +16,5 @@ Makefile
 cmake_install.cmake
 
 .vscode/
+
+.cache/

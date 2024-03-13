@@ -1,0 +1,38 @@
+name: MacWindowsx86x64
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest]
+        arch: [x86, x64]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - uses: lukka/get-cmake@latest
+
+    - name: Run CMake consuming CMakePreset.json and run vcpkg to build packages
+      uses: lukka/run-cmake@v10
+
+    - name: Install Dependencies (Windows)
+      uses: lukka/run-vcpkg@v11.5
+      with:
+        runVcpkgInstall: true
+        vcpkgJsonGlob: '**/vcpkg.json'
+        vcpkgGitCommitId: 'a42af01b72c28a8e1d7b48107b33e4f286a55ef6'
+
+
+    - name: Configure CMake (Windows)
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: cmake --build build --config Release
+
+    - name: Run Tests (macOS & Windows)
+      run: cd build && ctest --output-on-failure

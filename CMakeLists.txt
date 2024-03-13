@@ -6,22 +6,25 @@ enable_testing()
 # Set C standard
 set(CMAKE_C_STANDARD 99)
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Android" AND ANDROID_ABI STREQUAL "armeabi-v7a")
-message("compiling for Android")
+set(LIBFFI_INCLUDE_DIRS /hardcoded/path/to/libffi/include)
+set(LIBFFI_STATIC_LIB /hardcoded/path/to/libffi/lib/libffi.a)
+#if above hardcoded path works then good, otherwise use pkg-config
+if(EXISTS ${LIBFFI_STATIC_LIB} AND EXISTS ${LIBFFI_INCLUDE_DIRS})
+    message("Hardcoded")
+    set(LIBFFI_LIBRARIES ${LIBFFI_STATIC_LIB})
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Android" AND ANDROID_ABI STREQUAL "armeabi-v7a")
+    message("compiling for Android")
     set(LIBFFI_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libffi-3.4.6-android-27-armeabi-v7a/include)
-# set it to static compile against prebuilt libffi instead of shared
     set(LIBFFI_STATIC_LIB ${CMAKE_SOURCE_DIR}/libffi-3.4.6-android-27-armeabi-v7a/lib/libffi.a)
     set(LIBFFI_LIBRARIES ${LIBFFI_STATIC_LIB})
 else()
-    message("Not Android")
+    message("Not Hardcoded")
     find_package(PkgConfig REQUIRED)
-    pkg_search_module(LIBFFI REQUIRED libffi)
+    pkg_search_module(LIBFFI libffi)
 endif()
 
 
 find_library(DL_LIBRARY NAMES dl)
-
-
 
 # Include directories
 include_directories(${LIBFFI_INCLUDE_DIRS})
@@ -41,6 +44,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 # Target executable
 add_executable(cliffi ${SOURCES})
 target_link_libraries(cliffi ${LIBFFI_LIBRARIES})
+
 if(DL_LIBRARY)
   target_link_libraries(cliffi ${DL_LIBRARY})
 endif()

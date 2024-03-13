@@ -1,0 +1,78 @@
+name: Cross-Platform Build and Test
+
+on:
+    # push:
+    #     branches:
+    #         - master
+    workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dockcross_image:
+            - dockcross/linux-armv7
+            # - dockcross/linux-arm64
+            # - dockcross/linux-ppc64le
+            # - dockcross/linux-x64
+            # - dockcross/linux-x86
+            # - dockcross/linux-mips
+            - dockcross/linux-mipsel
+            # - dockcross/linux-s390x
+            # - dockcross/linux-armv5
+            # - dockcross/linux-armv6
+            # - dockcross/linux-s390x
+            # - dockcross/linux-xtensa-uclibc	
+            - dockcross/android-arm
+            # - dockcross/android-arm64
+            # - dockcross/android-x86
+            # - dockcross/android-x86_64
+
+            
+        #   - dockcross/windows-static-x64
+        #   - dockcross/windows-static-x86
+        #   - dockcross/web-wasm
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: install helper script
+        run: |
+            docker run --rm ${{ matrix.dockcross_image }} > ./dockcross
+            chmod +x ./dockcross
+
+      - name: test dockcross
+        run: |
+            ./dockcross bash -c "echo hello world"
+            
+
+    #   - name: install conan
+    #     run: |
+    #         ./dockcross pip install conan
+    #         ./dockcross bash -c "conan version || echo could not run conan version"
+    #         ./dockcross conan profile new --detect default
+
+      - name: install unzip
+        run: |
+                ./dockcross bash -c "apt-get update && apt-get install -y unzip || sudo apt-get install -y curl zip unzip tar || sudo dnf install -y curl zip unzip tar || sudo yum install -y curl zip unzip tar || sudo zypper install -y curl zip unzip tar || sudo pacman -S --noconfirm curl zip unzip tar cmake ninja || apk add --no-cache build-base cmake ninja zip unzip curl git"
+
+      - name: install libffi
+        run: |
+            ./dockcross bash -c "git clone https://github.com/microsoft/vcpkg"
+            ./dockcross bash -c "cd vcpkg && ./bootstrap-vcpkg.sh"
+            ./dockcross bash -c "cd vcpkg && ./vcpkg install libffi"
+
+      - name: Build with CMake
+        run: |
+            ./dockcross bash -c "cd build && cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release && cmcmake --build ."
+
+
+      - name: Test with CTest
+        run: |
+            ./dockcross bash -c "ctest --test-dir build --output-on-failure"
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: artifacts-${{ matrix.dockcross_image }}
+          path: build/
