@@ -346,8 +346,8 @@ set_tests_properties(my_printf_with_char_and_uchar_and_short_and_ushort_and_floa
 
 add_test(NAME my_printf_with_p_char_and_p_uchar_and_p_short_and_p_ushort_and_p_float_and_p_int_and_p_double_and_p_struct # test with a bunch of pointers
     COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v my_printf -s "Hello, %p %p %p %p %p %p %p %p" ... -pc q -pC 0x32 -ph 3 -pH 4 -pf 5.5 -pi 6 -pd 7.7 -pS: 8 9.9 :S)
-# can't really test the pointers, but we can test that they are printed
-set_tests_properties(my_printf_with_p_char_and_p_uchar_and_p_short_and_p_ushort_and_p_float_and_p_int_and_p_double_and_p_struct PROPERTIES PASS_REGULAR_EXPRESSION "Hello, 0x.* 0x.* 0x.* 0x.* 0x.* 0x.* 0x.* 0x.*")
+# can't really test the pointers, but we can test that they are printed. we're using very liberal pointer formatting regex here to allow for different pointer formats
+set_tests_properties(my_printf_with_p_char_and_p_uchar_and_p_short_and_p_ushort_and_p_float_and_p_int_and_p_double_and_p_struct PROPERTIES PASS_REGULAR_EXPRESSION "Hello, 0.* 0.* 0.* 0.* 0.* 0.* 0.* 0.*")
 
 
 #test that short types are okay as returns
