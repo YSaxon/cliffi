@@ -1,5 +1,6 @@
 #include "invoke_handler.h"
 #include "return_formatter.h"
+#include <stdbool.h>
 #include <string.h>
 
 #if defined(__APPLE__)
@@ -219,6 +220,48 @@ void fix_struct_pointers(ArgInfo* struct_arg, void* raw_memory) {
     }
 }
 
+void handle_promoting_vararg_if_necessary(ffi_type** arg_type_ptr, ArgInfo* arg, int argnum) {
+
+    if (arg->pointer_depth > 0 || arg->is_array) return; // we don't need to promote pointers or arrays (which in functions are passed as pointers)
+
+    size_t int_size = ffi_type_sint.size;
+    ffi_type* arg_type = *arg_type_ptr;
+    if (arg->type == TYPE_FLOAT) {
+        arg->value.d_val = (double)arg->value.f_val;
+        arg->type = TYPE_DOUBLE;
+        if (arg->explicitType) {
+            fprintf(stderr, "Warning: arg[%d] is a vararg so it was promoted from float to double\n", argnum);
+        }
+    } else if ((arg_type->type != FFI_TYPE_STRUCT
+               && arg_type->type != FFI_TYPE_COMPLEX)
+               && arg_type->size < int_size) {
+        if (arg->type==TYPE_CHAR) {
+            arg->value.i_val = (int)arg->value.c_val;
+            arg->type = TYPE_INT;
+        } else if (arg->type==TYPE_SHORT) {
+            arg->value.i_val = (int)arg->value.s_val;
+            arg->type = TYPE_INT;
+        } else if (arg->type==TYPE_UCHAR) {
+            arg->value.ui_val = (unsigned int)arg->value.uc_val;
+            arg->type = TYPE_UINT;
+        } else if (arg->type==TYPE_USHORT) {
+            arg->value.ui_val = (unsigned int)arg->value.us_val;
+            arg->type = TYPE_UINT;
+        } else { // if its too small but not one of the above types then we don't know what to do so just fail
+            fprintf(stderr, "Error: arg[%d] is a vararg but its %s type %s is of size %zu which is less than sizeof(int) which is %zu\nYou should probably %s explicit type flag", argnum, arg->explicitType ? "explicit" : "inferred", typeToString(arg->type), arg_type->size,int_size,arg->explicitType ? "correct the" : "add an");
+            exit(1);
+        }
+        //if it was one of the above types that we COULD convert
+        if (arg->explicitType) { // only bother them with a warning if they explicitly set the type
+            fprintf(stderr, "Warning: arg[%d] is a vararg so it was promoted from %s to %s\n", argnum, typeToString(arg->type), typeToString(TYPE_INT));
+        }
+    }
+    else return; // if it's not too small then we don't need to do anything
+
+    // now we need to update the arg_type_ptr to point to the new type
+    *arg_type_ptr = arg_type_to_ffi_type(arg, false);
+}
+
 
 // Main function to invoke a dynamic function call
 int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
@@ -228,6 +271,11 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
     void* values[call_info->info.arg_count];
     for (int i = 0; i < call_info->info.arg_count; ++i) {
         args[i] = arg_type_to_ffi_type(&call_info->info.args[i],false);
+
+        // if the arg is past the vararg start, we need to upgrade it if it's < sizeof(int) or a float type
+        bool is_vararg = call_info->info.vararg_start!=-1 && i >= call_info->info.vararg_start;
+        if (is_vararg) handle_promoting_vararg_if_necessary(&args[i], &call_info->info.args[i], i);
+
         if (!args[i]) {
             fprintf(stderr, "Failed to convert arg[%d].type = %c to ffi_type.\n", i, call_info->info.args[i].type);
             return -1;
