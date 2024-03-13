@@ -152,7 +152,7 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
                 fprintf(stderr, "Error: Varargs flag encountered in struct\n");
                 exit(1);
             }
-            info->vararg_start = i;
+            info->vararg_start = info->arg_count;
             continue;
         } else { // no flag, so we need to infer the type from the value
             infer_arg_type_from_value(&arg, argStr);
