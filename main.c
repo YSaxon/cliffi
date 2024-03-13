@@ -15,12 +15,12 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "0.5.7";
+const char* VERSION = "0.6.0";
 
 int main(int argc, char* argv[]) {
     if (argc > 1 && strcmp(argv[1], "--help") == 0) {
         printf( "%s %s\n", NAME, VERSION);
-        printf( "Usage: %s <library> <typeflag> <function_name> [<args>...]\n", argv[0]);
+        printf( "Usage: %s <library> <typeflag> <function_name> [<args>..  [... <varargs>..]]\n", argv[0]);
         printf( "  [--help]         Print this help message\n");
         printf( "  <library>        The path to the shared library containing the function to invoke\n"
                 "                   or the name of the library if it is in the system path\n");
@@ -30,6 +30,7 @@ int main(int argc, char* argv[]) {
         printf( "  [-<typeflag>] <arg> The argument values to pass to the function\n"
                 "                   Types will be inferred if not prefixed with flags\n"
                 "                   Flags look like -i for int, -s for string, etc\n");
+        printf( "  ...              Mark the position of varargs in the function signature if applicable\n");
         printf( "\n"
                 "  BASIC EXAMPLES:\n"
                 "         %s libexample.so i addints 3 4\n", argv[0]);
@@ -58,7 +59,7 @@ int main(int argc, char* argv[]) {
                 "     Typeflags can include additional flag prefixes to specify pointers, arrays or structs:\n"
                 "     <typeflag> = [p[p..]]<primitive_type>\n"
                 "     <typeflag> = [p[p..]][a<size>|t<argnum>]<primitive_type>\n"
-                "     <typeflag> = [p[p..]]S: <arg> <arg> ... :S \n"
+                "     <typeflag> = [p[p..]]S: <arg> <arg>.. :S \n"
                 "   POINTERS:\n"
                 "       p[p..]   The argument is a pointer to [an array of / a struct of] specified type\n"
                 "                The number of p's indicates the pointer depth\n"
@@ -84,11 +85,11 @@ int main(int argc, char* argv[]) {
         printf( "\n");
         printf( "   STRUCTS:\n"
                 "      Structs can be used for both arguments and return values\n"
-                "      The general syntax is [-]S: <arg> [<arg>...] :S \n"
+                "      The general syntax is [-]S: <arg> [<arg>..] :S \n"
                 "      For arguments the dash is included and values are given (with optional typeflags)\n"
-                "      -S: [-typeflag] <arg> [[-typeflag] <arg>...] S: \n"
+                "      -S: [-typeflag] <arg> [[-typeflag] <arg>..] S: \n"
                 "      For return values the dash is omitted and only dashless typeflags are given\n"
-                "      S: <typeflag> [<typeflag>...] :S\n"
+                "      S: <typeflag> [<typeflag>..] :S\n"
                 "      As always, the S: can be prefixed with p's to indicate struct pointers of arbitrary depth\n"
                 "      Nested structs are permitted but be careful with the open and close tags\n"
                 "    STRUCT EXAMPLES:\n"
@@ -99,10 +100,22 @@ int main(int argc, char* argv[]) {
                 "      %s libexample.so S: i s :S 5 \"hello world\"\n", argv[0]);
         printf( "      * For a function: modifyStruct(struct mystruct* s)\n"
                 "      %s libexample.so v modifyStruct -pS: 3 \"hello world\" :S\n", argv[0]);
+        printf( "\n");
+        printf( "  VARARGS:\n"
+                "     If a function takes varargs the position of the varargs should be specified with the `...` flag\n"
+                "     The `...` flag may sometimes be the first arg if the function takes all varargs, or the last for a function that takes varargs where none are being passed\n"
+                "     The varargs themselves are the same as any other function args and can be with or without typeflags\n"
+                "     (Floats and types shorter than int will be upgraded for you automatically)\n"
+                "    VARARGS EXAMPLES:\n"
+                "      %s libc.so i printf 'Hello %%s, your number is: %%.3f' ... bob 4.5\n", argv[0]);
+        printf( "      %s libc.so i printf 'This is just a static string' ... \n", argv[0]);
+        printf( "      %s some_lib.so v func_taking_all_varargs ... -i 3 -s hello\n", argv[0]);
+
+
         return 0;
     }
     else if (argc < 4) {
-        fprintf(stderr, "%s %s\nUsage: %s [--help] <library> <return_typeflag> <function_name> [[-typeflag] <arg>...]\n", NAME,VERSION,argv[0]);
+        fprintf(stderr, "%s %s\nUsage: %s [--help] <library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [... <varargs>..] ]\n", NAME,VERSION,argv[0]);
         return 1;
     }
 
