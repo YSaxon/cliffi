@@ -475,6 +475,18 @@ short get_short() {
     return 1;
 }
 
+short get_short_negative5() {
+    return -5;
+}
+
+unsigned char get_uchar_255() {
+    return 255;
+}
+
+unsigned short get_ushort_65535() {
+    return 65535;
+}
+
 float get_float() {
     return 1.5;
 }

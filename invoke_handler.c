@@ -300,6 +300,10 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
 
     ffi_type* return_type = arg_type_to_ffi_type(&call_info->info.return_var, false);
 
+    if (return_type->size < ffi_type_sint.size && return_type->type != FFI_TYPE_STRUCT && return_type->type != FFI_TYPE_COMPLEX) {
+          return_type = &ffi_type_sint; // if the return type is too small then we need to promote it to int
+    }
+
     void* rvalue;
     if (call_info->info.return_var.type == TYPE_STRUCT) {
         rvalue = make_raw_value_for_struct(&call_info->info.return_var); // this also handles pointer_depth

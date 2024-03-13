@@ -363,6 +363,20 @@ add_test(NAME get_float #
     COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} f get_float)
 set_tests_properties(get_float PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 1.50*")
 
+add_test(NAME get_short_negative5 #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} h get_short_negative5)
+set_tests_properties(get_short_negative5 PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: -5")
+
+add_test(NAME get_uchar_255 #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} C get_uchar_255)
+set_tests_properties(get_uchar_255 PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 255")
+
+add_test(NAME get_ushort_65535 #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} H get_ushort_65535)
+set_tests_properties(get_ushort_65535 PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 65535")
+
+
+
 
 # these still fail
 # add_test(NAME return_struct_with_embedded_array_complex #
