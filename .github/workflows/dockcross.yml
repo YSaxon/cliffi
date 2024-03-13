@@ -106,13 +106,13 @@ jobs:
 
       - name: everything together
         #exclude android builds
-        if: startsWith(matrix.dockcross_image, 'android') == false
+        if: (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm')) == false
         run: |
           ./dockcross bash ./dockcross_buildtest.sh
 
       - name: build without testing (android)
         #only android builds
-        if: startsWith(matrix.dockcross_image, 'android') == true
+        if: (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm')) == true
         run: |
           ./dockcross bash ./dockcross_buildonly.sh
 
@@ -151,5 +151,6 @@ jobs:
             upload_url: ${{ needs.create_release.outputs.upload_url }}
             # it could be plain cliffi or cliffi.exe
             asset_path: ${{ steps.get_executable.outputs.executable }}
-            asset_name: cliffi-${{ matrix.dockcross_image }}
+            #add -untested for android or windows-arm builds
+            asset_name: cliffi-${{ matrix.dockcross_image }}${{ (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm')) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
             asset_content_type: application/zip
