@@ -1,9 +1,7 @@
-on:
-    workflow_dispatch:
-      inputs:
-        tag-name:
-          required: true
-  jobs:
+name: Bump Homebrew formula
+on: workflow_dispatch
+
+jobs:
     bump_formula:
       name: Bump Homebrew formula
       runs-on: ubuntu-latest
