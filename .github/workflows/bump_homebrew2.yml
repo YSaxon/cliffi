@@ -13,6 +13,7 @@ on:
           env:
             COMMITTER_TOKEN: ${{ secrets.TOKEN }}
           with:
+            homebrew-tap: YSaxon/homebrew-cliffi
             formula-name: cliffi
             tag-name: ${{ github.event.inputs.tag-name }}
             download-url: https://github.com/YSaxon/cliffi/archive/refs/tags/${{ github.event.inputs.tag-name }}.tar.gz
