@@ -1,0 +1,19 @@
+on:
+    workflow_dispatch:
+      inputs:
+        tag-name:
+          required: true
+  jobs:
+    bump_formula:
+      name: Bump Homebrew formula
+      runs-on: ubuntu-latest
+      steps:
+        - name: Bump the Homebrew formula
+          uses: mislav/bump-homebrew-formula-action@v3
+          env:
+            COMMITTER_TOKEN: ${{ secrets.TOKEN }}
+          with:
+            formula-name: cliffi
+            tag-name: ${{ github.event.inputs.tag-name }}
+            download-url: https://github.com/YSaxon/cliffi/archive/refs/tags/${{ github.event.inputs.tag-name }}.tar.gz
+  
