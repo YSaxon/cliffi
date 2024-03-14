@@ -11,6 +11,6 @@ jobs:
     steps:
       - uses: dawidd6/action-homebrew-bump-formula@v3
         with:
-          token: ${{secrets.HOMEBREW_TAP_BUMP_TOKEN}}
+          token: ${{secrets.TOKEN}}
           tap: ysaxon/homebrew-cliffi
           formula: cliffi
