@@ -1,0 +1,16 @@
+name: Bump Homebrew formula in personal tap
+on:
+  push:
+    tags: '*'
+  workflow_dispatch:  
+  
+jobs:
+  homebrew:
+    name: Bump Homebrew formula
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dawidd6/action-homebrew-bump-formula@v3
+        with:
+          token: ${{secrets.HOMEBREW_TAP_BUMP_TOKEN}}
+          tap: ysaxon/homebrew-cliffi
+          formula: cliffi
