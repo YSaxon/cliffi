@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
         printf( "         %s ./libexample.so s concatstrings -s hello -s world\n", argv[0]);
         printf( "         %s libexample.so s concatstrings hello world\n", argv[0]);
         printf( "         %s libexample.so d multdoubles -d 1.5 1.5d\n", argv[0]);
-        printf( "         %s libc.so i printf 'Here is a number: %%.3f' 4.5", argv[0]);
+        printf( "         %s libc.so i printf 'Here is a number: %%.3f' ... 4.5", argv[0]);
         printf( "\n");
         printf( "  TYPES:\n"
                 "     The primitive typeflags are:\n");
