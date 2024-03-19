@@ -28,18 +28,18 @@ Here we denoted that 2 should be a double by preceeding it with a -d flag. Thoug
 This is only rarely necessary with basic primitive types, but becomes more helpful for pointers, arrays, and structs.
 
 ### Primitive Types
-v for void, only allowed as a return type, and does not accept prefixes
-c for char
-h for short
-i for int
-l for long
-C for unsigned char
-H for unsigned short
-I for unsigned int
-L for unsigned long
-f for float
-d for double
-s for cstring (ie null terminated char*)
+- v for void, only allowed as a return type, and does not accept prefixes
+- c for char
+- h for short
+- i for int
+- l for long
+- C for unsigned char
+- H for unsigned short
+- I for unsigned int
+- L for unsigned long
+- f for float
+- d for double
+- s for cstring (ie null terminated char*)
 
 ### Pointers
 Pointers are specified with a number of `p` flags equal to the level of pointer.
