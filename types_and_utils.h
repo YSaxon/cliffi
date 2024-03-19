@@ -51,7 +51,7 @@ typedef struct ArgInfo {
         double d_val;
         char* str_val; // For strings
         void* ptr_val; // For pointers or complex data
-    } value;
+    } *value;
     int pointer_depth; // For pointer types, indicates how many levels of indirection
     arrayMode is_array; // For pointer types, indicates if the pointer is an array
     union {
