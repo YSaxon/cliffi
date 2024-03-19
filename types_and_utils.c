@@ -59,8 +59,8 @@ bool isFloatingPoint(const char* str) {
 
 ArgType infer_arg_type_single(const char* argval){
     if (!argval) return TYPE_UNKNOWN;
-    if (argval[0] == '"' || argval[0] == '\'' || strlen(argval) == 0) return TYPE_STRING; // if it starts with a quote or is empty, it's probably a string
-    if (strchr(argval, ' ') != NULL) return TYPE_STRING; // if there is a space in the value, it's probably a string
+    // if (argval[0] == '"' || argval[0] == '\'' || strlen(argval) == 0) return TYPE_STRING; // if it starts with a quote or is empty, it's probably a string
+    // if (strchr(argval, ' ') != NULL) return TYPE_STRING; // if there is a space in the value, it's probably a string
 
     bool is_negative = argval[0] == '-';
     const char* without_negative_sign = is_negative ? argval+1 : argval;
@@ -110,7 +110,7 @@ ArgType infer_arg_type_single(const char* argval){
         }
     }
 
-    // Add more rules as needed
+    if (strlen(argval) == 1) return TYPE_CHAR;
     return TYPE_STRING; // Default fallback
 }
 
@@ -127,7 +127,7 @@ void infer_arg_type_from_value(ArgInfo* arg, const char* argval) {
         while (token != NULL) {
             ArgType next_type = infer_arg_type_single(token);
             if (next_type != first_type) {
-                fprintf(stderr, "Warning: In argstr %s, multiple types found in comma delimitted list. We'll use the first type %c\n", argval, typeToChar(first_type));
+                fprintf(stderr, "Warning: In argstr %s, multiple types found in comma delimitted list. We'll use the first type %s\n", argval, typeToString(first_type));
                 break;
             }
             token = strtok_r(rest, ",", &rest);

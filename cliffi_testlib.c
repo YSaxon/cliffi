@@ -491,6 +491,16 @@ float get_float() {
     return 1.5;
 }
 
+
+void return_some_numbers(int** numbers, size_t* count) {
+    *count = 3;
+    *numbers = malloc(3 * sizeof(int));
+    (*numbers)[0] = 1;
+    (*numbers)[1] = 2;
+    (*numbers)[2] = 3;
+    return;
+}
+
 // Entry point to prevent the compiler from complaining when compiling as a shared library
 // This function will not be called; it's just to satisfy the linker.
 int main() {
