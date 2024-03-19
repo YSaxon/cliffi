@@ -113,7 +113,9 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
 
 void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *args_used, bool is_return, bool is_struct) {
     // ArgInfoContainer* arginfo = info->type == FUNCTION_INFO ? &info->function_info->info : &info->struct_info->info;
+    #ifdef DEBUG
     printf("Beginning to parse args (%d remaining)\n", argc);
+    #endif
     bool hit_struct_close = false;
     info->vararg_start = -1;
     int i;
@@ -163,7 +165,9 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
             StructInfo* struct_info = calloc(1, sizeof(StructInfo));
             int struct_args_used = 0;
             i++; // skip the S: open tag
+            #ifdef DEBUG
             printf("-S tag encountered, parsing struct from args\n");
+            #endif
             parse_all_from_argvs(&struct_info->info, argc-i, argv+i, &struct_args_used, is_return, true);
 
             i+=struct_args_used;
@@ -209,7 +213,9 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         StructInfo* struct_info = calloc(1, sizeof(StructInfo));
         int struct_args_used = 0;
         // i++; // skip the S: open tag
+        #ifdef DEBUG
         printf("S tag encountered, parsing struct from args\n");
+        #endif
         parse_all_from_argvs(&struct_info->info, argc-3, argv+3, &struct_args_used, true, true);
 
         info->info.return_var.struct_info = struct_info;
