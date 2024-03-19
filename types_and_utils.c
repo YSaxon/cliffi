@@ -557,23 +557,28 @@ void convert_all_arrays_to_arginfo_ptr_sized_after_parsing(ArgInfoContainer* inf
 }
 
 size_t get_size_for_arginfo_sized_array(const ArgInfo* arg){
+    void* size_t_param_val = &arg->array_size.arginfo_of_size_t->value;
     switch(arg->is_array){
         case ARRAY_SIZE_AT_ARGINFO_PTR:
+            for (int i = 0; i < arg->array_size.arginfo_of_size_t->pointer_depth; i++) {
+                if (!size_t_param_val) return 0;
+                size_t_param_val = *(void**)size_t_param_val;
+            }
             switch (arg->array_size.arginfo_of_size_t->type) {
                 case TYPE_SHORT:
-                    return (size_t)arg->array_size.arginfo_of_size_t->value.s_val;
+                    return (size_t) *(short*)size_t_param_val;
                 case TYPE_INT:
-                    return (size_t)arg->array_size.arginfo_of_size_t->value.i_val;
+                    return (size_t) *(int*)size_t_param_val;
                 case TYPE_LONG:
-                    return (size_t)arg->array_size.arginfo_of_size_t->value.l_val;
+                    return (size_t) *(long*)size_t_param_val;
                 case TYPE_UCHAR:
-                    return (size_t)arg->array_size.arginfo_of_size_t->value.uc_val;
+                    return (size_t) *(unsigned char*)size_t_param_val;
                 case TYPE_USHORT:
-                    return (size_t)arg->array_size.arginfo_of_size_t->value.us_val;
+                    return (size_t) *(unsigned short*)size_t_param_val;
                 case TYPE_UINT:
-                    return (size_t)arg->array_size.arginfo_of_size_t->value.ui_val;
+                    return (size_t) *(unsigned int*)size_t_param_val;
                 case TYPE_ULONG:
-                    return (size_t)arg->array_size.arginfo_of_size_t->value.ul_val;
+                    return (size_t) *(unsigned long*)size_t_param_val;
                 default:
                     fprintf(stderr, "Error: array was specified to have its size_t be another argument, but the arg at that position is not a numeric type\n");
                     exit(1);
