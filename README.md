@@ -69,9 +69,13 @@ Now you have three choices for size:
 
 ### Structs
 Structs are specified by enclosing the (optional types and) values inside of -S: :S delimiters. Structs can be nested, you can have pointers to them, and they can contain raw arrays.
+
+Some examples:
 ```
 -S: 1 2 :S     struct { int; int; } = {1,2}
 -pS: 1 2 :S   *struct { int; int; } = {1,2}
+-S: -pf 1 -ac6 test :S
+               struct { float*; char[6]; } = { 1.0, "test\x00\x00"}
 -S: 1 2 -S: test 3.5 :S 6 7 :S`
                struct { int; int; struct { char*; double; } int; int;}
 ```
