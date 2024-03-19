@@ -43,12 +43,13 @@ This is only rarely necessary with basic primitive types, but becomes more helpf
 
 ### Pointers
 Pointers are specified with a number of `p` flags equal to the level of pointer.
-`-pi` = *int
-`-ppi` = **int
+- `-pi` = *int
+- `-ppi` = **int
 
 ### Arrays
 Array values are specified as unspaced comma delimited values, like `1,2,3,4` or `this,"is an","array of",strings` or `4.3,3.1,9,0`
-Type and size will be inferred here as well if unspecified, but specifying types of arrays is probably a good idea.
+
+Type and size will be inferred here as well if unspecified, but can be specified explicitly with flags.
 
 #### Specifying types and sizes
 In the following order, unspaced
