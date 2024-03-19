@@ -59,18 +59,21 @@ Now you have three choices for size:
 * Size, eg `10`: size is equal to the number you provide
 * `t<param_number_with_size>` eg `t3`: size is equal to the number _stored in_ the param denoted by the number, specifically the 1-indexed param position (with 0 denoting the return). This is primarily useful for outpointers to arrays, where you won't know the size until the function returns, and the size will be returned to you in a size_t outparameter. By sizing the array dynamically like this, cliffi will read that parameter for the size before reading and outputting the array.
 
-
-`1,2,3`         (inferred type)     int[3]       = {1,2,3}
-`-ai 1,2,3`     (explicit type)     int[3]       = {1,2,3}
-`-ai5 1,2,3`    (statically sized)  int[5]       = {1,2,3,NULL,NULL}
-`-pi 0` `-ait1` (dynamically sized) int[ ]* = {NULL}
+```
+1,2,3         (inferred type)     int[3]       = {1,2,3}
+-ai 1,2,3     (explicit type)     int[3]       = {1,2,3}
+-ai5 1,2,3    (statically sized)  int[5]       = {1,2,3,NULL,NULL}
+-pi 0 -ait1   (dynamically sized) int[ ]* = {NULL}
+```
 
 ### Structs
 Structs are specified by enclosing the (optional types and) values inside of -S: :S delimiters. Structs can be nested, you can have pointers to them, and they can contain raw arrays.
-`-S: 1 2 :S`     struct { int; int; } = {1,2}
-`-pS: 1 2 S:`   *struct { int; int; } = {1,2}
-`-S: 1 2 -S: test 3.5 :S 6 7 :S` 
-            struct { int; int; struct { char*; double; } int; int;}
+```
+-S: 1 2 :S     struct { int; int; } = {1,2}
+-pS: 1 2 :S   *struct { int; int; } = {1,2}
+-S: 1 2 -S: test 3.5 :S 6 7 :S`
+               struct { int; int; struct { char*; double; } int; int;}
+```
 
 ### Other notes
 * Note that arrays inside of structs are raw memory arrays of that size, whereas "arrays" given to functions as arguments directly are really pointer types in disguise, as are cstrings. This is a quirk of C itself, not of cliffi.
@@ -79,6 +82,7 @@ Structs are specified by enclosing the (optional types and) values inside of -S:
 * If you mark something as a char array, it will be formatted back to you as a string. If you mark it as a uchar* array, it will be formatted as a hexdump.
 * Arrays of structs are not currently supported (as it's just a syntactical nightmare), but you can fake one with a struct of structs if you really want to.
 * Just use a 0/1 int for a bool
+* Don't get the order mixed up for struct start and end tags, it's S: :S. I mess this up sometimes myself, but it's still the best shell-inert delimitter syntax I could come up with.
 
 # License
 This is released under the MIT License.
