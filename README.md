@@ -63,7 +63,7 @@ Now you have three choices for size:
 1,2,3         (inferred type)     int[3]       = {1,2,3}
 -ai 1,2,3     (explicit type)     int[3]       = {1,2,3}
 -ai5 1,2,3    (statically sized)  int[5]       = {1,2,3,NULL,NULL}
--pi 0 -ait1   (dynamically sized) int[ ]* = {NULL}
+-pait2 null -pi 0  (dynamically sized) int**        void return_some_ints(int** numbers, size_t* count)
 ```
 
 ### Structs
