@@ -140,6 +140,7 @@ set_tests_properties(TestReturningBuffer PROPERTIES PASS_REGULAR_EXPRESSION "Fun
 
 add_test(NAME TestReturningBufferWithSize # aC and ac buffers should both work to contain strings
             COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} act2 buffer_as_return -act2 a,b,c,d 4)
+set_tests_properties(TestReturningBufferWithSize PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: .*a.*b.*c.*d.*")
 
 add_test(NAME TestGetX # 
             COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i get_x -S: 5 2.2 :S )
@@ -376,6 +377,9 @@ add_test(NAME get_ushort_65535 #
 set_tests_properties(get_ushort_65535 PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 65535")
 
 
+add_test(NAME return_some_numbers_via_sizet_outparam #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v return_some_numbers -pait2 null -pi null)
+set_tests_properties(return_some_numbers_via_sizet_outparam PROPERTIES PASS_REGULAR_EXPRESSION "\{ 1, 2, 3 \}")
 
 
 # these still fail
