@@ -44,18 +44,22 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
         explicitType = charToType(argStr[pointer_depth]);
     }
         if (explicitType == TYPE_ARRAY) {
+        int array_value_pointer_depth = 0;
         // We'll need to figure out how to move forward argv past the array values
         // For now we'll just say that the array values can't have a space in them
         // So the entire array will just be one argv
         // In the future we may switch to using end delimitters eg a: 3 2 1 :a
+        while (charToType(argStr[1+pointer_depth+array_value_pointer_depth]) == TYPE_POINTER) {
+            array_value_pointer_depth++;
+        }
 
-        if (isAllDigits(&argStr[1+pointer_depth]) || argStr[1+pointer_depth] == 't') {
+        if (isAllDigits(&argStr[1+pointer_depth+array_value_pointer_depth]) || argStr[1+pointer_depth+array_value_pointer_depth] == 't') {
             //argStr[:2+pointer_depth] is the array flag + 'i' + argStr[2+pointer_depth:]
             fprintf(stderr, "Error: Array flag must be followed by a primitive type flag, and THEN it can be followed by a size or size_t argnum, so for instance ai4 or ait1 for an array of ints, whereas you have %s\n", argStr);
             exit(1);
         }
 
-        explicitType = charToType(argStr[1 + pointer_depth]);
+        explicitType = charToType(argStr[1 + pointer_depth+array_value_pointer_depth]);
 
         if (explicitType == TYPE_STRUCT){
             fprintf(stderr, "Error: Arrays of structs are not presently supported, in flags %s\n", argStr);
@@ -74,14 +78,14 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
 
 
         // see if there's a size appended to the end of the array flag
-        if (isAllDigits(&argStr[2 + pointer_depth])){
+        if (isAllDigits(&argStr[2 + pointer_depth+array_value_pointer_depth])){
             arg->is_array = ARRAY_STATIC_SIZE;
-            arg->array_size.static_size = atoi(argStr + 2 + pointer_depth);
-        } else if (argStr[2 + pointer_depth] == 't') { 
+            arg->array_size.static_size = atoi(argStr + 2 + pointer_depth+array_value_pointer_depth);
+        } else if (argStr[2 + pointer_depth+array_value_pointer_depth] == 't') {
             // t is a flag indicating that the array size is specified as a size_t in another argument
-            if (isAllDigits(&argStr[3 + pointer_depth])){
+            if (isAllDigits(&argStr[3 + pointer_depth+array_value_pointer_depth])){
                 arg->is_array = ARRAY_SIZE_AT_ARGNUM;
-                arg->array_size.argnum_of_size_t_to_be_replaced = atoi(argStr + 3 + pointer_depth);
+                arg->array_size.argnum_of_size_t_to_be_replaced = atoi(argStr + 3 + pointer_depth + array_value_pointer_depth);
             } else {
                 //maybe in the future we'll allow just assuming its the next arg if it's not a number
                 fprintf(stderr, "Error: Array size flag t must be followed by a number in flags %s\n", argStr);

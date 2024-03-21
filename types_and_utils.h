@@ -53,6 +53,7 @@ typedef struct ArgInfo {
         void* ptr_val; // For pointers or complex data
     } value;
     int pointer_depth; // For pointer types, indicates how many levels of indirection
+    int array_value_pointer_depth; // For array types, indicates how many levels of indirection for the value pointers
     arrayMode is_array; // For pointer types, indicates if the pointer is an array
     union {
         size_t static_size; // For array types, indicates the size of the array
