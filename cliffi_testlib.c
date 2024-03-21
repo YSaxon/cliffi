@@ -602,6 +602,15 @@ void return_some_numbers(int** numbers, size_t* count) {
     return;
 }
 
+long add_long(long a, long b) {
+    return a + b;
+}
+
+unsigned long add_ulong(unsigned long a, unsigned long b) {
+    return a + b;
+}
+
+
 // Entry point to prevent the compiler from complaining when compiling as a shared library
 // This function will not be called; it's just to satisfy the linker.
 int main() {
