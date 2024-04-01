@@ -219,8 +219,8 @@ void fix_struct_pointers(ArgInfo* struct_arg, void* raw_memory) {
             fix_struct_pointers(&struct_info->info.args[i], raw_memory+offsets[i]);
         } else if (!struct_info->info.args[i].is_array) {
             struct_info->info.args[i].value = struct_info->value_ptrs[i] = raw_memory+offsets[i];
-        } else {
-            struct_info->value_ptrs[i] = raw_memory+offsets[i];
+        } else { //is an array
+            struct_info->info.args[i].value->ptr_val = struct_info->value_ptrs[i] = raw_memory+offsets[i];
         }
     }
 }
@@ -330,6 +330,11 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
 
     ffi_call(&cif, func, rvalue, values);
 
+    for (int i = 0; i < call_info->info.arg_count; ++i) {
+        if (call_info->info.args[i].type == TYPE_STRUCT) {
+            fix_struct_pointers(&call_info->info.args[i], values[i]);
+        }
+    }
     if (call_info->info.return_var.type == TYPE_STRUCT) {
         fix_struct_pointers(&call_info->info.return_var, rvalue);
     } else if (return_type->size < ffi_type_sint.size && call_info->info.return_var.type != TYPE_VOID && call_info->info.return_var.type != TYPE_FLOAT) {
