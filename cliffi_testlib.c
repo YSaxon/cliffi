@@ -335,6 +335,18 @@ struct struct_with_embedded_array{
     int y;
 };
 
+struct struct_with_embedded_array_intonly{
+    int x;
+    int a[3];
+    int y;
+};
+
+struct struct_with_embedded_array_charonly{
+    int x;
+    char s[10];
+    int y;
+};
+
 void test_struct_with_embedded_array(struct struct_with_embedded_array s){
     hexdump(&s, sizeof(struct struct_with_embedded_array));
     printf("s.x: %d\n", s.x);
@@ -345,6 +357,8 @@ void test_struct_with_embedded_array(struct struct_with_embedded_array s){
     printf("s.a[2]: %d\n", s.a[2]);
     printf("s.y: %d\n", s.y);
 }
+
+
 
 void test_p_struct_with_embedded_array(struct struct_with_embedded_array* s){
     hexdump(s, sizeof(struct struct_with_embedded_array));
@@ -357,6 +371,65 @@ void test_p_struct_with_embedded_array(struct struct_with_embedded_array* s){
     printf("s->y: %d\n", s->y);
 }
 
+void test_p_struct_with_embedded_array_intonly(struct struct_with_embedded_array_intonly* s){
+    hexdump(s, sizeof(struct struct_with_embedded_array_intonly));
+    printf("s->x: %d\n", s->x);
+    printf("s->a[0]: %d\n", s->a[0]);
+    printf("s->a[1]: %d\n", s->a[1]);
+    printf("s->a[2]: %d\n", s->a[2]);
+    printf("s->y: %d\n", s->y);
+
+}
+
+struct struct_with_embedded_array_intonly test_p_struct_with_embedded_array_intonly_return_struct(struct struct_with_embedded_array_intonly* s){
+    hexdump(s, sizeof(struct struct_with_embedded_array_intonly));
+    printf("s->x: %d\n", s->x);
+    printf("s->a[0]: %d\n", s->a[0]);
+    printf("s->a[1]: %d\n", s->a[1]);
+    printf("s->a[2]: %d\n", s->a[2]);
+    printf("s->y: %d\n", s->y);
+    return *s;
+}
+
+struct struct_with_embedded_array_intonly return_struct_with_embedded_array_intonly(){
+    struct struct_with_embedded_array_intonly s = {};
+    s.x = 1;
+    s.a[0] = 2;
+    s.a[1] = 3;
+    s.a[2] = 4;
+    s.y = 5;
+    return s;
+}
+
+struct simple_struct_embedded_array {
+    int ints[3];
+};
+
+struct simple_struct_embedded_array return_simple_struct_embedded_array() {
+    struct simple_struct_embedded_array s = {};
+    s.ints[0] = 1;
+    s.ints[1] = 2;
+    s.ints[2] = 3;
+    return s;
+}
+
+struct struct_with_embedded_array_intonly* test_p_struct_with_embedded_array_intonly_return_p_struct(struct struct_with_embedded_array_intonly* s){
+    hexdump(s, sizeof(struct struct_with_embedded_array_intonly));
+    printf("s->x: %d\n", s->x);
+    printf("s->a[0]: %d\n", s->a[0]);
+    printf("s->a[1]: %d\n", s->a[1]);
+    printf("s->a[2]: %d\n", s->a[2]);
+    printf("s->y: %d\n", s->y);
+    return s;
+}
+
+void test_p_struct_with_embedded_array_charonly(struct struct_with_embedded_array_charonly* s){
+    hexdump(s, sizeof(struct struct_with_embedded_array_charonly));
+    printf("s->x: %d\n", s->x);
+    printf("s->s: %s\n", s->s);
+    printf("s->y: %d\n", s->y);
+}
+
 void test_p_struct_with_embedded_array_changed(struct struct_with_embedded_array* s){
     hexdump(s, sizeof(struct struct_with_embedded_array));
     s->x = 5;
@@ -366,6 +439,17 @@ void test_p_struct_with_embedded_array_changed(struct struct_with_embedded_array
     s->a[2] = 12;
     s->y = 15;
 }
+
+void test_struct_with_embedded_array_changed(struct struct_with_embedded_array s){
+    hexdump(&s, sizeof(struct struct_with_embedded_array));
+    s.x = 5;
+    strcpy(s.s, "changed");
+    s.a[0] = 10;
+    s.a[1] = 11;
+    s.a[2] = 12;
+    s.y = 15;
+}
+
 
 
 struct struct_with_embedded_array return_struct_with_embedded_array(){
