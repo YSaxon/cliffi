@@ -242,9 +242,44 @@ set_tests_properties(test_p_struct_with_embedded_array PROPERTIES PASS_REGULAR_E
 set_tests_properties(test_p_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s->a[2]: 3")
 set_tests_properties(test_p_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s->y: 4")
 
+add_test(NAME test_p_struct_with_embedded_array_intonly #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_p_struct_with_embedded_array_intonly -pS: 1 1,2,3 4 :S )
+set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1")
+set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->s: hello")
+set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->a[0]: 1")
+set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->a[1]: 2")
+set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->a[2]: 3")
+set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->y: 4")
+set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "Arg 0 after function .*1, 2, 3")
+
+add_test(NAME test_p_struct_with_embedded_array_intonly_return_struct #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} S: i ai3 i :S test_p_struct_with_embedded_array_intonly_return_struct -pS: 1 1,2,3 4 :S )
+set_tests_properties(test_p_struct_with_embedded_array_intonly_return_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1")
+set_tests_properties(test_p_struct_with_embedded_array_intonly_return_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->a[0]: 1")
+set_tests_properties(test_p_struct_with_embedded_array_intonly_return_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->a[1]: 2")
+set_tests_properties(test_p_struct_with_embedded_array_intonly_return_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->a[2]: 3")
+set_tests_properties(test_p_struct_with_embedded_array_intonly_return_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->y: 4")
+
+add_test(NAME return_struct_with_embedded_array_intonly #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} S: i ai3 i :S return_struct_with_embedded_array_intonly )
+set_tests_properties(return_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \{ int 1, .*2, 3, 4.* int 5")
+
+
+add_test(NAME test_p_struct_with_embedded_array_charonly #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_p_struct_with_embedded_array_charonly -pS: 1 -ac10 h,e,l,l,o 4 :S )
+set_tests_properties(test_p_struct_with_embedded_array_charonly PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1")
+set_tests_properties(test_p_struct_with_embedded_array_charonly PROPERTIES PASS_REGULAR_EXPRESSION "s->s: hello")
+set_tests_properties(test_p_struct_with_embedded_array_charonly PROPERTIES PASS_REGULAR_EXPRESSION "s->y: 4")
+
+add_test(NAME return_simple_struct_embedded_array #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} S: ai3 :S return_simple_struct_embedded_array )
+set_tests_properties(return_simple_struct_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:.*1, 2, 3.*")
+
+
 add_test(NAME test_p_struct_with_embedded_array_changed #
     COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_p_struct_with_embedded_array_changed -pS: 1 -ac10 h,e,l,l,o 1,2,3 4 :S )
 set_tests_properties(test_p_struct_with_embedded_array_changed PROPERTIES PASS_REGULAR_EXPRESSION "5.*changed.*10, 11, 12.*15")
+
 
 
 add_test(NAME test_fixed_char_array_10_with_incomplete_values #
