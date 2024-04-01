@@ -393,7 +393,7 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
 void second_pass_arginfo_ptr_sized_null_array_initialization_inner(ArgInfo* arg){
         // first we have to traverse the pointer_depths to get to the actual array
         void* value = arg->value->ptr_val;
-        void* parent = &arg->value;
+        void* parent = arg->value;
         for (int j = 0; j < arg->pointer_depth; j++) {
             parent = value;
             value = *(void**)value;
