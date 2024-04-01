@@ -116,7 +116,7 @@ ffi_type* arg_type_to_ffi_type(const ArgInfo* arg, bool inside_struct) {
 
 
 
-void* make_raw_value_for_struct(ArgInfo* struct_arginfo){//, ffi_type* struct_type){
+void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return){//, ffi_type* struct_type){
     ffi_type* struct_type = make_ffi_type_for_struct(struct_arginfo);
     StructInfo* struct_info = struct_arginfo->struct_info;
     
@@ -147,8 +147,8 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo){//, ffi_type* struct_ty
 
             // not necessary to set the value_ptr for a struct
 
-            void* inner_struct_address = make_raw_value_for_struct(&struct_info->info.args[i]);//, struct_type->elements[i]);
-            memcpy(raw_memory+offsets[i], inner_struct_address, inner_size);
+            void* inner_struct_address = make_raw_value_for_struct(&struct_info->info.args[i],is_return);//, struct_type->elements[i]);
+            if (!is_return)  memcpy(raw_memory+offsets[i], inner_struct_address, inner_size);
 
             free(inner_struct_address);
 
@@ -158,14 +158,14 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo){//, ffi_type* struct_ty
             if (struct_info->info.args[i].pointer_depth > 0) {
                 fprintf(stderr, "Warning, parsing array pointers within structs is not fully tested, attempting to parse the struct pointer as one shallower pointer depth than usual\n");
                 size_t size = sizeof(void*);
-                memcpy(raw_memory+offsets[i], struct_info->info.args[i].value->ptr_val, size);
+                if (!is_return) memcpy(raw_memory+offsets[i], struct_info->info.args[i].value->ptr_val, size);
                 free(struct_info->info.args[i].value);
                 struct_info->info.args[i].value = raw_memory+offsets[i];
             }
             else {
                 fprintf(stderr, "Warning, parsing raw arrays within structs is not fully tested\n");
                 size_t size = typeToSize(struct_info->info.args[i].type) * get_size_for_arginfo_sized_array(&struct_info->info.args[i]);
-                memcpy(raw_memory+offsets[i], struct_info->info.args[i].value->ptr_val, size);
+                if (!is_return) memcpy(raw_memory+offsets[i], struct_info->info.args[i].value->ptr_val, size);
                 free(struct_info->info.args[i].value);
                 struct_info->info.args[i].value = raw_memory+offsets[i];
             }
@@ -294,7 +294,7 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
         if (call_info->info.args[i].type != TYPE_STRUCT){//|| call_info->info.args[i].pointer_depth == 0) {
             values[i] = call_info->info.args[i].value;
         } else {
-            values[i] = make_raw_value_for_struct(&call_info->info.args[i]);
+            values[i] = make_raw_value_for_struct(&call_info->info.args[i], false);
         }
     }
 
@@ -304,7 +304,7 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
     void* rvalue;
     if (call_info->info.return_var.type == TYPE_STRUCT) {
         free(call_info->info.return_var.value);
-        rvalue = call_info->info.return_var.value = make_raw_value_for_struct(&call_info->info.return_var); // this also handles pointer_depth
+        rvalue = call_info->info.return_var.value = make_raw_value_for_struct(&call_info->info.return_var, true); // this also handles pointer_depth
     } else {
         rvalue = call_info->info.return_var.value;
     }
