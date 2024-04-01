@@ -17,10 +17,9 @@
 const char* NAME = "cliffi";
 const char* VERSION = "0.9.3";
 
-int main(int argc, char* argv[]) {
-    if (argc > 1 && strcmp(argv[1], "--help") == 0) {
+void print_usage(char* argv0){
         printf( "%s %s\n", NAME, VERSION);
-        printf( "Usage: %s <library> <typeflag> <function_name> [<args>..  [... <varargs>..]]\n", argv[0]);
+        printf( "Usage: %s <library> <typeflag> <function_name> [<args>..  [... <varargs>..]]\n", argv0);
         printf( "  [--help]         Print this help message\n");
         printf( "  <library>        The path to the shared library containing the function to invoke\n"
                 "                   or the name of the library if it is in the system path\n");
@@ -33,12 +32,12 @@ int main(int argc, char* argv[]) {
         printf( "  ...              Mark the position of varargs in the function signature if applicable\n");
         printf( "\n"
                 "  BASIC EXAMPLES:\n"
-                "         %s libexample.so i addints 3 4\n", argv[0]);
-        printf( "         %s path/to/libexample.so v dofoo\n", argv[0]);
-        printf( "         %s ./libexample.so s concatstrings -s hello -s world\n", argv[0]);
-        printf( "         %s libexample.so s concatstrings hello world\n", argv[0]);
-        printf( "         %s libexample.so d multdoubles -d 1.5 1.5d\n", argv[0]);
-        printf( "         %s libc.so i printf 'Here is a number: %%.3f' ... 4.5", argv[0]);
+                "         %s libexample.so i addints 3 4\n", argv0);
+        printf( "         %s path/to/libexample.so v dofoo\n", argv0);
+        printf( "         %s ./libexample.so s concatstrings -s hello -s world\n", argv0);
+        printf( "         %s libexample.so s concatstrings hello world\n", argv0);
+        printf( "         %s libexample.so d multdoubles -d 1.5 1.5d\n", argv0);
+        printf( "         %s libc.so i printf 'Here is a number: %%.3f' ... 4.5", argv0);
         printf( "\n");
         printf( "  TYPES:\n"
                 "     The primitive typeflags are:\n");
@@ -78,11 +77,11 @@ int main(int argc, char* argv[]) {
                 "       Note that pa<type> means a pointer to an array of type, while ap<type> means an array of <type> pointers \n"
                 "   ARRAY EXAMPLES:\n");
         printf( "     * For a function: int return_buffer(char** outbuff) which returns size\n");
-        printf( "     %s libexample.so v return_buffer -past2 NULL -pi 0\n", argv[0]);
+        printf( "     %s libexample.so v return_buffer -past2 NULL -pi 0\n", argv0);
         printf( "     * Or alternatively if it were: void return_buffer(char** outbuff, size_t* outsize)\n");
-        printf( "     %s libexample.so i return_buffer -past0 NULL\n", argv[0]);
+        printf( "     %s libexample.so i return_buffer -past0 NULL\n", argv0);
         printf( "     * For a function: int add_all_ints(int** nums, size_t size) which returns sum\n");
-        printf( "     %s libexample.so i add_all_ints -ai 1,2,3,4,5 -i 5\n", argv[0]);
+        printf( "     %s libexample.so i add_all_ints -ai 1,2,3,4,5 -i 5\n", argv0);
         printf( "\n");
         printf( "   STRUCTS:\n"
                 "      Structs can be used for both arguments and return values\n"
@@ -97,11 +96,11 @@ int main(int argc, char* argv[]) {
                 "    STRUCT EXAMPLES:\n"
                 "      Given a struct: struct mystruct { int x; char* s; }\n"
                 "      * For a function: void print_struct(struct mystruct s)\n"
-                "      %s libexample.so v print_struct -S: 3 \"hello world\" :S\n", argv[0]);
+                "      %s libexample.so v print_struct -S: 3 \"hello world\" :S\n", argv0);
         printf( "      * For a function: struct mystruct return_struct(int x, char* s)\n"
-                "      %s libexample.so S: i s :S 5 \"hello world\"\n", argv[0]);
+                "      %s libexample.so S: i s :S 5 \"hello world\"\n", argv0);
         printf( "      * For a function: modifyStruct(struct mystruct* s)\n"
-                "      %s libexample.so v modifyStruct -pS: 3 \"hello world\" :S\n", argv[0]);
+                "      %s libexample.so v modifyStruct -pS: 3 \"hello world\" :S\n", argv0);
         printf( "\n");
         printf( "  VARARGS:\n"
                 "     If a function takes varargs the position of the varargs should be specified with the `...` flag\n"
@@ -109,11 +108,14 @@ int main(int argc, char* argv[]) {
                 "     The varargs themselves are the same as any other function args and can be with or without typeflags\n"
                 "     (Floats and types shorter than int will be upgraded for you automatically)\n"
                 "    VARARGS EXAMPLES:\n"
-                "      %s libc.so i printf 'Hello %%s, your number is: %%.3f' ... bob 4.5\n", argv[0]);
-        printf( "      %s libc.so i printf 'This is just a static string' ... \n", argv[0]);
-        printf( "      %s some_lib.so v func_taking_all_varargs ... -i 3 -s hello\n", argv[0]);
+                "      %s libc.so i printf 'Hello %%s, your number is: %%.3f' ... bob 4.5\n", argv0);
+        printf( "      %s libc.so i printf 'This is just a static string' ... \n", argv0);
+        printf( "      %s some_lib.so v func_taking_all_varargs ... -i 3 -s hello\n", argv0);
+}
 
-
+int main(int argc, char* argv[]) {
+    if (argc > 1 && strcmp(argv[1], "--help") == 0) {
+        print_usage(argv[0]);
         return 0;
     }
     else if (argc < 4) {
