@@ -121,7 +121,7 @@ ffi_type* arg_type_to_ffi_type(const ArgInfo* arg, bool inside_struct) {
 
 
 
-void* make_raw_value_for_struct(ArgInfo* struct_arginfo){//, ffi_type* struct_type){
+void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return){//, ffi_type* struct_type){
     ffi_type* struct_type = make_ffi_type_for_struct(struct_arginfo);
     StructInfo* struct_info = struct_arginfo->struct_info;
     
@@ -135,12 +135,6 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo){//, ffi_type* struct_ty
     void* raw_memory = calloc(1,struct_type->size);
     if (!raw_memory) {
         fprintf(stderr, "Failed to allocate memory for struct.\n");
-        exit(1);
-    }
-
-    struct_info->value_ptrs = calloc(struct_info->info.arg_count, sizeof(void*));
-    if (!struct_info->value_ptrs) {
-        fprintf(stderr, "Failed to allocate memory for struct value pointers.\n");
         exit(1);
     }
 
@@ -158,8 +152,8 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo){//, ffi_type* struct_ty
 
             // not necessary to set the value_ptr for a struct
 
-            void* inner_struct_address = make_raw_value_for_struct(&struct_info->info.args[i]);//, struct_type->elements[i]);
-            memcpy(raw_memory+offsets[i], inner_struct_address, inner_size);
+            void* inner_struct_address = make_raw_value_for_struct(&struct_info->info.args[i],is_return);//, struct_type->elements[i]);
+            if (!is_return)  memcpy(raw_memory+offsets[i], inner_struct_address, inner_size);
 
             free(inner_struct_address);
 
@@ -169,22 +163,25 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo){//, ffi_type* struct_ty
             if (struct_info->info.args[i].pointer_depth > 0) {
                 fprintf(stderr, "Warning, parsing array pointers within structs is not fully tested, attempting to parse the struct pointer as one shallower pointer depth than usual\n");
                 size_t size = sizeof(void*);
-                memcpy(raw_memory+offsets[i], struct_info->info.args[i].value.ptr_val, size);
-                struct_info->value_ptrs[i] = raw_memory+offsets[i];
+                if (!is_return) memcpy(raw_memory+offsets[i], struct_info->info.args[i].value->ptr_val, size);
+                free(struct_info->info.args[i].value);
+                struct_info->info.args[i].value = raw_memory+offsets[i];
             }
             else {
                 fprintf(stderr, "Warning, parsing raw arrays within structs is not fully tested\n");
                 size_t size = typeToSize(struct_info->info.args[i].type) * get_size_for_arginfo_sized_array(&struct_info->info.args[i]);
-                memcpy(raw_memory+offsets[i], struct_info->info.args[i].value.ptr_val, size);
-                struct_info->value_ptrs[i] = raw_memory+offsets[i];
+                if (!is_return) memcpy(raw_memory+offsets[i], struct_info->info.args[i].value->ptr_val, size);
+                free(struct_info->info.args[i].value);
+                struct_info->info.args[i].value = raw_memory+offsets[i];
             }
                 
             // above are bandaid fixes for the fact that we previously decided to handle arrays as pointer types since that is how they are passed to functions as arguments
 
         } else copy_primitive: {
             size_t size = typeToSize(struct_info->info.args[i].type);
-            memcpy(raw_memory+offsets[i], &struct_info->info.args[i].value, size);
-            struct_info->value_ptrs[i] = raw_memory+offsets[i];
+            memcpy(raw_memory+offsets[i], struct_info->info.args[i].value, size);
+            free(struct_info->info.args[i].value);
+            struct_info->info.args[i].value = raw_memory+offsets[i];
         }
     }
 
@@ -219,8 +216,11 @@ void fix_struct_pointers(ArgInfo* struct_arg, void* raw_memory) {
     for (int i = 0; i < struct_info->info.arg_count; i++) {
         if (struct_info->info.args[i].type == TYPE_STRUCT) {
             fix_struct_pointers(&struct_info->info.args[i], raw_memory+offsets[i]);
-        } else {
-            struct_info->value_ptrs[i] = raw_memory+offsets[i];
+        } else if (!struct_info->info.args[i].is_array) {
+            struct_info->info.args[i].value = raw_memory+offsets[i];
+        } else { //is an array, so we need to copy it one level deeper since we handle arrays as pointers
+            struct_info->info.args[i].value = malloc(sizeof(void*));
+            struct_info->info.args[i].value->ptr_val = raw_memory+offsets[i];
         }
     }
 }
@@ -243,7 +243,7 @@ void handle_promoting_vararg_if_necessary(ffi_type** arg_type_ptr, ArgInfo* arg,
     size_t int_size = ffi_type_sint.size;
     ffi_type* arg_type = *arg_type_ptr;
     if (arg->type == TYPE_FLOAT) {
-        arg->value.d_val = (double)arg->value.f_val;
+        arg->value->d_val = (double)arg->value->f_val;
         arg->type = TYPE_DOUBLE;
         if (arg->explicitType) {
             fprintf(stderr, "Warning: arg[%d] is a vararg so it was promoted from float to double\n", argnum);
@@ -252,16 +252,16 @@ void handle_promoting_vararg_if_necessary(ffi_type** arg_type_ptr, ArgInfo* arg,
                && arg_type->type != FFI_TYPE_COMPLEX)
                && arg_type->size < int_size) {
         if (arg->type==TYPE_CHAR) {
-            arg->value.i_val = (int)arg->value.c_val;
+            arg->value->i_val = (int)arg->value->c_val;
             arg->type = TYPE_INT;
         } else if (arg->type==TYPE_SHORT) {
-            arg->value.i_val = (int)arg->value.s_val;
+            arg->value->i_val = (int)arg->value->s_val;
             arg->type = TYPE_INT;
         } else if (arg->type==TYPE_UCHAR) {
-            arg->value.ui_val = (unsigned int)arg->value.uc_val;
+            arg->value->ui_val = (unsigned int)arg->value->uc_val;
             arg->type = TYPE_UINT;
         } else if (arg->type==TYPE_USHORT) {
-            arg->value.ui_val = (unsigned int)arg->value.us_val;
+            arg->value->ui_val = (unsigned int)arg->value->us_val;
             arg->type = TYPE_UINT;
         } else { // if its too small but not one of the above types then we don't know what to do so just fail
             fprintf(stderr, "Error: arg[%d] is a vararg but its %s type %s is of size %zu which is less than sizeof(int) which is %zu\nYou should probably %s explicit type flag", argnum, arg->explicitType ? "explicit" : "inferred", typeToString(arg->type), arg_type->size,int_size,arg->explicitType ? "correct the" : "add an");
@@ -297,9 +297,9 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
             return -1;
         }
         if (call_info->info.args[i].type != TYPE_STRUCT){//|| call_info->info.args[i].pointer_depth == 0) {
-            values[i] = &call_info->info.args[i].value;
+            values[i] = call_info->info.args[i].value;
         } else {
-            values[i] = make_raw_value_for_struct(&call_info->info.args[i]);
+            values[i] = make_raw_value_for_struct(&call_info->info.args[i], false);
         }
     }
 
@@ -308,9 +308,10 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
 
     void* rvalue;
     if (call_info->info.return_var.type == TYPE_STRUCT) {
-        rvalue = make_raw_value_for_struct(&call_info->info.return_var); // this also handles pointer_depth
+        free(call_info->info.return_var.value);
+        rvalue = call_info->info.return_var.value = make_raw_value_for_struct(&call_info->info.return_var, true); // this also handles pointer_depth
     } else {
-        rvalue = &call_info->info.return_var.value;
+        rvalue = call_info->info.return_var.value;
     }
 
 
@@ -329,18 +330,23 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
 
     ffi_call(&cif, func, rvalue, values);
 
+    for (int i = 0; i < call_info->info.arg_count; ++i) {
+        if (call_info->info.args[i].type == TYPE_STRUCT) {
+            fix_struct_pointers(&call_info->info.args[i], values[i]);
+        }
+    }
     if (call_info->info.return_var.type == TYPE_STRUCT) {
         fix_struct_pointers(&call_info->info.return_var, rvalue);
     } else if (return_type->size < ffi_type_sint.size && call_info->info.return_var.type != TYPE_VOID && call_info->info.return_var.type != TYPE_FLOAT) {
         // this is really only necessary for rare architectures, but it's a good idea to do it anyway
         if (call_info->info.return_var.type==TYPE_CHAR) {
-            call_info->info.return_var.value.c_val = (char)call_info->info.return_var.value.i_val;
+            call_info->info.return_var.value->c_val = (char)call_info->info.return_var.value->i_val;
         } else if (call_info->info.return_var.type==TYPE_SHORT) {
-            call_info->info.return_var.value.s_val = (short)call_info->info.return_var.value.i_val;
+            call_info->info.return_var.value->s_val = (short)call_info->info.return_var.value->i_val;
         } else if (call_info->info.return_var.type==TYPE_UCHAR) {
-            call_info->info.return_var.value.uc_val = (unsigned char)call_info->info.return_var.value.ui_val;
+            call_info->info.return_var.value->uc_val = (unsigned char)call_info->info.return_var.value->ui_val;
         } else if (call_info->info.return_var.type==TYPE_USHORT) {
-            call_info->info.return_var.value.us_val = (unsigned short)call_info->info.return_var.value.ui_val;
+            call_info->info.return_var.value->us_val = (unsigned short)call_info->info.return_var.value->ui_val;
         } else {
             fprintf(stderr, "Warning: sizeof(return type) < sizeof(int), but we couldn't automatically promote it, so on some rare (BE?) architectures it may malfunction\n");
         }

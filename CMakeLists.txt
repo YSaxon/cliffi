@@ -242,9 +242,44 @@ set_tests_properties(test_p_struct_with_embedded_array PROPERTIES PASS_REGULAR_E
 set_tests_properties(test_p_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s->a[2]: 3")
 set_tests_properties(test_p_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s->y: 4")
 
+add_test(NAME test_p_struct_with_embedded_array_intonly #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_p_struct_with_embedded_array_intonly -pS: 1 1,2,3 4 :S )
+set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1")
+set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->s: hello")
+set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->a[0]: 1")
+set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->a[1]: 2")
+set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->a[2]: 3")
+set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->y: 4")
+set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "Arg 0 after function .*1, 2, 3")
+
+add_test(NAME test_p_struct_with_embedded_array_intonly_return_struct #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} S: i ai3 i :S test_p_struct_with_embedded_array_intonly_return_struct -pS: 1 1,2,3 4 :S )
+set_tests_properties(test_p_struct_with_embedded_array_intonly_return_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1")
+set_tests_properties(test_p_struct_with_embedded_array_intonly_return_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->a[0]: 1")
+set_tests_properties(test_p_struct_with_embedded_array_intonly_return_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->a[1]: 2")
+set_tests_properties(test_p_struct_with_embedded_array_intonly_return_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->a[2]: 3")
+set_tests_properties(test_p_struct_with_embedded_array_intonly_return_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->y: 4")
+
+add_test(NAME return_struct_with_embedded_array_intonly #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} S: i ai3 i :S return_struct_with_embedded_array_intonly )
+set_tests_properties(return_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \{ int 1, .*2, 3, 4.* int 5")
+
+
+add_test(NAME test_p_struct_with_embedded_array_charonly #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_p_struct_with_embedded_array_charonly -pS: 1 -ac10 h,e,l,l,o 4 :S )
+set_tests_properties(test_p_struct_with_embedded_array_charonly PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1")
+set_tests_properties(test_p_struct_with_embedded_array_charonly PROPERTIES PASS_REGULAR_EXPRESSION "s->s: hello")
+set_tests_properties(test_p_struct_with_embedded_array_charonly PROPERTIES PASS_REGULAR_EXPRESSION "s->y: 4")
+
+add_test(NAME return_simple_struct_embedded_array #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} S: ai3 :S return_simple_struct_embedded_array )
+set_tests_properties(return_simple_struct_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:.*1, 2, 3.*")
+
+
 add_test(NAME test_p_struct_with_embedded_array_changed #
     COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_p_struct_with_embedded_array_changed -pS: 1 -ac10 h,e,l,l,o 1,2,3 4 :S )
 set_tests_properties(test_p_struct_with_embedded_array_changed PROPERTIES PASS_REGULAR_EXPRESSION "5.*changed.*10, 11, 12.*15")
+
 
 
 add_test(NAME test_fixed_char_array_10_with_incomplete_values #
@@ -279,6 +314,14 @@ set_tests_properties(test_even_simpler_struct_embedded_array_10_chars_filled PRO
 add_test(NAME test_struct_with_embedded_array_pointer #
     COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_struct_with_char_pointer -S: -pac10 h,e,l,l,o,0x00,q :S )
 set_tests_properties(test_struct_with_embedded_array_pointer PROPERTIES PASS_REGULAR_EXPRESSION "s: hello")
+
+add_test(NAME test_p_struct_with_embedded_array_pointer #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_p_struct_with_char_pointer -pS: -pac10 h,e,l,l,o,0x00,q :S )
+set_tests_properties(test_p_struct_with_embedded_array_pointer PROPERTIES PASS_REGULAR_EXPRESSION "s: hello")
+set_tests_properties(test_p_struct_with_embedded_array_pointer PROPERTIES PASS_REGULAR_EXPRESSION "after function return:.*hello")
+
+
+
 
 add_test(NAME func_with_int_varargs #
     COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i sum_func_with_int_varargs 10 ... 1 2 3 4 5 6 7 8 9 10)
@@ -408,12 +451,14 @@ add_test(NAME TestUnsignedTypes
 COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v my_printf -s "unsigned: %hhu %hu %u %lu" ... -C 255 -H 65535 -I 4294967295 -L 18446744073709551615)
 set_tests_properties(TestUnsignedTypes PROPERTIES PASS_REGULAR_EXPRESSION "unsigned: 255 65535 4294967295 18446744073709551615")
 
+add_test(NAME return_struct_with_embedded_array_complex #
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} S: i ac10 ai3 i :S return_struct_with_embedded_array )
+set_tests_properties(return_struct_with_embedded_array_complex PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \{ int 1,.*h.?e.?l.?l.?o.?.*2, 3, 4.*int 5")
 
-# these still fail
-# add_test(NAME return_struct_with_embedded_array_complex #
-#     COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} S: i ai3 ac10 i :S return_struct_with_embedded_array )
-# set_tests_properties(return_struct_with_embedded_array_complex PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \{ int 1, int \{ 1, 2, 3 \}, .*h.?e.?l.?l.?o.?, int 5")
+add_test(NAME return_struct_with_embedded_array_pointer
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} S: pac10 :S return_struct_with_embedded_array_pointer)
+set_tests_properties(return_struct_with_embedded_array_pointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: .*h.?e.?l.?l.?o.?")
 
-# add_test(NAME return_struct_with_embedded_array_pointer
-#     COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} S: ac10 :S return_struct_with_embedded_array)
-# set_tests_properties(return_struct_with_embedded_array_pointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: .*h.?e.?l.?l.?o.?")
+add_test(NAME return_p_struct_with_embedded_array_pointer
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} pS: pac10 :S return_p_struct_with_embedded_array_pointer)
+set_tests_properties(return_p_struct_with_embedded_array_pointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: .*h.?e.?l.?l.?o.?")

@@ -1,18 +1,33 @@
 name: Bump Homebrew formula
-on: workflow_dispatch
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag-name:
+        description: 'Tag name for the release (optional)'
+        required: false
+  release:
+    types: [published]
 
 jobs:
-    bump_formula:
-      name: Bump Homebrew formula
-      runs-on: ubuntu-latest
-      steps:
-        - name: Bump the Homebrew formula
-          uses: mislav/bump-homebrew-formula-action@v3
-          env:
-            COMMITTER_TOKEN: ${{ secrets.TOKEN }}
-          with:
-            homebrew-tap: YSaxon/homebrew-cliffi
-            formula-name: cliffi
-            tag-name: ${{ github.event.inputs.tag-name }}
-            download-url: https://github.com/YSaxon/cliffi/archive/refs/tags/${{ github.event.inputs.tag-name }}.tar.gz
-  
+  bump_formula:
+    name: Bump Homebrew formula
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Get the latest release tag
+        id: latest_release
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.tag-name == ''
+        run: echo "LATEST_TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)" >> $GITHUB_ENV
+
+      - name: Bump the Homebrew formula
+        uses: mislav/bump-homebrew-formula-action@v3
+        env:
+          COMMITTER_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          homebrew-tap: YSaxon/homebrew-cliffi
+          formula-name: cliffi
+          tag-name: ${{ github.event.inputs.tag-name || env.LATEST_TAG || github.event.release.tag_name }}
+          download-url: https://github.com/YSaxon/cliffi/archive/refs/tags/${{ github.event.inputs.tag-name || env.LATEST_TAG || github.event.release.tag_name }}.tar.gz

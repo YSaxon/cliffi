@@ -51,7 +51,7 @@ typedef struct ArgInfo {
         double d_val;
         char* str_val; // For strings
         void* ptr_val; // For pointers or complex data
-    } value;
+    } *value;
     int pointer_depth; // For pointer types, indicates how many levels of indirection
     int array_value_pointer_depth; // For array types, indicates how many levels of indirection for the value pointers
     arrayMode is_array; // For pointer types, indicates if the pointer is an array
@@ -73,7 +73,6 @@ typedef struct ArgInfoContainer {
 
 typedef struct StructInfo {
     struct ArgInfoContainer info;
-    void** value_ptrs; // this is a pointer to an array of pointers to the values of the struct members, set when the struct is packed
     //possibly we should save a pointer to the struct's memory, so we can free it later
     bool is_packed;
 } StructInfo;

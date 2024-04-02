@@ -117,18 +117,10 @@ void hexdump(const void *data, size_t size) {
 
 
     //this contains an optional override for the value, which is used for printing struct fields
-    void format_and_print_arg_value_with_override(const ArgInfo* arg, const void* struct_value_ptr) {  //, char* buffer, size_t buffer_size) {
+    void format_and_print_arg_value(const ArgInfo* arg) {  //, char* buffer, size_t buffer_size) {
         
         const void* value;
-        if (struct_value_ptr == NULL) {
-            value = &(arg->value);
-        } else {
-            if (arg->is_array) {
-                value = &struct_value_ptr; // we treat array types as pointers, but in structs they are raw
-            } else {
-                value = struct_value_ptr;
-            }
-        }
+        value = arg->value;
 
         if (arg->pointer_depth > 0) {
             for (int j = 0; j < arg->pointer_depth; j++) {
@@ -141,8 +133,8 @@ void hexdump(const void *data, size_t size) {
             for (int i = 0; i < struct_info->info.arg_count; i++) {
                 format_and_print_arg_type(&struct_info->info.args[i]);
                 printf(" ");
-                void* override = struct_info->value_ptrs==NULL ? NULL : struct_info->value_ptrs[i];
-                format_and_print_arg_value_with_override(&struct_info->info.args[i], override);
+                // void* override = struct_info->value_ptrs==NULL ? NULL : struct_info->value_ptrs[i];
+                format_and_print_arg_value(&struct_info->info.args[i]);
                 if (i < struct_info->info.arg_count - 1) {
                     printf(", ");
                 }
@@ -151,10 +143,9 @@ void hexdump(const void *data, size_t size) {
         }
         else if (!arg->is_array) {
             print_arg_value(value, arg->type, 0);
-            // printf("\n");
         } 
         else { // is an array
-            value = *(void**)value;
+            value = *(void**)value; // because arrays are stored as pointers
             size_t array_size = get_size_for_arginfo_sized_array(arg);
             if (arg->type == TYPE_CHAR){
                 print_char_buffer((const char*)value, array_size);
@@ -174,8 +165,4 @@ void hexdump(const void *data, size_t size) {
                 // printf(" }\n");
             }
         }
-    }
-
-    void format_and_print_arg_value(const ArgInfo* arg) {
-        format_and_print_arg_value_with_override(arg, NULL);
     }

@@ -2,6 +2,7 @@
 #include "invoke_handler.h"
 #include "library_path_resolver.h"
 #include "types_and_utils.h"
+#include <malloc/_malloc.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -125,7 +126,7 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
     int i;
     for (i=0; i < argc; i++) {
         char* argStr = argv[i];
-        ArgInfo arg = {0};
+        ArgInfo arg = {.value = malloc(sizeof(void*))};
         int pointer_depth = 0;
 
         if (strcmp(argStr, ":S") == 0){ // this terminates a struct flag
@@ -197,6 +198,7 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
  
 FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     FunctionCallInfo* info = calloc(1, sizeof(FunctionCallInfo)); // using calloc to zero out the struct
+    info->info.return_var.value = malloc(sizeof(void*));
     int opt;
     char* argStr;
 
