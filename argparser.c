@@ -2,7 +2,6 @@
 #include "invoke_handler.h"
 #include "library_path_resolver.h"
 #include "types_and_utils.h"
-#include <malloc/_malloc.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
