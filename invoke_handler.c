@@ -109,7 +109,7 @@ ffi_type* arg_type_to_ffi_type(const ArgInfo* arg, bool inside_struct) {
         if (inside_struct && arg->pointer_depth==0)
         {
             ffi_type* element_type = arg->array_value_pointer_depth > 0 ? &ffi_type_pointer : primitive_argtype_to_ffi_type(arg->type);
-            return create_raw_array_type_for_use_inside_structs(get_size_for_arginfo_sized_array(arg), primitive_argtype_to_ffi_type(arg->type));
+            return create_raw_array_type_for_use_inside_structs(get_size_for_arginfo_sized_array(arg), element_type);
         } else {
             return &ffi_type_pointer;
         }
