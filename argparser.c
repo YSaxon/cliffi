@@ -39,13 +39,13 @@ void addArgToFunctionCallInfo(ArgInfoContainer* info, ArgInfo* arg) {
 
 void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
     int pointer_depth = 0;
+    int array_value_pointer_depth = 0;
     ArgType explicitType = charToType(argStr[0]); // Convert flag to type
     while (explicitType == TYPE_POINTER) {
         pointer_depth++;
         explicitType = charToType(argStr[pointer_depth]);
     }
         if (explicitType == TYPE_ARRAY) {
-        int array_value_pointer_depth = 0;
         // We'll need to figure out how to move forward argv past the array values
         // For now we'll just say that the array values can't have a space in them
         // So the entire array will just be one argv
@@ -114,6 +114,7 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
     arg->type = explicitType;
     arg->explicitType = true;
     arg->pointer_depth = pointer_depth;
+    arg->array_value_pointer_depth = array_value_pointer_depth;
 }
 
 void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *args_used, bool is_return, bool is_struct) {

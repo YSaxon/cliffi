@@ -9,6 +9,15 @@
 #include "return_formatter.h"
 
 
+void* makePointerLevel(void* value, int pointer_depth) {
+    for (int i = 0; i < pointer_depth; i++) {
+        void* temp = malloc(sizeof(void*)); // Allocate memory for each level of indirection
+        *(void**)temp = value; // Store the pointer to the previous level
+        value = temp;
+    }
+    return value;
+}
+
 bool isAllDigits(const char* str) {
     return str && *str && strspn(str, "0123456789") == strlen(str);
 }
@@ -159,7 +168,7 @@ void* hex_string_to_bytes(const char* hexStr) {
         int val2 = isxdigit(hexStr[i + 1]) ? (isdigit(hexStr[i + 1]) ? hexStr[i + 1] - '0' : toupper(hexStr[i + 1]) - 'A' + 10) : -1;
 
         if (val1 < 0 || val2 < 0) {
-            free(output); // Cleanup on error
+            // free(output); // Cleanup on error
             fprintf(stderr, "Error: Invalid hex character in string: %s\n", hexStr);
             exit(1);
         }
@@ -171,7 +180,7 @@ void* hex_string_to_bytes(const char* hexStr) {
 }
 
 void* convert_to_type(ArgType type, const char* argStr) {
-    void* result = malloc(typeToSize(type));
+    void* result = malloc(typeToSize(type,0));
 
     if (result == NULL) {
         fprintf(stderr, "Memory allocation failed.\n");
@@ -287,7 +296,7 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
 
     if ((strcmp(argStr, "0") == 0 || strcmp(argStr, "NULL") == 0 || strcmp(argStr, "null") == 0)){
         if (arg->is_array==ARRAY_STATIC_SIZE) {
-            arg->value->ptr_val = calloc(arg->array_size.static_size, typeToSize(arg->type));
+            arg->value->ptr_val = calloc(arg->array_size.static_size, typeToSize(arg->type, arg->array_value_pointer_depth));
             return;
         } else if (arg->is_array==ARRAY_SIZE_AT_ARGNUM) {
             // fprintf(stderr, "Warning: We have not yet implemented initializing null arrays of size pointed to by another argument, so this will be a null pointer for now\n");
@@ -310,7 +319,7 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
     // Step 1: Split string by commas and count substrings
     size_t array_size_implicit;
     void* array_values;
-    size_t size_of_type = typeToSize(arg->type);
+    size_t size_of_type = typeToSize(arg->type, arg->array_value_pointer_depth);
     
     int count = 1;
     for (const char* p = argStr; *p; p++) {
@@ -321,6 +330,10 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
     if (count == 1){
         if (isHexFormat(argStr))
         {
+            if (arg->array_value_pointer_depth > 0) {
+                fprintf(stderr, "Error: You can't use the hex array initialization method with an array of pointer types");
+                exit(1);
+            }
             //consider argstr to be a hex string containing the raw values for the array (mostly only useful for char arrays)
             int hexstring_bytes = (strlen(argStr) - 2) / 2;
             if (size_of_type == 0) {
@@ -350,6 +363,7 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
                 exit(1);
             }
             void* convertedValue = convert_to_type(arg->type, token);
+            convertedValue = makePointerLevel(convertedValue, arg->array_value_pointer_depth);
             memcpy(array_values + (i * size_of_type), convertedValue, size_of_type);
             free(convertedValue);
         }
@@ -366,7 +380,7 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
             arg->value->ptr_val = array_values;
             arg->array_size.static_size = explicit_size;
         } else if (explicit_size > implicit_size){
-            fprintf(stderr, "Warning: Array was specified to have size %zu, but the value implies a size of %zu. Filling the rest of the array with 0s\n", explicit_size, implicit_size);
+            fprintf(stderr, "Warning: Array was specified to have size %zu, but the value implies a size of %zu. Filling the rest of the array with null bytes\n", explicit_size, implicit_size);
             arg->value->ptr_val = calloc(explicit_size, size_of_type);
             memcpy(arg->value->ptr_val, array_values, implicit_size * size_of_type);
             free(array_values);
@@ -400,7 +414,7 @@ void second_pass_arginfo_ptr_sized_null_array_initialization_inner(ArgInfo* arg)
         }
         if (value==NULL){
             size_t size = get_size_for_arginfo_sized_array(arg);
-            * (void**) parent = calloc(size, typeToSize(arg->type));
+            * (void**) parent = calloc(size, typeToSize(arg->type, arg->array_value_pointer_depth));
         } else {
             // fprintf(stderr, "Warning: Array was specified to have its size be at arginfo ptr, but the array was already initialized with a non-null value. We will not reallocate the array, but this may lead to unexpected behavior\n");
             // realloc the array to the correct size?
@@ -419,8 +433,8 @@ void second_pass_arginfo_ptr_sized_null_array_initialization_inner(ArgInfo* arg)
                 * (void**) parent = temp_array.array;
             } else if (explicit_size > implicit_size){
                 fprintf(stderr, "Warning: Array was specified by its size_t arg to have size %zu, but the value implies a size of %zu. Filling the rest of the array with 0s\n", explicit_size, implicit_size);
-                * (void**) parent = calloc(explicit_size, typeToSize(arg->type));
-                memcpy(* (void**) parent, temp_array.array, implicit_size * typeToSize(arg->type));
+                * (void**) parent = calloc(explicit_size, typeToSize(arg->type, arg->array_value_pointer_depth));
+                memcpy(* (void**) parent, temp_array.array, implicit_size * typeToSize(arg->type, arg->array_value_pointer_depth));
                 free(temp_array.array);
             } else {
                 * (void**) parent = temp_array.array;
@@ -467,7 +481,8 @@ char* typeToString(ArgType type) {
     }
 }
 
-size_t typeToSize(ArgType type) {
+size_t typeToSize(ArgType type, int array_value_pointer_depth) {
+    if (array_value_pointer_depth > 0) return sizeof(void*);
     switch (type) {
         case TYPE_CHAR: return sizeof(char);
         case TYPE_SHORT: return sizeof(short);

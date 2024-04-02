@@ -615,11 +615,23 @@ struct has_array_of_int_pointers {
     int* arr[3];
 };
 
-void test_array_of_pointers_in_struct(struct has_array_of_int_pointers s) {
+int test_array_of_pointers_in_struct(struct has_array_of_int_pointers s) {
+    int sum = 0;
     for (int i = 0; i < 3; i++) {
-        printf("s.arr[%d]: %d\n", i, s.arr[i][0]);
+        sum += *s.arr[i];
     }
+    return sum;
 }
+
+int test_array_of_int_pointers_simple(int* arr[3]) {
+    int sum = 0;
+    for (int i = 0; i < 3; i++) {
+        sum += *arr[i];
+    }
+    return sum;
+}
+// int** grand_test_of_arrays_of_pointers(struct has_array_of_int_pointers s, struct has_array_of_int_pointers* s2, int arr[3], int (*arr2)[3]);
+
 
 int** grand_test_of_arrays_of_int_pointers(struct has_array_of_int_pointers s, struct has_array_of_int_pointers* s2, int* arr[3], int* (*arr2)[3]) {
     int** return_ints = malloc(12 * sizeof(int*));

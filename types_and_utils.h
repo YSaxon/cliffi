@@ -96,7 +96,7 @@ void* hex_string_to_bytes(const char* hexStr);
 void infer_arg_type_from_value(ArgInfo* arg, const char* argval);
 void convert_arg_value(ArgInfo* arg, const char* argStr);
 void log_function_call_info(FunctionCallInfo* info);
-size_t typeToSize(ArgType type);
+size_t typeToSize(ArgType type, int array_value_pointer_depth);
 char* typeToFormatSpecifier(ArgType type);
 void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr);
 
