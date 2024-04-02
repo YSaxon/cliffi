@@ -133,12 +133,6 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo){//, ffi_type* struct_ty
         exit(1);
     }
 
-    struct_info->value_ptrs = calloc(struct_info->info.arg_count, sizeof(void*));
-    if (!struct_info->value_ptrs) {
-        fprintf(stderr, "Failed to allocate memory for struct value pointers.\n");
-        exit(1);
-    }
-
     for (int i = 0; i < struct_info->info.arg_count; i++) {
 
        if (struct_info->info.args[i].type == TYPE_STRUCT) {
@@ -166,14 +160,14 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo){//, ffi_type* struct_ty
                 size_t size = sizeof(void*);
                 memcpy(raw_memory+offsets[i], struct_info->info.args[i].value->ptr_val, size);
                 free(struct_info->info.args[i].value);
-                struct_info->info.args[i].value = struct_info->value_ptrs[i] = raw_memory+offsets[i];
+                struct_info->info.args[i].value = raw_memory+offsets[i];
             }
             else {
                 fprintf(stderr, "Warning, parsing raw arrays within structs is not fully tested\n");
                 size_t size = typeToSize(struct_info->info.args[i].type) * get_size_for_arginfo_sized_array(&struct_info->info.args[i]);
                 memcpy(raw_memory+offsets[i], struct_info->info.args[i].value->ptr_val, size);
                 free(struct_info->info.args[i].value);
-                struct_info->info.args[i].value = struct_info->value_ptrs[i] = raw_memory+offsets[i];
+                struct_info->info.args[i].value = raw_memory+offsets[i];
             }
                 
             // above are bandaid fixes for the fact that we previously decided to handle arrays as pointer types since that is how they are passed to functions as arguments
@@ -182,7 +176,7 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo){//, ffi_type* struct_ty
             size_t size = typeToSize(struct_info->info.args[i].type);
             memcpy(raw_memory+offsets[i], struct_info->info.args[i].value, size);
             free(struct_info->info.args[i].value);
-            struct_info->info.args[i].value = struct_info->value_ptrs[i] = raw_memory+offsets[i];
+            struct_info->info.args[i].value = raw_memory+offsets[i];
         }
     }
 
@@ -218,9 +212,9 @@ void fix_struct_pointers(ArgInfo* struct_arg, void* raw_memory) {
         if (struct_info->info.args[i].type == TYPE_STRUCT) {
             fix_struct_pointers(&struct_info->info.args[i], raw_memory+offsets[i]);
         } else if (!struct_info->info.args[i].is_array) {
-            struct_info->info.args[i].value = struct_info->value_ptrs[i] = raw_memory+offsets[i];
+            struct_info->info.args[i].value = raw_memory+offsets[i];
         } else { //is an array
-            struct_info->info.args[i].value->ptr_val = struct_info->value_ptrs[i] = raw_memory+offsets[i];
+            struct_info->info.args[i].value->ptr_val = raw_memory+offsets[i];
         }
     }
 }
