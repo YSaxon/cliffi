@@ -55,7 +55,14 @@ void hexdump(const void *data, size_t size) {
 }
 
 
-    void print_arg_value(const void* value, ArgType type, size_t offset) {
+    void print_arg_value(const void* value, ArgType type, size_t offset, int pointer_depth) {
+    if (pointer_depth > 0) {
+        value = value + offset * sizeof(void*);
+        for (int j = 0; j < pointer_depth; j++) {
+            value = *(void**)value;
+        }
+        offset = 0;
+    }
     switch (type) {
         case TYPE_CHAR:
             printf("%c", ((char*)value)[offset]);
@@ -153,27 +160,27 @@ void hexdump(const void *data, size_t size) {
             printf(" }");
         }
         else if (!arg->is_array) {
-            print_arg_value(value, arg->type, 0);
+            print_arg_value(value, arg->type, 0, 0);
         } 
         else { // is an array
             value = *(void**)value; // because arrays are stored as pointers
             size_t array_size = get_size_for_arginfo_sized_array(arg);
-            if (arg->type == TYPE_CHAR){
-                print_char_buffer((const char*)value, array_size);
-                // print it as a string, with escape characters
-            } else if (arg->type == TYPE_UCHAR) {
-                hexdump(value, array_size);
-            } else 
-            {
+            if(arg->array_value_pointer_depth==0){
+                if (arg->type == TYPE_CHAR){
+                    print_char_buffer((const char*)value, array_size);
+                    // print it as a string, with escape characters
+                } else if (arg->type == TYPE_UCHAR) {
+                    hexdump(value, array_size);
+            } else goto print_regular;
+            } else print_regular: {
                 printf("{ ");
                 for (size_t i = 0; i < array_size; i++) {
-                    print_arg_value(value, arg->type,i);
+                    print_arg_value(value, arg->type,i, arg->array_value_pointer_depth);
                     if (i < array_size - 1) {
                         printf(", ");
                     }
                 }
                 printf(" }");
-                // printf(" }\n");
             }
         }
     }
