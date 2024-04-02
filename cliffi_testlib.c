@@ -633,7 +633,7 @@ int test_array_of_int_pointers_simple(int* arr[3]) {
 // int** grand_test_of_arrays_of_pointers(struct has_array_of_int_pointers s, struct has_array_of_int_pointers* s2, int arr[3], int (*arr2)[3]);
 
 
-int** grand_test_of_arrays_of_int_pointers(struct has_array_of_int_pointers s, struct has_array_of_int_pointers* s2, int* arr[3], int* (*arr2)[3]) {
+int** grand_test_of_arrays_of_int_pointers(struct has_array_of_int_pointers s, struct has_array_of_int_pointers* s2, int* arr[3], int* (**arr2)[3]) {
     int** return_ints = malloc(12 * sizeof(int*));
     for (int i = 0; i < 3; i++) {
         printf("s.arr[%d]: %d\n", i, *s.arr[i]);
@@ -648,11 +648,8 @@ int** grand_test_of_arrays_of_int_pointers(struct has_array_of_int_pointers s, s
         return_ints[i + 6] = arr[i];
     }
     for (int i = 0; i < 3; i++) {
-        printf("arr2[%d]: %d\n", i, *(*arr2)[i]);
-        return_ints[i + 9] = (*arr2)[i];
-    }
-    for (int i = 0; i < 12; i++) {
-        return_ints[i] = NULL;
+        printf("arr2[%d]: %d\n", i, *(**arr2)[i]);
+        return_ints[i + 9] = (**arr2)[i];
     }
     return return_ints;
 }
