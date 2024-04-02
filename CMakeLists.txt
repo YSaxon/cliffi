@@ -462,3 +462,27 @@ set_tests_properties(return_struct_with_embedded_array_pointer PROPERTIES PASS_R
 add_test(NAME return_p_struct_with_embedded_array_pointer
     COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} pS: pac10 :S return_p_struct_with_embedded_array_pointer)
 set_tests_properties(return_p_struct_with_embedded_array_pointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: .*h.?e.?l.?l.?o.?")
+
+add_test(NAME grand_test_of_arrays_of_int_pointers
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} api12 grand_test_of_arrays_of_int_pointers -S: -api3 1,2,3 :S -pS: -api3 4,5,6 :S -api3 7,8,9 -papi3 10,11,12)
+    set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "s.arr[0]: 1")
+    set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "s.arr[1]: 2")
+    set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "s.arr[2]: 3")
+    set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "s2->arr[0]: 4")
+    set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "s2->arr[1]: 5")
+    set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "s2->arr[2]: 6")
+    set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "arr[0]: 7")
+    set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "arr[1]: 8")
+    set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "arr[2]: 9")
+    set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "arr2[0]: 10")
+    set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "arr2[1]: 11")
+    set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "arr2[2]: 12")
+    set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:.*1.*2.*3.*4.*5.*6.*7.*8.*9.*10.*11.*12")
+
+add_test(NAME test_array_of_int_pointers_simple
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i test_array_of_int_pointers_simple -api3 1,2,3)
+    set_tests_properties(test_array_of_int_pointers_simple PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 6")
+
+add_test(NAME test_array_of_pointers_in_struct
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i test_array_of_pointers_in_struct -S: -api3 1,2,3 4,5,6 :S)
+    set_tests_properties(test_array_of_pointers_in_struct PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 6")

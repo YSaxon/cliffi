@@ -611,6 +611,52 @@ unsigned long add_ulong(unsigned long a, unsigned long b) {
 }
 
 
+struct has_array_of_int_pointers {
+    int* arr[3];
+};
+
+int test_array_of_pointers_in_struct(struct has_array_of_int_pointers s) {
+    int sum = 0;
+    for (int i = 0; i < 3; i++) {
+        sum += *s.arr[i];
+    }
+    return sum;
+}
+
+int test_array_of_int_pointers_simple(int* arr[3]) {
+    int sum = 0;
+    for (int i = 0; i < 3; i++) {
+        sum += *arr[i];
+    }
+    return sum;
+}
+// int** grand_test_of_arrays_of_pointers(struct has_array_of_int_pointers s, struct has_array_of_int_pointers* s2, int arr[3], int (*arr2)[3]);
+
+
+int** grand_test_of_arrays_of_int_pointers(struct has_array_of_int_pointers s, struct has_array_of_int_pointers* s2, int* arr[3], int* (**arr2)[3]) {
+    int** return_ints = malloc(12 * sizeof(int*));
+    for (int i = 0; i < 3; i++) {
+        printf("s.arr[%d]: %d\n", i, *s.arr[i]);
+        return_ints[i] = s.arr[i];
+    }
+    for (int i = 0; i < 3; i++) {
+        printf("s2->arr[%d]: %d\n", i, *s2->arr[i]);
+        return_ints[i + 3] = s2->arr[i];
+    }
+    for (int i = 0; i < 3; i++) {
+        printf("arr[%d]: %d\n", i, *arr[i]);
+        return_ints[i + 6] = arr[i];
+    }
+    for (int i = 0; i < 3; i++) {
+        printf("arr2[%d]: %d\n", i, *(**arr2)[i]);
+        return_ints[i + 9] = (**arr2)[i];
+    }
+    return return_ints;
+}
+
+
+
+
 // Entry point to prevent the compiler from complaining when compiling as a shared library
 // This function will not be called; it's just to satisfy the linker.
 int main() {

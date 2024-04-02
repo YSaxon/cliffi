@@ -106,8 +106,13 @@ ffi_type* arg_type_to_ffi_type(const ArgInfo* arg, bool inside_struct) {
     } else if (arg->type == TYPE_STRUCT) {
         return make_ffi_type_for_struct(arg);
     } else if (arg->is_array) {
-        if (inside_struct && arg->pointer_depth==0) return create_raw_array_type_for_use_inside_structs(get_size_for_arginfo_sized_array(arg), primitive_argtype_to_ffi_type(arg->type));
-        else return &ffi_type_pointer;
+        if (inside_struct && arg->pointer_depth==0)
+        {
+            ffi_type* element_type = arg->array_value_pointer_depth > 0 ? &ffi_type_pointer : primitive_argtype_to_ffi_type(arg->type);
+            return create_raw_array_type_for_use_inside_structs(get_size_for_arginfo_sized_array(arg), element_type);
+        } else {
+            return &ffi_type_pointer;
+        }
     } else {
         return primitive_argtype_to_ffi_type(arg->type);
     }
@@ -156,15 +161,13 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return){//, ffi
         } else if (struct_info->info.args[i].is_array) {
             // we need to step down one layer of pointers compared to the usual handling of arrays in functions
             if (struct_info->info.args[i].pointer_depth > 0) {
-                fprintf(stderr, "Warning, parsing array pointers within structs is not fully tested, attempting to parse the struct pointer as one shallower pointer depth than usual\n");
                 size_t size = sizeof(void*);
                 if (!is_return) memcpy(raw_memory+offsets[i], struct_info->info.args[i].value->ptr_val, size);
                 free(struct_info->info.args[i].value);
                 struct_info->info.args[i].value = raw_memory+offsets[i];
             }
             else {
-                fprintf(stderr, "Warning, parsing raw arrays within structs is not fully tested\n");
-                size_t size = typeToSize(struct_info->info.args[i].type) * get_size_for_arginfo_sized_array(&struct_info->info.args[i]);
+                size_t size = typeToSize(struct_info->info.args[i].type,struct_info->info.args[i].array_value_pointer_depth) * get_size_for_arginfo_sized_array(&struct_info->info.args[i]);
                 if (!is_return) memcpy(raw_memory+offsets[i], struct_info->info.args[i].value->ptr_val, size);
                 free(struct_info->info.args[i].value);
                 struct_info->info.args[i].value = raw_memory+offsets[i];
@@ -173,7 +176,7 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return){//, ffi
             // above are bandaid fixes for the fact that we previously decided to handle arrays as pointer types since that is how they are passed to functions as arguments
 
         } else copy_primitive: {
-            size_t size = typeToSize(struct_info->info.args[i].type);
+            size_t size = typeToSize(struct_info->info.args[i].type,0);
             memcpy(raw_memory+offsets[i], struct_info->info.args[i].value, size);
             free(struct_info->info.args[i].value);
             struct_info->info.args[i].value = raw_memory+offsets[i];
