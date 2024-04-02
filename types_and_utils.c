@@ -219,17 +219,17 @@ void convert_arg_value(ArgInfo* arg, const char* argStr) {
 
     ArgType type = arg->type;
     switch (arg->type) {
-        case TYPE_INT: arg->value.i_val = *(int*)convertedValue; break;
-        case TYPE_FLOAT: arg->value.f_val = *(float*)convertedValue; break;
-        case TYPE_DOUBLE: arg->value.d_val = *(double*)convertedValue; break;
-        case TYPE_CHAR: arg->value.c_val = *(char*)convertedValue; break;
-        case TYPE_SHORT: arg->value.s_val = *(short*)convertedValue; break;
-        case TYPE_UCHAR: arg->value.uc_val = *(unsigned char*)convertedValue; break;
-        case TYPE_USHORT: arg->value.us_val = *(unsigned short*)convertedValue; break;
-        case TYPE_UINT: arg->value.ui_val = *(unsigned int*)convertedValue; break;
-        case TYPE_ULONG: arg->value.ul_val = *(unsigned long*)convertedValue; break;
-        case TYPE_LONG: arg->value.l_val = *(long*)convertedValue; break;
-        case TYPE_STRING: arg->value.str_val = *(char**)convertedValue; break;
+        case TYPE_INT: arg->value->i_val = *(int*)convertedValue; break;
+        case TYPE_FLOAT: arg->value->f_val = *(float*)convertedValue; break;
+        case TYPE_DOUBLE: arg->value->d_val = *(double*)convertedValue; break;
+        case TYPE_CHAR: arg->value->c_val = *(char*)convertedValue; break;
+        case TYPE_SHORT: arg->value->s_val = *(short*)convertedValue; break;
+        case TYPE_UCHAR: arg->value->uc_val = *(unsigned char*)convertedValue; break;
+        case TYPE_USHORT: arg->value->us_val = *(unsigned short*)convertedValue; break;
+        case TYPE_UINT: arg->value->ui_val = *(unsigned int*)convertedValue; break;
+        case TYPE_ULONG: arg->value->ul_val = *(unsigned long*)convertedValue; break;
+        case TYPE_LONG: arg->value->l_val = *(long*)convertedValue; break;
+        case TYPE_STRING: arg->value->str_val = *(char**)convertedValue; break;
         default:
             fprintf(stderr, "Unsupported argument type. Cannot assign value.\n");
             break;
@@ -239,9 +239,9 @@ void convert_arg_value(ArgInfo* arg, const char* argStr) {
 
 
 for (int i = 0; i < arg->pointer_depth; i++) {
-    void* temp = malloc(sizeof(arg->value.ptr_val)); // meaning size of a pointer
-    memcpy(temp, &arg->value, sizeof(arg->value.ptr_val));
-    arg->value.ptr_val = temp; //TODO we should free it at the end
+    void* temp = malloc(sizeof(void*)); // meaning size of a pointer
+    memcpy(temp, arg->value, sizeof(void*));
+    arg->value->ptr_val = temp; //TODO we should free it at the end
     // arg->value.ptr_val = &arg->value; this doesn't work because it just ends up pointing to itself
     //don't make the mistake of setting type to POINTER. type is the type of the value being pointed to, not the pointer itself
     }
@@ -254,7 +254,7 @@ typedef struct {
                 } ArgnumSizedButAlsoImplicitlySizedArray;
 
 void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
-
+    arg->value = malloc(sizeof(void*));
 
     // multiple scenarios to deal with:
     // sizing:
@@ -287,12 +287,12 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
 
     if ((strcmp(argStr, "0") == 0 || strcmp(argStr, "NULL") == 0 || strcmp(argStr, "null") == 0)){
         if (arg->is_array==ARRAY_STATIC_SIZE) {
-            arg->value.ptr_val = calloc(arg->array_size.static_size, typeToSize(arg->type));
+            arg->value->ptr_val = calloc(arg->array_size.static_size, typeToSize(arg->type));
             return;
         } else if (arg->is_array==ARRAY_SIZE_AT_ARGNUM) {
             // fprintf(stderr, "Warning: We have not yet implemented initializing null arrays of size pointed to by another argument, so this will be a null pointer for now\n");
             // we've now implemented this in second_pass_arginfo_ptr_sized_null_array_initialization, so we can just return
-            arg->value.ptr_val = NULL;
+            arg->value->ptr_val = NULL;
             return;
         } else {
             fprintf(stderr, "Error: Argstr %s is interpreted as NULL. We cannot initialize a null array with no sizing info. If you WANT a null pointer you should use the pointer flag instead\n", argStr);
@@ -357,21 +357,21 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
     if (arg->is_array==ARRAY_STATIC_SIZE_UNSET){
         arg->is_array = ARRAY_STATIC_SIZE;
         arg->array_size.static_size = array_size_implicit;
-        arg->value.ptr_val = array_values;
+        arg->value->ptr_val = array_values;
     } else if (arg->is_array==ARRAY_STATIC_SIZE){
         size_t explicit_size = arg->array_size.static_size;
         size_t implicit_size = array_size_implicit;
         if (explicit_size < implicit_size){
             fprintf(stderr, "Warning: Array was specified to have size %zu, but the value implies a size of %zu. Setting array size to the explicit size (values may be truncated)\n", explicit_size, implicit_size);
-            arg->value.ptr_val = array_values;
+            arg->value->ptr_val = array_values;
             arg->array_size.static_size = explicit_size;
         } else if (explicit_size > implicit_size){
             fprintf(stderr, "Warning: Array was specified to have size %zu, but the value implies a size of %zu. Filling the rest of the array with 0s\n", explicit_size, implicit_size);
-            arg->value.ptr_val = calloc(explicit_size, size_of_type);
-            memcpy(arg->value.ptr_val, array_values, implicit_size * size_of_type);
+            arg->value->ptr_val = calloc(explicit_size, size_of_type);
+            memcpy(arg->value->ptr_val, array_values, implicit_size * size_of_type);
             free(array_values);
         } else {
-            arg->value.ptr_val = array_values;
+            arg->value->ptr_val = array_values;
             arg->array_size.static_size = explicit_size;
         }
     } else if (arg->is_array==ARRAY_SIZE_AT_ARGNUM){
@@ -379,7 +379,7 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
         ArgnumSizedButAlsoImplicitlySizedArray *temp_array = malloc(sizeof(ArgnumSizedButAlsoImplicitlySizedArray));
         temp_array->temp_array_size = array_size_implicit;
         temp_array->array = array_values;
-        arg->value.ptr_val = temp_array;
+        arg->value->ptr_val = temp_array;
         // arg->array_size.static_size = array_size_implicit; <-- DONT DO THAT, IT WILL OVERWRITE THE ARGNUM!
         // alternatively we could add a field to the arginfo to store the implicit size
     }
@@ -392,8 +392,8 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
 
 void second_pass_arginfo_ptr_sized_null_array_initialization_inner(ArgInfo* arg){
         // first we have to traverse the pointer_depths to get to the actual array
-        void* value = arg->value.ptr_val;
-        void* parent = &arg->value;
+        void* value = arg->value->ptr_val;
+        void* parent = arg->value;
         for (int j = 0; j < arg->pointer_depth; j++) {
             parent = value;
             value = *(void**)value;
@@ -566,19 +566,19 @@ size_t get_size_for_arginfo_sized_array(const ArgInfo* arg){
             }
             switch (arg->array_size.arginfo_of_size_t->type) {
                 case TYPE_SHORT:
-                    return (size_t) *(short*)size_t_param_val;
+                    return (size_t) **(short**)size_t_param_val;
                 case TYPE_INT:
-                    return (size_t) *(int*)size_t_param_val;
+                    return (size_t) **(int**)size_t_param_val;
                 case TYPE_LONG:
-                    return (size_t) *(long*)size_t_param_val;
+                    return (size_t) **(long**)size_t_param_val;
                 case TYPE_UCHAR:
-                    return (size_t) *(unsigned char*)size_t_param_val;
+                    return (size_t) **(unsigned char**)size_t_param_val;
                 case TYPE_USHORT:
-                    return (size_t) *(unsigned short*)size_t_param_val;
+                    return (size_t) **(unsigned short**)size_t_param_val;
                 case TYPE_UINT:
-                    return (size_t) *(unsigned int*)size_t_param_val;
+                    return (size_t) **(unsigned int**)size_t_param_val;
                 case TYPE_ULONG:
-                    return (size_t) *(unsigned long*)size_t_param_val;
+                    return (size_t) **(unsigned long**)size_t_param_val;
                 default:
                     fprintf(stderr, "Error: array was specified to have its size_t be another argument, but the arg at that position is not a numeric type\n");
                     exit(1);
