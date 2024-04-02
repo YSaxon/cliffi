@@ -310,23 +310,40 @@ void test_even_simpler_struct_embedded_array_10_chars(struct even_simpler_struct
 }
 
 struct struct_with_embedded_array_pointer{
-    char* s;
+    char (*s)[10];
 };
 
 void test_struct_with_char_pointer(struct struct_with_embedded_array_pointer s){
-    hexdump(&s.s, sizeof(struct struct_with_embedded_array_pointer));
-    printf("s: %s\n", s.s);
+    hexdump(&s, sizeof(struct struct_with_embedded_array_pointer));
+    printf("s: %s\n", *s.s);
     for (int i = 0; i < 10; i++){
-        printf("s.s[%d]: %c\n", i, s.s[i]);
+        printf("s.s[%d]: %c\n", i, *s.s[i]);
     }
 }
 
 struct struct_with_embedded_array_pointer return_struct_with_embedded_array_pointer(){
     struct struct_with_embedded_array_pointer s = {};
     s.s = malloc(10);
-    strcpy(s.s, "hello");
+    strcpy(*s.s, "hello");
     return s;
 }
+
+void test_p_struct_with_char_pointer(struct struct_with_embedded_array_pointer *s){
+    hexdump(s, sizeof(struct struct_with_embedded_array_pointer));
+    printf("s: %s\n", *s->s);
+    for (int i = 0; i < 10; i++){
+        printf("s.s[%d]: %c\n", i, *s->s[i]);
+    }
+}
+
+struct struct_with_embedded_array_pointer* return_p_struct_with_embedded_array_pointer(){
+    struct struct_with_embedded_array_pointer* s = malloc(sizeof(struct struct_with_embedded_array_pointer));
+    s->s = malloc(10);
+    strcpy(*s->s, "hello");
+    return s;
+}
+
+
 
 struct struct_with_embedded_array{
     int x;
