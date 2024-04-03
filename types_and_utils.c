@@ -417,9 +417,9 @@ void second_pass_arginfo_ptr_sized_null_array_initialization_inner(ArgInfo* arg)
             if (size_from_sizet_arg < implied_or_explicit_size){
                 fprintf(stderr, "Warning: Array was specified by its size_t arg to have size %zu, but the value implies a greater size of %zu. Setting array size to the explicit size (values may be truncated)\n", size_from_sizet_arg, implied_or_explicit_size);
             } else if (size_from_sizet_arg > implied_or_explicit_size){
-                fprintf(stderr, "Warning: Array was specified by its size_t arg to have size %zu, but the value implies a smaller size of %zu. Filling the rest of the array with 0s\n", size_from_sizet_arg, implied_or_explicit_size);
-                value = realloc(value, size_from_sizet_arg);
-                memset(value + implied_or_explicit_size, 0, size_from_sizet_arg - implied_or_explicit_size);
+                * (void**) parent = calloc(size_from_sizet_arg, typeToSize(arg->type, arg->array_value_pointer_depth));
+                memcpy(* (void**) parent, value, implied_or_explicit_size * typeToSize(arg->type, arg->array_value_pointer_depth));
+                // should we free the old array? it seems to cause errors if we do
             }
         }
 }
