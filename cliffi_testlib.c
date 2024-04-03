@@ -573,7 +573,7 @@ struct UnPackedStruct get_unpacked_struct() {
     return s;
 }
 
-// called as v -SP: c i ac2 d ai3 c :S
+// called as v -SK: c i ac2 d ai3 c :S
 
 struct PackedStruct* get_p_packed_struct() {
     struct PackedStruct* s = malloc(sizeof(struct PackedStruct));

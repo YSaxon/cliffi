@@ -490,13 +490,13 @@ add_test(NAME test_array_of_pointers_in_struct
 
 
 add_test(NAME get_packed_struct #
-    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} SP: c i ac2 d ai3 c :S get_packed_struct )
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} SK: c i ac2 d ai3 c :S get_packed_struct )
 
 add_test(NAME get_p_packed_struct #
-    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} pSP: c i ac2 d ai3 c :S get_p_packed_struct )
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} pSK: c i ac2 d ai3 c :S get_p_packed_struct )
 
 add_test(NAME test_packed_struct #
-    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_packed_struct -SP: -c a 0 a,b 4.5 1,2,3 -c q :S)
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_packed_struct -SK: -c a 0 a,b 4.5 1,2,3 -c q :S)
     set_tests_properties(test_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s.c: a")
     set_tests_properties(test_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s.i: 0")
     set_tests_properties(test_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s.s[0]: a")
@@ -506,7 +506,7 @@ add_test(NAME test_packed_struct #
 
 
 add_test(NAME test_p_packed_struct #
-    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_p_packed_struct -pSP: -c a 0 a,b 4.5 1,2,3 -c q :S)
+    COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_p_packed_struct -pSK: -c a 0 a,b 4.5 1,2,3 -c q :S)
     set_tests_properties(test_p_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->c: a")
     set_tests_properties(test_p_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->i: 0")
     set_tests_properties(test_p_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->s[0]: a")

@@ -47,7 +47,7 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
         if (explicitType == TYPE_STRUCT) {
             arg->struct_info = calloc(1, sizeof(StructInfo));
             arg->struct_info->is_packed = false;
-            if (argStr[1+pointer_depth] == 'P'){ // SP: = Packed struct
+            if (argStr[1+pointer_depth] == 'K'){ // SK: = pacKed struct
                 arg->struct_info->is_packed = true;
             }
             if (argStr[1 + pointer_depth + arg->struct_info->is_packed] != ':') {
@@ -180,7 +180,6 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
         if (!is_return && arg.type!=TYPE_STRUCT) {
             convert_arg_value(&arg, argStr);
         } else if (arg.type==TYPE_STRUCT){
-            //check next letter for P indicating a packed struct
             StructInfo* struct_info = arg.struct_info; // it's now allocated inside parse_arg_type_from_flag
             //StructInfo* struct_info = calloc(1, sizeof(StructInfo));
             int struct_args_used = 0;
