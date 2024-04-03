@@ -560,6 +560,9 @@ size_t get_size_for_arginfo_sized_array(const ArgInfo* arg){
                 if (!size_t_param_val) return 0;
                 size_t_param_val = *(void**)size_t_param_val;
             }
+            #if defined(__s390x__)
+            return (size_t) **(unsigned long**)size_t_param_val;
+            #else
             switch (arg->array_sizet_arg.arginfo_of_size_t->type) {
                 case TYPE_SHORT:
                     return (size_t) **(short**)size_t_param_val;
@@ -579,6 +582,7 @@ size_t get_size_for_arginfo_sized_array(const ArgInfo* arg){
                     fprintf(stderr, "Error: array was specified to have its size_t be another argument, but the arg at that position is not a numeric type\n");
                     exit(1);
         }
+        #endif
         case ARRAY_STATIC_SIZE:
             // fprintf(stderr,"Warning: getSizeForSizeTArray was called on an array with static size\n");
             return arg->static_or_implied_size;
