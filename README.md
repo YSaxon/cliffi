@@ -59,6 +59,8 @@ Now you have three choices for size:
 * Leave it blank: size is inferred from the number of items you provide
 * Size, eg `10`: size is equal to the number you provide
 * `t<param_number_with_size>` eg `t3`: size is equal to the number _stored in_ the param denoted by the number, specifically the 1-indexed param position (with 0 denoting the return). This is primarily useful for outpointers to arrays, where you won't know the size until the function returns, and the size will be returned to you in a size_t outparameter. By sizing the array dynamically like this, cliffi will read that parameter for the size before reading and outputting the array.
+* Order matters in the pointer syntax for arrays: a pointer to an array of ints -pai, is different than an array of pointers to ints -api
+
 
 ```
 1,2,3         (inferred type)     int[3]       = {1,2,3}
@@ -68,7 +70,7 @@ Now you have three choices for size:
 ```
 
 ### Structs
-Structs are specified by enclosing the (optional types and) values inside of -S: :S delimiters. Structs can be nested, you can have pointers to them, and they can contain raw arrays.
+Structs are specified by enclosing the (optional types and) values inside of -S[K]: :S delimiters. Structs can be nested, you can have pointers to them, and they can contain raw arrays. The optional K denotes that the struct is pacKed.
 
 Some examples:
 ```
@@ -78,6 +80,7 @@ Some examples:
                struct { float*; char[6]; } = { 1.0, "test\x00\x00"}
 -S: 1 2 -S: test 3.5 :S 6 7 :S`
                struct { int; int; struct { char*; double; } int; int;}
+-SK: a 1 b :S  struct __attribute__((packed))  {char; int; char;}
 ```
 
 ### Other notes

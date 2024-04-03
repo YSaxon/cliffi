@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
         printf( "  POINTERS AND ARRAYS AND STRUCTS:\n"
                 "     Typeflags can include additional flag prefixes to specify pointers, arrays or structs:\n"
                 "     <typeflag> = [p[p..]]<primitive_type>\n"
-                "     <typeflag> = [p[p..]][a<size>|t<argnum>]<primitive_type>\n"
+                "     <typeflag> = [p[p..]][a<size>|t<argnum>][p[p..]]<primitive_type>\n"
                 "     <typeflag> = [p[p..]]S: <arg> <arg>.. :S \n"
                 "   POINTERS:\n"
                 "       p[p..]   The argument is a pointer to [an array of / a struct of] specified type\n"
@@ -75,6 +75,7 @@ int main(int argc, char* argv[]) {
                 "       a<type>t<argnum>     (Notice the `t` flag!) The size of the array is dependent on the value of <argnum>\n"
                 "                            <argnum> is 0 for return value or n for the nth (1-indexed) argument \n"
                 "       In arguments, where the size is specified, the value can be given as NULL, if the function is expected to allocate the array\n"
+                "       Note that pa<type> means a pointer to an array of type, while ap<type> means an array of <type> pointers \n"
                 "   ARRAY EXAMPLES:\n");
         printf( "     * For a function: int return_buffer(char** outbuff) which returns size\n");
         printf( "     %s libexample.so v return_buffer -past2 NULL -pi 0\n", argv[0]);
