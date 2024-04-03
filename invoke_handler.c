@@ -148,9 +148,9 @@ ffi_status get_packed_offset(const ArgInfo* struct_info, ffi_type* struct_type, 
             } else {
                 ffi_get_struct_offsets(FFI_DEFAULT_ABI, arg, inner_offsets);
             }
-            fprintf(stderr,"while getting packed offsets, found inner struct at field %d\n", i);
-            fprintf(stderr, "alignment: %d\n", arg->alignment);
-            fprintf(stderr, "size: %zu\n", arg->size);
+            // fprintf(stderr,"while getting packed offsets, found inner struct at field %d\n", i);
+            // fprintf(stderr, "alignment: %d\n", arg->alignment);
+            // fprintf(stderr, "size: %zu\n", arg->size);
 
         }
         offset += arg->size;

@@ -124,9 +124,11 @@ int main(int argc, char* argv[]) {
 
 
     //print all args
+    #ifdef DEBUG
     for (int i = 0; i < argc; i++) {
         printf("argv[%d] = %s\n", i, argv[i]);
     }
+    #endif
     setbuf(stdout, NULL); // disable buffering for stdout
     setbuf(stderr, NULL); // disable buffering for stderr
 
