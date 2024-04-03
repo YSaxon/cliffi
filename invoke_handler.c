@@ -374,8 +374,24 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
     }
     if (call_info->info.return_var.type == TYPE_STRUCT) {
         fix_struct_pointers(&call_info->info.return_var, rvalue);
-    } else if (return_type->size < ffi_type_sint.size && call_info->info.return_var.type != TYPE_VOID && call_info->info.return_var.type != TYPE_FLOAT) {
-        // this is really only necessary for rare architectures, but it's a good idea to do it anyway
+    }
+        #if defined(__s390x__)
+        else if (return_type->size < ffi_type_slong.size){
+        if (call_info->info.return_var.type==TYPE_CHAR) {
+            call_info->info.return_var.value->c_val = (char)call_info->info.return_var.value->l_val;
+        } else if (call_info->info.return_var.type==TYPE_SHORT) {
+            call_info->info.return_var.value->s_val = (short)call_info->info.return_var.value->l_val;
+        } else if (call_info->info.return_var.type==TYPE_UCHAR) {
+            call_info->info.return_var.value->uc_val = (unsigned char)call_info->info.return_var.value->ul_val;
+        } else if (call_info->info.return_var.type==TYPE_USHORT) {
+            call_info->info.return_var.value->us_val = (unsigned short)call_info->info.return_var.value->ul_val;
+        } else if (call_info->info.return_var.type==TYPE_INT) {
+            call_info->info.return_var.value->i_val = (int)call_info->info.return_var.value->l_val;
+        } else if (call_info->info.return_var.type==TYPE_UINT) {
+            call_info->info.return_var.value->ui_val = (unsigned int)call_info->info.return_var.value->ul_val;
+        }}
+        #elif defined(__mips__)
+        else if (return_type->size < ffi_type_sint.size && call_info->info.return_var.type != TYPE_VOID && call_info->info.return_var.type != TYPE_FLOAT) {
         if (call_info->info.return_var.type==TYPE_CHAR) {
             call_info->info.return_var.value->c_val = (char)call_info->info.return_var.value->i_val;
         } else if (call_info->info.return_var.type==TYPE_SHORT) {
@@ -384,10 +400,8 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
             call_info->info.return_var.value->uc_val = (unsigned char)call_info->info.return_var.value->ui_val;
         } else if (call_info->info.return_var.type==TYPE_USHORT) {
             call_info->info.return_var.value->us_val = (unsigned short)call_info->info.return_var.value->ui_val;
-        } else {
-            fprintf(stderr, "Warning: sizeof(return type) < sizeof(int), but we couldn't automatically promote it, so on some rare (BE?) architectures it may malfunction\n");
-        }
-    }
+        }}
+        #endif
 
     return 0;
 }
