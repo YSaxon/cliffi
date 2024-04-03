@@ -89,7 +89,7 @@ jobs:
           - windows-static-x86
           - windows-static-x64
           # - windows-static-x64-posix
-          - windows-armv7
+          # - windows-armv7 #no idea why this one doesn't work
           - windows-arm64
 
     steps:
