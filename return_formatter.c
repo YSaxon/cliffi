@@ -66,6 +66,10 @@ void hexdump(const void *data, size_t size) {
     //bugfix for architectures that throw a bus error when trying to read from an unaligned address
     void* alligned_copy = NULL;
     size_t size = typeToSize(type, 0);
+    if (size == 0) {
+        fprintf(stderr, "Size of type %s is 0\n", typeToString(type));
+        exit(1);
+    }
     if ((size_t)value % size != 0)  {
         alligned_copy = malloc(size);
         memcpy(alligned_copy, value + offset * size, size);
