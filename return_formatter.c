@@ -63,6 +63,15 @@ void hexdump(const void *data, size_t size) {
         }
         offset = 0;
     }
+    //bugfix for architectures that throw a bus error when trying to read from an unaligned address
+    void* alligned_copy = NULL;
+    size_t size = typeToSize(type, 0);
+    if ((size_t)value % size != 0)  {
+        alligned_copy = malloc(size);
+        memcpy(alligned_copy, value + offset * size, size);
+        value = alligned_copy;
+        offset = 0;
+    }
     switch (type) {
         case TYPE_CHAR:
             printf("%c", ((char*)value)[offset]);
@@ -109,6 +118,9 @@ void hexdump(const void *data, size_t size) {
         default:
             printf("Unsupported type");
             break;
+    }
+    if (alligned_copy != NULL) {
+        free(alligned_copy);
     }
 }
 
