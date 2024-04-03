@@ -65,6 +65,7 @@ void hexdump(const void *data, size_t size) {
     }
     //bugfix for architectures that throw a bus error when trying to read from an unaligned address
     void* alligned_copy = NULL;
+    if (type!=TYPE_VOID){
     size_t size = typeToSize(type, 0);
     if (size == 0) {
         fprintf(stderr, "Size of type %s is 0\n", typeToString(type));
@@ -76,6 +77,7 @@ void hexdump(const void *data, size_t size) {
         value = alligned_copy;
         offset = 0;
     }
+}
     switch (type) {
         case TYPE_CHAR:
             printf("%c", ((char*)value)[offset]);
