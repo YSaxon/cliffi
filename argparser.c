@@ -93,12 +93,12 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
         // see if there's a size appended to the end of the array flag
         if (isAllDigits(&argStr[2 + pointer_depth+array_value_pointer_depth])){
             arg->is_array = ARRAY_STATIC_SIZE;
-            arg->array_size.static_size = atoi(argStr + 2 + pointer_depth+array_value_pointer_depth);
+            arg->static_or_implied_size = atoi(argStr + 2 + pointer_depth+array_value_pointer_depth);
         } else if (argStr[2 + pointer_depth+array_value_pointer_depth] == 't') {
             // t is a flag indicating that the array size is specified as a size_t in another argument
             if (isAllDigits(&argStr[3 + pointer_depth+array_value_pointer_depth])){
                 arg->is_array = ARRAY_SIZE_AT_ARGNUM;
-                arg->array_size.argnum_of_size_t_to_be_replaced = atoi(argStr + 3 + pointer_depth + array_value_pointer_depth);
+                arg->array_sizet_arg.argnum_of_size_t_to_be_replaced = atoi(argStr + 3 + pointer_depth + array_value_pointer_depth);
             } else {
                 //maybe in the future we'll allow just assuming its the next arg if it's not a number
                 fprintf(stderr, "Error: Array size flag t must be followed by a number in flags %s\n", argStr);

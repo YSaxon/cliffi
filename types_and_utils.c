@@ -257,10 +257,7 @@ for (int i = 0; i < arg->pointer_depth; i++) {
 
 }
 
-typedef struct {
-                size_t temp_array_size;
-                void* array;
-                } ArgnumSizedButAlsoImplicitlySizedArray;
+
 
 void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
     arg->value = malloc(sizeof(void*));
@@ -296,7 +293,7 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
 
     if ((strcmp(argStr, "0") == 0 || strcmp(argStr, "NULL") == 0 || strcmp(argStr, "null") == 0)){
         if (arg->is_array==ARRAY_STATIC_SIZE) {
-            arg->value->ptr_val = calloc(arg->array_size.static_size, typeToSize(arg->type, arg->array_value_pointer_depth));
+            arg->value->ptr_val = calloc(arg->static_or_implied_size, typeToSize(arg->type, arg->array_value_pointer_depth));
             return;
         } else if (arg->is_array==ARRAY_SIZE_AT_ARGNUM) {
             // fprintf(stderr, "Warning: We have not yet implemented initializing null arrays of size pointed to by another argument, so this will be a null pointer for now\n");
@@ -370,15 +367,15 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
     }
     if (arg->is_array==ARRAY_STATIC_SIZE_UNSET){
         arg->is_array = ARRAY_STATIC_SIZE;
-        arg->array_size.static_size = array_size_implicit;
+        arg->static_or_implied_size = array_size_implicit;
         arg->value->ptr_val = array_values;
     } else if (arg->is_array==ARRAY_STATIC_SIZE){
-        size_t explicit_size = arg->array_size.static_size;
+        size_t explicit_size = arg->static_or_implied_size;
         size_t implicit_size = array_size_implicit;
         if (explicit_size < implicit_size){
             fprintf(stderr, "Warning: Array was specified to have size %zu, but the value implies a size of %zu. Setting array size to the explicit size (values may be truncated)\n", explicit_size, implicit_size);
             arg->value->ptr_val = array_values;
-            arg->array_size.static_size = explicit_size;
+            arg->static_or_implied_size = explicit_size;
         } else if (explicit_size > implicit_size){
             fprintf(stderr, "Warning: Array was specified to have size %zu, but the value implies a size of %zu. Filling the rest of the array with null bytes\n", explicit_size, implicit_size);
             arg->value->ptr_val = calloc(explicit_size, size_of_type);
@@ -386,15 +383,13 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
             free(array_values);
         } else {
             arg->value->ptr_val = array_values;
-            arg->array_size.static_size = explicit_size;
+            arg->static_or_implied_size = explicit_size;
         }
     } else if (arg->is_array==ARRAY_SIZE_AT_ARGNUM){
         // fprintf(stderr, "Warning: we are initializing an argnum size_t sized array with the implicit size %zu implied by the value it is being initialized with. On the second pass of the parser, we will reallocate the array, but this may lead to truncation or \n");
-        ArgnumSizedButAlsoImplicitlySizedArray *temp_array = malloc(sizeof(ArgnumSizedButAlsoImplicitlySizedArray));
-        temp_array->temp_array_size = array_size_implicit;
-        temp_array->array = array_values;
-        arg->value->ptr_val = temp_array;
-        // arg->array_size.static_size = array_size_implicit; <-- DONT DO THAT, IT WILL OVERWRITE THE ARGNUM!
+        arg->static_or_implied_size = array_size_implicit;
+        arg->value->ptr_val = array_values;
+        // arg->static_or_implied_size = array_size_implicit; <-- DONT DO THAT, IT WILL OVERWRITE THE ARGNUM!
         // alternatively we could add a field to the arginfo to store the implicit size
     }
     else {
@@ -416,30 +411,16 @@ void second_pass_arginfo_ptr_sized_null_array_initialization_inner(ArgInfo* arg)
             size_t size = get_size_for_arginfo_sized_array(arg);
             * (void**) parent = calloc(size, typeToSize(arg->type, arg->array_value_pointer_depth));
         } else {
-            // fprintf(stderr, "Warning: Array was specified to have its size be at arginfo ptr, but the array was already initialized with a non-null value. We will not reallocate the array, but this may lead to unexpected behavior\n");
-            // realloc the array to the correct size?
-            // but no way to be sure that the array will end with zeros then
-            // size_t size = get_size_for_arginfo_sized_array(arg);
-            // * (void**) parent = realloc(value, size);
+            size_t implied_or_explicit_size = arg->static_or_implied_size;
+            size_t size_from_sizet_arg = get_size_for_arginfo_sized_array(arg);
 
-            ArgnumSizedButAlsoImplicitlySizedArray temp_array = *(ArgnumSizedButAlsoImplicitlySizedArray*) value;
-
-            size_t implicit_size = temp_array.temp_array_size;
-            size_t explicit_size = get_size_for_arginfo_sized_array(arg);
-
-
-            if (explicit_size < implicit_size){
-                fprintf(stderr, "Warning: Array was specified by its size_t arg to have size %zu, but the value implies a size of %zu. Setting array size to the explicit size (values may be truncated)\n", explicit_size, implicit_size);
-                * (void**) parent = temp_array.array;
-            } else if (explicit_size > implicit_size){
-                fprintf(stderr, "Warning: Array was specified by its size_t arg to have size %zu, but the value implies a size of %zu. Filling the rest of the array with 0s\n", explicit_size, implicit_size);
-                * (void**) parent = calloc(explicit_size, typeToSize(arg->type, arg->array_value_pointer_depth));
-                memcpy(* (void**) parent, temp_array.array, implicit_size * typeToSize(arg->type, arg->array_value_pointer_depth));
-                free(temp_array.array);
-            } else {
-                * (void**) parent = temp_array.array;
+            if (size_from_sizet_arg < implied_or_explicit_size){
+                fprintf(stderr, "Warning: Array was specified by its size_t arg to have size %zu, but the value implies a greater size of %zu. Setting array size to the explicit size (values may be truncated)\n", size_from_sizet_arg, implied_or_explicit_size);
+            } else if (size_from_sizet_arg > implied_or_explicit_size){
+                fprintf(stderr, "Warning: Array was specified by its size_t arg to have size %zu, but the value implies a smaller size of %zu. Filling the rest of the array with 0s\n", size_from_sizet_arg, implied_or_explicit_size);
+                value = realloc(value, size_from_sizet_arg);
+                memset(value + implied_or_explicit_size, 0, size_from_sizet_arg - implied_or_explicit_size);
             }
-            free(value);
         }
 }
 
@@ -545,17 +526,17 @@ ArgType charToType(char c) {
 
 void convert_argnum_sized_array_to_arginfo_ptr(ArgInfo* arg,ArgInfoContainer* info){
     if (arg->is_array==ARRAY_SIZE_AT_ARGNUM){
-        if (arg->array_size.argnum_of_size_t_to_be_replaced > info->arg_count){
-            fprintf(stderr, "Error: array was specified to have its size_t be at argnum %d, but there are only %d args\n", arg->array_size.argnum_of_size_t_to_be_replaced, info->arg_count);
+        if (arg->array_sizet_arg.argnum_of_size_t_to_be_replaced > info->arg_count){
+            fprintf(stderr, "Error: array was specified to have its size_t be at argnum %d, but there are only %d args\n", arg->array_sizet_arg.argnum_of_size_t_to_be_replaced, info->arg_count);
             exit(1);
         }
-        else if (arg->array_size.argnum_of_size_t_to_be_replaced < 0){
-            fprintf(stderr, "Error: array was specified to have its size_t be at argnum %d, but argnums must be positive\n", arg->array_size.argnum_of_size_t_to_be_replaced);
+        else if (arg->array_sizet_arg.argnum_of_size_t_to_be_replaced < 0){
+            fprintf(stderr, "Error: array was specified to have its size_t be at argnum %d, but argnums must be positive\n", arg->array_sizet_arg.argnum_of_size_t_to_be_replaced);
             exit(1);
         } else {
             arg->is_array = ARRAY_SIZE_AT_ARGINFO_PTR; //TODO maybe we should replace 0 with R for return value?
-            if (arg->array_size.argnum_of_size_t_to_be_replaced==0) arg->array_size.arginfo_of_size_t = (ArgInfo*)&info->return_var; // 0 is the return value
-            else arg->array_size.arginfo_of_size_t= &info->args[arg->array_size.argnum_of_size_t_to_be_replaced-1]; // -1 because the argnums are 1 indexed
+            if (arg->array_sizet_arg.argnum_of_size_t_to_be_replaced==0) arg->array_sizet_arg.arginfo_of_size_t = (ArgInfo*)&info->return_var; // 0 is the return value
+            else arg->array_sizet_arg.arginfo_of_size_t= &info->args[arg->array_sizet_arg.argnum_of_size_t_to_be_replaced-1]; // -1 because the argnums are 1 indexed
         }
     }
 }
@@ -572,14 +553,14 @@ void convert_all_arrays_to_arginfo_ptr_sized_after_parsing(ArgInfoContainer* inf
 }
 
 size_t get_size_for_arginfo_sized_array(const ArgInfo* arg){
-    void* size_t_param_val = &arg->array_size.arginfo_of_size_t->value;
+    void* size_t_param_val = &arg->array_sizet_arg.arginfo_of_size_t->value;
     switch(arg->is_array){
         case ARRAY_SIZE_AT_ARGINFO_PTR:
-            for (int i = 0; i < arg->array_size.arginfo_of_size_t->pointer_depth; i++) {
+            for (int i = 0; i < arg->array_sizet_arg.arginfo_of_size_t->pointer_depth; i++) {
                 if (!size_t_param_val) return 0;
                 size_t_param_val = *(void**)size_t_param_val;
             }
-            switch (arg->array_size.arginfo_of_size_t->type) {
+            switch (arg->array_sizet_arg.arginfo_of_size_t->type) {
                 case TYPE_SHORT:
                     return (size_t) **(short**)size_t_param_val;
                 case TYPE_INT:
@@ -600,7 +581,7 @@ size_t get_size_for_arginfo_sized_array(const ArgInfo* arg){
         }
         case ARRAY_STATIC_SIZE:
             // fprintf(stderr,"Warning: getSizeForSizeTArray was called on an array with static size\n");
-            return arg->array_size.static_size;
+            return arg->static_or_implied_size;
         case ARRAY_STATIC_SIZE_UNSET:
             fprintf(stderr,"Error: getSizeForSizeTArray was called on an array on static_unset mode\n");
             exit(1);
@@ -658,13 +639,13 @@ void log_function_call_info(FunctionCallInfo* info){
 // void convert_all_arrays_to_static_sized_after_function_return(FunctionCallInfo* call_info){
 //     for (int i = 0; i < call_info->arg_count; i++) {
 //     if (call_info->args[i].is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
-//         call_info->args[i].array_size.static_size = get_size_for_arginfo_sized_array(&call_info->args[i]);
+//         call_info->args[i].static_or_implied_size = get_size_for_arginfo_sized_array(&call_info->args[i]);
 //         call_info->args[i].is_array=ARRAY_STATIC_SIZE;
 //     }
 //     }
 //     // do the same for the return value
 //     if (call_info->return_var.is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
-//         call_info->return_var.array_size.static_size = get_size_for_arginfo_sized_array(&call_info->return_var);
+//         call_info->return_var.static_or_implied_size = get_size_for_arginfo_sized_array(&call_info->return_var);
 //         call_info->return_var.is_array=ARRAY_STATIC_SIZE;
 //     }
 // // }
@@ -683,7 +664,7 @@ void log_function_call_info(FunctionCallInfo* info){
 //     // Or we can just decided to not free them, and let the OS clean up after the program ends
 
 //     if (arg->is_array && (arg->type==TYPE_STRING /* || arg->type==TYPE_STRUCT */)){
-//         for (int i = 0; i < arg->array_size.static_size; i++) { // we are assuming we've already made the array be of static size
+//         for (int i = 0; i < arg->static_or_implied_size; i++) { // we are assuming we've already made the array be of static size
 //             free(((char**)temp)[i]);
 //         }
 //     }

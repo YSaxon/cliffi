@@ -55,11 +55,12 @@ typedef struct ArgInfo {
     int pointer_depth; // For pointer types, indicates how many levels of indirection
     int array_value_pointer_depth; // For array types, indicates how many levels of indirection for the value pointers
     arrayMode is_array; // For pointer types, indicates if the pointer is an array
+    size_t static_or_implied_size; // For array types, indicates the size of the array
     union {
-        size_t static_size; // For array types, indicates the size of the array
         int argnum_of_size_t_to_be_replaced; // For array types, indicates which argument to use as the size_t, -1 = RETURN VAL, 0 = FIRST ARG, 1 = SECOND ARG, etc.
         struct ArgInfo* arginfo_of_size_t;
-    } array_size; // For array types, indicates which argument to use as the size_t, as an alternative to array_size
+    } array_sizet_arg; // For array types, indicates which argument to use as the size_t, as an alternative to array_size
+
     struct StructInfo* struct_info; // For struct types, contains the struct info, since we can't set the ptr_val until we calculate the raw memory for the struct later
 } ArgInfo;
 
