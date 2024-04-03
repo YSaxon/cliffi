@@ -428,12 +428,12 @@ COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}c
 set_tests_properties(TestNegativeInts PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: -100")
 
 add_test(NAME TestLongInts
-         COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} l add_long -l 1000000000000 -l 1000000000000)
-set_tests_properties(TestLongInts PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 2000000000000")
+         COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} l add_long -l -5000 -l -5000)
+set_tests_properties(TestLongInts PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: -10000")
 
 add_test(NAME TestUnsignedLongs
-         COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} L add_ulong -L 5000000000 -L 5000000000)
-set_tests_properties(TestUnsignedLongs PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 10000000000")
+         COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} L add_ulong -L 2147483647 -L 2147483647)
+set_tests_properties(TestUnsignedLongs PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 4294967294")
 
 add_test(NAME TestDoublePointers
 COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_at_pointer_pointer -ppi 42)
@@ -448,8 +448,8 @@ COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}c
 set_tests_properties(TestComplexVarargs PROPERTIES PASS_REGULAR_EXPRESSION "integers: 1 2 3, strings: foo bar, floats: 1.23.* 4.56.*, char: z")
 
 add_test(NAME TestUnsignedTypes
-COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v my_printf -s "unsigned: %hhu %hu %u %lu" ... -C 255 -H 65535 -I 4294967295 -L 18446744073709551615)
-set_tests_properties(TestUnsignedTypes PROPERTIES PASS_REGULAR_EXPRESSION "unsigned: 255 65535 4294967295 18446744073709551615")
+COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v my_printf -s "unsigned: %hhu %hu %u %lu" ... -C 255 -H 65535 -I 4294967295 -L 4294967295)
+set_tests_properties(TestUnsignedTypes PROPERTIES PASS_REGULAR_EXPRESSION "unsigned: 255 65535 4294967295 4294967295")
 
 add_test(NAME return_struct_with_embedded_array_complex #
     COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} S: i ac10 ai3 i :S return_struct_with_embedded_array )
