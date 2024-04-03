@@ -52,13 +52,17 @@ ffi_type* create_raw_array_type_for_use_inside_structs(size_t n, ffi_type *array
     return type_ptr;
 }
 
+ffi_status get_packed_offset(const ArgInfo* struct_info, ffi_type* struct_type, size_t* offsets);
+
+
 ffi_type* make_ffi_type_for_struct(const ArgInfo* arg){ // does not handle pointer_depth
     StructInfo* struct_info = arg->struct_info;
     ffi_type* struct_type = malloc(sizeof(ffi_type));
+    bool ispacked=arg->struct_info->is_packed;
     //Where do I set whether it is packed or not?
     struct_type->size = 0;
     struct_type->alignment = 0;
-    struct_type->type = FFI_TYPE_STRUCT;
+    struct_type->type = ispacked ? FFI_TYPE_STRUCT : FFI_TYPE_STRUCT;
     struct_type->elements = calloc((struct_info->info.arg_count + 1),sizeof(ffi_type*));
     for (int i = 0; i < struct_info->info.arg_count; i++) {
         struct_type->elements[i] = arg_type_to_ffi_type(&struct_info->info.args[i], true);
@@ -67,10 +71,15 @@ ffi_type* make_ffi_type_for_struct(const ArgInfo* arg){ // does not handle point
             exit(1);
         }
     }
+    // if (!ispacked)
     ffi_status status = ffi_get_struct_offsets(FFI_DEFAULT_ABI, struct_type, NULL); // this will set size and such
     if (status != FFI_OK) {
         fprintf(stderr, "Failed to get struct offsets.\n");
         exit(1);
+    }
+    if (ispacked){
+        size_t offsets[struct_info->info.arg_count];
+        get_packed_offset(arg, struct_type,offsets);
     }
     return struct_type;
 }
@@ -119,14 +128,44 @@ ffi_type* arg_type_to_ffi_type(const ArgInfo* arg, bool inside_struct) {
     
 }
 
+ffi_status get_packed_offset(const ArgInfo* struct_info, ffi_type* struct_type, size_t* offsets){
+    size_t offset = 0;
+    // for (int i = 0; i < struct_info->struct_info->info.arg_count; i++) {
+    for (int i = 0; struct_type->elements[i]; i++) {
+        offsets[i] = offset;
+        ffi_type* arg = arg_type_to_ffi_type(&struct_info->struct_info->info.args[i],true);
+        // if (arg->alignment) {
+        //     arg->alignment = 1;
+        // }
+        if (arg->size == 0) {
+            // fprintf(stderr, "Failed to get size for struct field %d.\n", i);
+            // struct_type->size = 0; // meaning we don't know the size yet
+            // struct_type->alignment = 1;
+            // return FFI_OK;
+            size_t* inner_offsets = {0};
+            if (struct_info->struct_info->info.args[i].type == TYPE_STRUCT){
+                get_packed_offset(&struct_info->struct_info->info.args[i], arg, inner_offsets);
+            } else {
+                ffi_get_struct_offsets(FFI_DEFAULT_ABI, arg, inner_offsets);
+            }
+            fprintf(stderr,"while getting packed offsets, found inner struct at field %d\n", i);
+            fprintf(stderr, "alignment: %d\n", arg->alignment);
+            fprintf(stderr, "size: %zu\n", arg->size);
 
+        }
+        offset += arg->size;
+    }
+    struct_type->size = offset;
+    struct_type->alignment = 1;
+    return FFI_OK;
+}
 
 void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return){//, ffi_type* struct_type){
     ffi_type* struct_type = make_ffi_type_for_struct(struct_arginfo);
     StructInfo* struct_info = struct_arginfo->struct_info;
     
     size_t offsets[struct_info->info.arg_count];
-    ffi_status struct_status = ffi_get_struct_offsets(FFI_DEFAULT_ABI, struct_type, offsets);
+    ffi_status struct_status = struct_arginfo->struct_info->is_packed? get_packed_offset(struct_arginfo,struct_type,offsets) : ffi_get_struct_offsets(FFI_DEFAULT_ABI, struct_type, offsets);
     if (struct_status != FFI_OK) {
         fprintf(stderr, "Failed to get struct offsets.\n");
         exit(1);
@@ -205,7 +244,7 @@ void fix_struct_pointers(ArgInfo* struct_arg, void* raw_memory) {
     }
 
     ffi_type* struct_type = make_ffi_type_for_struct(struct_arg);
-    ffi_status struct_status = ffi_get_struct_offsets(FFI_DEFAULT_ABI, struct_type, offsets);
+    ffi_status struct_status = struct_arg->struct_info->is_packed? get_packed_offset(struct_arg,struct_type,offsets) : ffi_get_struct_offsets(FFI_DEFAULT_ABI, struct_type, offsets);
     if (struct_status != FFI_OK) {
         fprintf(stderr, "Failed to get struct offsets.\n");
         exit(1);

@@ -527,6 +527,102 @@ const char* buffer_as_return(const char* buffer, size_t size) {
     return retval;
 }
 
+struct __attribute__((packed)) PackedStruct {
+    char c;
+    int i;
+    char s[2];
+    double d;
+    int a[3];
+    char c2;
+};
+
+struct UnPackedStruct {
+    char c;
+    int i;
+    char s[2];
+    double d;
+    int a[3];
+    char c2;
+};
+
+struct PackedStruct get_packed_struct() {
+    struct PackedStruct s = {};
+    s.c = 'a';
+    s.i = 42;
+    s.s[0] = 'b';
+    s.s[1] = 'c';
+    s.d = 3.14;
+    s.a[0] = 1;
+    s.a[1] = 2;
+    s.a[2] = 3;
+    s.c2 = 'd';
+    return s;
+}
+
+struct UnPackedStruct get_unpacked_struct() {
+    struct UnPackedStruct s = {};
+    s.c = 'a';
+    s.i = 42;
+    s.s[0] = 'b';
+    s.s[1] = 'c';
+    s.d = 3.14;
+    s.a[0] = 1;
+    s.a[1] = 2;
+    s.a[2] = 3;
+    s.c2 = 'd';
+    return s;
+}
+
+// called as v -SP: c i ac2 d ai3 c :S
+
+struct PackedStruct* get_p_packed_struct() {
+    struct PackedStruct* s = malloc(sizeof(struct PackedStruct));
+    s->c = 'a';
+    s->i = 42;
+    s->s[0] = 'b';
+    s->s[1] = 'c';
+    s->d = 3.14;
+    s->a[0] = 1;
+    s->a[1] = 2;
+    s->a[2] = 3;
+    s->c2 = 'd';
+    return s;
+}
+
+void test_packed_struct(struct PackedStruct s) {
+    printf("sizeof(struct PackedStruct): %lu\n", sizeof(struct PackedStruct));
+    hexdump(&s, sizeof(struct PackedStruct));
+    printf("s.c: %c\n", s.c);
+    printf("s.i: %d\n", s.i);
+    printf("s.s[0]: %c\n", s.s[0]);
+    printf("s.s[1]: %c\n", s.s[1]);
+    printf("s.d: %f\n", s.d);
+    printf("s.a: %d %d %d\n", s.a[0], s.a[1], s.a[2]);
+    printf("s.c2: %c\n", s.c2);
+}
+
+void test_p_packed_struct(struct PackedStruct* s) {
+    hexdump(s, sizeof(struct PackedStruct));
+    printf("s->c: %c\n", s->c);
+    printf("s->i: %d\n", s->i);
+    printf("s->s: %c%c\n", s->s[0], s->s[1]);
+    printf("s->d: %f\n", s->d);
+    printf("s->a: %d %d %d\n", s->a[0], s->a[1], s->a[2]);
+    printf("s->c2: %c\n", s->c2);
+}
+
+
+void test_unpacked_struct(struct UnPackedStruct s) {
+    hexdump(&s, sizeof(struct UnPackedStruct));
+    printf("s.c: %c\n", s.c);
+    printf("s.i: %d\n", s.i);
+    printf("s.s[0]: %c\n", s.s[0]);
+    printf("s.s[1]: %c\n", s.s[1]);
+    printf("s.d: %f\n", s.d);
+    printf("s.a: %d %d %d\n", s.a[0], s.a[1], s.a[2]);
+    printf("s.c2: %c\n", s.c2);
+}
+
 
 int sum_func_with_int_varargs(int count, ...) {
     va_list args;

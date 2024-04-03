@@ -44,6 +44,19 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
         pointer_depth++;
         explicitType = charToType(argStr[pointer_depth]);
     }
+        if (explicitType == TYPE_STRUCT) {
+            arg->struct_info = calloc(1, sizeof(StructInfo));
+            arg->struct_info->is_packed = false;
+            if (argStr[1+pointer_depth] == 'P'){ // SP: = Packed struct
+                arg->struct_info->is_packed = true;
+            }
+            if (argStr[1 + pointer_depth + arg->struct_info->is_packed] != ':') {
+                fprintf(stderr, "Error: Struct flag must be followed by a colon and then a list of arguments, in flags %s\n", argStr);
+                exit(1);
+            }
+        }
+
+    
         if (explicitType == TYPE_ARRAY) {
         // We'll need to figure out how to move forward argv past the array values
         // For now we'll just say that the array values can't have a space in them
@@ -167,7 +180,9 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
         if (!is_return && arg.type!=TYPE_STRUCT) {
             convert_arg_value(&arg, argStr);
         } else if (arg.type==TYPE_STRUCT){
-            StructInfo* struct_info = calloc(1, sizeof(StructInfo));
+            //check next letter for P indicating a packed struct
+            StructInfo* struct_info = arg.struct_info; // it's now allocated inside parse_arg_type_from_flag
+            //StructInfo* struct_info = calloc(1, sizeof(StructInfo));
             int struct_args_used = 0;
             i++; // skip the S: open tag
             #ifdef DEBUG
@@ -216,7 +231,8 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         exit(1);
         return NULL;
     } else if (info->info.return_var.type == TYPE_STRUCT) {
-        StructInfo* struct_info = calloc(1, sizeof(StructInfo));
+        // StructInfo* struct_info = calloc(1, sizeof(StructInfo));
+        StructInfo* struct_info = info->info.return_var.struct_info;
         int struct_args_used = 0;
         // i++; // skip the S: open tag
         #ifdef DEBUG
