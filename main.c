@@ -21,7 +21,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "0.9.4";
+const char* VERSION = "0.10.0";
 
 sigjmp_buf jmpBuffer;
 
