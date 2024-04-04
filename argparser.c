@@ -129,6 +129,40 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
     arg->array_value_pointer_depth = array_value_pointer_depth;
 }
 
+void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *args_used, bool is_return, bool is_struct);
+
+void parse_one_arg(ArgInfo* arg, int argc, char* argv[], int *args_used, bool is_return){
+        char* argStr = argv[0];
+        int i = 0;
+        if (is_return){ // is a return type, so we don't need to parse values or check for the - flag
+            parse_arg_type_from_flag(arg, argStr);
+        } else if (argStr[0] == '-' && !isAllDigits(argStr+1) && !isHexFormat(argStr+1)) {
+            parse_arg_type_from_flag(arg, argStr+1);
+
+            if (arg->type != TYPE_STRUCT) argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
+        
+        } else if (strcmp(argStr, "...") == 0) {
+           fprintf(stderr, "Error: Varargs flag encountered when parsing single arg.\n");
+            exit(1);
+        } else { // no flag, so we need to infer the type from the value
+            infer_arg_type_from_value(arg, argStr);
+        }
+
+        if (!is_return && arg->type!=TYPE_STRUCT) {
+            convert_arg_value(arg, argStr);
+        } else if (arg->type==TYPE_STRUCT){
+            StructInfo* struct_info = arg->struct_info; // it's allocated inside parse_arg_type_from_flag
+            int struct_args_used = 0;
+            i++; // skip the S: open tag
+            parse_all_from_argvs(&struct_info->info, argc-i, argv+i, &struct_args_used, is_return, true);
+
+            i+=struct_args_used;
+            arg->struct_info = struct_info;
+            // not setting a value here, that will be handled by the make_raw_value_for_struct function in the invoke handler module
+        }
+        *args_used = i;
+}
+
 void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *args_used, bool is_return, bool is_struct) {
     // ArgInfoContainer* arginfo = info->type == FUNCTION_INFO ? &info->function_info->info : &info->struct_info->info;
     #ifdef DEBUG
