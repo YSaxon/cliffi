@@ -522,3 +522,23 @@ add_test(NAME test_p_packed_struct #
     set_tests_properties(test_p_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->s[0]: a")
     set_tests_properties(test_p_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->s[1]: b")
     set_tests_properties(test_p_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->d: 4.50*")
+
+
+add_test(NAME repl_smoketest #
+COMMAND bash -c "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi --repl <<EOF
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i add 1 2
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i add 3 4
+")
+set_tests_properties(repl_smoketest PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")
+set_tests_properties(repl_smoketest PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 7")
+
+
+add_test(NAME repl_test_globals #
+COMMAND bash -c "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi --repl <<EOF
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global
+")
+set_tests_properties(repl_test_globals PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 1")
+set_tests_properties(repl_test_globals PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 2")
+set_tests_properties(repl_test_globals PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")
