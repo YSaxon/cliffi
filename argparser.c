@@ -141,9 +141,6 @@ void parse_one_arg(ArgInfo* arg, int argc, char* argv[], int *args_used, bool is
 
             if (arg->type != TYPE_STRUCT) argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
         
-        } else if (strcmp(argStr, "...") == 0) {
-           fprintf(stderr, "Error: Varargs flag encountered when parsing single arg.\n");
-            exit(1);
         } else { // no flag, so we need to infer the type from the value
             infer_arg_type_from_value(arg, argStr);
         }
@@ -185,17 +182,7 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
             break;
         }
 
-        if (is_return){ // is a return type, so we don't need to parse values or check for the - flag
-            parse_arg_type_from_flag(&arg, argStr);
-            // addArgToFunctionCallInfo(info, &arg);
-            // continue;
-        } else if (argStr[0] == '-' && !isAllDigits(argStr+1) && !isHexFormat(argStr+1)) {
-            parse_arg_type_from_flag(&arg, argStr+1);
-            // parse_struct_from_flag(&info->return_var, argv[2]);
-
-            if (arg.type != TYPE_STRUCT) argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
-        
-        } else if (strcmp(argStr, "...") == 0) {
+        if (strcmp(argStr, "...") == 0) {
             if (info->vararg_start != -1){
                 fprintf(stderr, "Error: Multiple varargs flags encountered\n");
                 exit(1);
@@ -208,6 +195,17 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
             }
             info->vararg_start = info->arg_count;
             continue;
+        }
+
+        if (is_return){ // is a return type, so we don't need to parse values or check for the - flag
+            parse_arg_type_from_flag(&arg, argStr);
+            // addArgToFunctionCallInfo(info, &arg);
+            // continue;
+        } else if (argStr[0] == '-' && !isAllDigits(argStr+1) && !isHexFormat(argStr+1)) {
+            parse_arg_type_from_flag(&arg, argStr+1);
+            // parse_struct_from_flag(&info->return_var, argv[2]);
+
+            if (arg.type != TYPE_STRUCT) argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
         } else { // no flag, so we need to infer the type from the value
             infer_arg_type_from_value(&arg, argStr);
         }
