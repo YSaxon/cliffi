@@ -53,7 +53,7 @@ target_link_libraries(cliffi PRIVATE
 )
 
 # Append the project root directory to CMAKE_PREFIX_PATH
-list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}")
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build")
 
 if(NOT LIBFFI_FOUND)
 set(libffi_DIR ${SOURCES})
