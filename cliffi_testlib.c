@@ -750,7 +750,10 @@ int** grand_test_of_arrays_of_int_pointers(struct has_array_of_int_pointers s, s
     return return_ints;
 }
 
-
+int global_int = 0;
+int increment_global() {
+    return ++global_int;
+}
 
 
 // Entry point to prevent the compiler from complaining when compiling as a shared library

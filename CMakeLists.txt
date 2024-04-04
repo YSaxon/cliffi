@@ -6,13 +6,15 @@ enable_testing()
 # Set C standard
 set(CMAKE_C_STANDARD 99)
 
-set(LIBFFI_INCLUDE_DIRS /hardcoded/path/to/libffi/include)
-set(LIBFFI_STATIC_LIB /hardcoded/path/to/libffi/lib/libffi.a)
-#if above hardcoded path works then good, otherwise use pkg-config
-if(EXISTS ${LIBFFI_STATIC_LIB} AND EXISTS ${LIBFFI_INCLUDE_DIRS})
-    message("Hardcoded")
-    set(LIBFFI_LIBRARIES ${LIBFFI_STATIC_LIB})
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Android" AND ANDROID_ABI STREQUAL "armeabi-v7a")
+# Set a default build type if none was specified
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to 'Release' as none was specified.")
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+  # Set the possible values of build type for cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Android" AND ANDROID_ABI STREQUAL "armeabi-v7a")
     message("compiling for Android")
     set(LIBFFI_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libffi-3.4.6-android-27-armeabi-v7a/include)
     set(LIBFFI_STATIC_LIB ${CMAKE_SOURCE_DIR}/libffi-3.4.6-android-27-armeabi-v7a/lib/libffi.a)
@@ -21,6 +23,7 @@ else()
     message("Not Hardcoded")
     find_package(PkgConfig REQUIRED)
     pkg_search_module(LIBFFI libffi)
+    pkg_search_module(READLINE readline)
 endif()
 
 
@@ -37,18 +40,44 @@ set(SOURCES
     invoke_handler.c
     library_path_resolver.c
     return_formatter.c
+    library_manager.c
 )
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 # Target executable
 add_executable(cliffi ${SOURCES})
-target_link_libraries(cliffi ${LIBFFI_LIBRARIES})
+target_link_libraries(cliffi PRIVATE
+    ${LIBFFI_LIBRARIES}
+    ${READLINE_LIBRARIES}
+)
+
+# Append the project root directory to CMAKE_PREFIX_PATH
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build")
+
+if(NOT LIBFFI_FOUND)
+set(libffi_DIR ${SOURCES})
+find_package(libffi REQUIRED)
+target_link_libraries(cliffi PRIVATE libffi::libffi)
+message(STATUS "libffi include dirs: ${libffi_INCLUDE_DIRS}")
+endif()
+
+if (NOT READLINE_FOUND)
+find_package(readline REQUIRED)
+target_link_libraries(cliffi PRIVATE readline::readline)
+message(STATUS "readline include dirs: ${readline_INCLUDE_DIRS}")
+message("attempting link readline::readline")
+endif()
 
 if(DL_LIBRARY)
-  target_link_libraries(cliffi ${DL_LIBRARY})
+  target_link_libraries(cliffi PRIVATE ${DL_LIBRARY})
 endif()
-target_include_directories(cliffi PRIVATE ${LIBFFI_INCLUDE_DIRS})
+
+
+target_include_directories(cliffi PRIVATE
+        ${LIBFFI_INCLUDE_DIRS}
+        ${READLINE_INCLUDE_DIRS}
+        )
 
 # Compile cliffi_testlib.c into a shared library
 add_library(cliffitest SHARED cliffi_testlib.c)
@@ -512,3 +541,23 @@ add_test(NAME test_p_packed_struct #
     set_tests_properties(test_p_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->s[0]: a")
     set_tests_properties(test_p_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->s[1]: b")
     set_tests_properties(test_p_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->d: 4.50*")
+
+
+add_test(NAME repl_smoketest #
+COMMAND bash -c "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi --repl <<EOF
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i add 1 2
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i add 3 4
+")
+set_tests_properties(repl_smoketest PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")
+set_tests_properties(repl_smoketest PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 7")
+
+
+add_test(NAME repl_test_globals #
+COMMAND bash -c "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi --repl <<EOF
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global
+")
+set_tests_properties(repl_test_globals PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 1")
+set_tests_properties(repl_test_globals PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 2")
+set_tests_properties(repl_test_globals PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")
