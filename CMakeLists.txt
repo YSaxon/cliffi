@@ -21,6 +21,7 @@ else()
     message("Not Hardcoded")
     find_package(PkgConfig REQUIRED)
     pkg_search_module(LIBFFI libffi)
+    pkg_search_module(READLINE readline)
 endif()
 
 
@@ -44,12 +45,20 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 # Target executable
 add_executable(cliffi ${SOURCES})
-target_link_libraries(cliffi ${LIBFFI_LIBRARIES})
+target_link_libraries(cliffi
+    ${LIBFFI_LIBRARIES}
+    ${READLINE_LIBRARIES}
+)
 
 if(DL_LIBRARY)
   target_link_libraries(cliffi ${DL_LIBRARY})
 endif()
-target_include_directories(cliffi PRIVATE ${LIBFFI_INCLUDE_DIRS})
+
+
+target_include_directories(cliffi PRIVATE
+        ${LIBFFI_INCLUDE_DIRS}
+        ${READLINE_INCLUDE_DIRS}
+        )
 
 # Compile cliffi_testlib.c into a shared library
 add_library(cliffitest SHARED cliffi_testlib.c)
