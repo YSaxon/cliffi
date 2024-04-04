@@ -6,6 +6,14 @@ enable_testing()
 # Set C standard
 set(CMAKE_C_STANDARD 99)
 
+# Set a default build type if none was specified
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to 'Release' as none was specified.")
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+  # Set the possible values of build type for cmake-gui
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
+
 set(LIBFFI_INCLUDE_DIRS /hardcoded/path/to/libffi/include)
 set(LIBFFI_STATIC_LIB /hardcoded/path/to/libffi/lib/libffi.a)
 #if above hardcoded path works then good, otherwise use pkg-config
