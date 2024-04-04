@@ -53,7 +53,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 # Target executable
 add_executable(cliffi ${SOURCES})
-target_link_libraries(cliffi
+target_link_libraries(cliffi PRIVATE
     ${LIBFFI_LIBRARIES}
     ${READLINE_LIBRARIES}
 )
