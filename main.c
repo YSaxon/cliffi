@@ -15,7 +15,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "0.9.3";
+const char* VERSION = "0.9.4";
 
 int main(int argc, char* argv[]) {
     if (argc > 1 && strcmp(argv[1], "--help") == 0) {
