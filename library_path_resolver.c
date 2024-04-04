@@ -17,13 +17,20 @@ char* resolve_library_path(const char* library_name) {
         return NULL;
     }
 
-    // Check if the path is already absolute or relative
-    if (library_name[0] == '/' || library_name[0] == '.' || strstr(library_name, "./") == library_name || strstr(library_name, "../") == library_name) {
-        // Inside resolve_library_path, after checking if the path exists
+    // Check if the path is already absolute
+    if (library_name[0] == '/') {
         if (file_exists(library_name)) {
             return strdup(library_name);
         }
     }
+
+    // Attempt to find the library relative to the current directory
+    char* relative_path = malloc(strlen(library_name) + 3); // +3 for './', '/', and '\0'
+    sprintf(relative_path, "./%s", library_name);
+    if (file_exists(relative_path)) {
+        return relative_path;
+    }
+    free(relative_path);
 
     // Attempt to find the library in LD_LIBRARY_PATH or default paths
     const char* ld_lib_path = getenv("LD_LIBRARY_PATH");
@@ -35,7 +42,7 @@ char* resolve_library_path(const char* library_name) {
         sprintf(full_path, "%s/%s", path, library_name);
         if (file_exists(full_path)) {
             free(search_paths);
-            return full_path; // Caller is responsible for freeing this memory
+            return full_path;
         }
         free(full_path);
         path = strtok(NULL, ":");
@@ -43,12 +50,12 @@ char* resolve_library_path(const char* library_name) {
     free(search_paths);
 
     // If the library wasn't found in LD_LIBRARY_PATH, check standard locations
-    const char* standard_paths[] = {"/usr/lib", "/lib", NULL};
+    const char* standard_paths[] = {"/usr/lib", "/lib", "/usr/local/lib", NULL};
     for (int i = 0; standard_paths[i] != NULL; i++) {
         char* full_path = malloc(strlen(standard_paths[i]) + strlen(library_name) + 2); // +2 for '/' and '\0'
         sprintf(full_path, "%s/%s", standard_paths[i], library_name);
         if (file_exists(full_path)) {
-            return full_path; // Caller is responsible for freeing this memory
+            return full_path;
         }
         free(full_path);
     }
