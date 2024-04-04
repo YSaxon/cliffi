@@ -157,7 +157,7 @@ void parse_one_arg(ArgInfo* arg, int argc, char* argv[], int *args_used, bool is
             arg->struct_info = struct_info;
             // not setting a value here, that will be handled by the make_raw_value_for_struct function in the invoke handler module
         }
-        *args_used = i;
+        *args_used += i;
 }
 
 void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *args_used, bool is_return, bool is_struct) {
@@ -197,35 +197,8 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
             continue;
         }
 
-        if (is_return){ // is a return type, so we don't need to parse values or check for the - flag
-            parse_arg_type_from_flag(&arg, argStr);
-            // addArgToFunctionCallInfo(info, &arg);
-            // continue;
-        } else if (argStr[0] == '-' && !isAllDigits(argStr+1) && !isHexFormat(argStr+1)) {
-            parse_arg_type_from_flag(&arg, argStr+1);
-            // parse_struct_from_flag(&info->return_var, argv[2]);
+        parse_one_arg(&arg, argc-i, argv+i, &i, is_return);
 
-            if (arg.type != TYPE_STRUCT) argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
-        } else { // no flag, so we need to infer the type from the value
-            infer_arg_type_from_value(&arg, argStr);
-        }
-        if (!is_return && arg.type!=TYPE_STRUCT) {
-            convert_arg_value(&arg, argStr);
-        } else if (arg.type==TYPE_STRUCT){
-            StructInfo* struct_info = arg.struct_info; // it's now allocated inside parse_arg_type_from_flag
-            //StructInfo* struct_info = calloc(1, sizeof(StructInfo));
-            int struct_args_used = 0;
-            i++; // skip the S: open tag
-            #ifdef DEBUG
-            printf("-S tag encountered, parsing struct from args\n");
-            #endif
-            parse_all_from_argvs(&struct_info->info, argc-i, argv+i, &struct_args_used, is_return, true);
-
-            i+=struct_args_used;
-            arg.struct_info = struct_info;
-            // not setting a value here, that will be handled by the make_raw_value_for_struct function in the invoke handler module
-
-        }
         addArgToFunctionCallInfo(info, &arg);
     }
 
