@@ -236,7 +236,7 @@ void startRepl() {
     while ((command = readline("> ")) != NULL) {
         command = trim_whitespace(command);
         if (strlen(command) > 0) {
-            fprintf(stderr, "Command: %s\n", command);
+            // fprintf(stderr, "Command: %s\n", command);
             HIST_ENTRY * last_command = history_get(history_length);
             if (last_command == NULL || strcmp(command, last_command->line) != 0)
             {
@@ -247,7 +247,14 @@ void startRepl() {
                 free(command);
                 break;
             } else if (strcmp(command, "help") == 0) {
-                print_usage("> ");
+                printf("Commands:\n");
+                printf("  docs: Print the cliffi docs\n");
+                printf("  list: List all opened libraries\n");
+                printf("  close <library>: Close the specified library\n");
+                printf("  closeall: Close all opened libraries\n");
+                printf("  exit: Quit the REPL\n");
+            } else if (strcmp(command, "docs") == 0) {
+                print_usage(">");
             } else if (strcmp(command, "list") == 0) {
                 listOpenedLibraries();
             } else if (strncmp(command, "close", 5) == 0) {
