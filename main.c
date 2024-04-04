@@ -139,7 +139,7 @@ int main(int argc, char* argv[]) {
 
 
     // Step 2: Parse command-line arguments
-    FunctionCallInfo* call_info = parse_arguments(argc, argv);
+    FunctionCallInfo* call_info = parse_arguments(argc-1, argv+1); // skip the program name
     // convert_all_arrays_to_arginfo_ptr_sized_after_parsing(call_info); <-- handled inside parse_arguments now
     
 

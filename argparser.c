@@ -217,13 +217,13 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     char* argStr;
 
     // arg[1] is the library path
-    info->library_path = resolve_library_path(argv[1]);
+    info->library_path = resolve_library_path(argv[0]);
     if (!info->library_path) {
-        fprintf(stderr, "Error: Unable to resolve library path for %s\n", argv[1]);
+        fprintf(stderr, "Error: Unable to resolve library path for %s\n", argv[0]);
         return NULL;
     }
 
-    parse_arg_type_from_flag(&info->info.return_var, argv[2]);
+    parse_arg_type_from_flag(&info->info.return_var, argv[1]);
 
     if (info->info.return_var.type == TYPE_UNKNOWN) {
         fprintf(stderr, "Error: Unknown Return Type\n");
@@ -237,7 +237,7 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         #ifdef DEBUG
         printf("S tag encountered, parsing struct from args\n");
         #endif
-        parse_all_from_argvs(&struct_info->info, argc-3, argv+3, &struct_args_used, true, true);
+        parse_all_from_argvs(&struct_info->info, argc-2, argv+2, &struct_args_used, true, true);
 
         info->info.return_var.struct_info = struct_info;
 
@@ -248,7 +248,7 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     // parse_struct_from_flag(&info->return_var, argv[2]);
     //check if return is an array without a specified size
     if (info->info.return_var.is_array==ARRAY_STATIC_SIZE_UNSET) {
-        fprintf(stderr, "Error: Array return types must have a specified size. Put a number at the end of the flag with no spaces, eg %s4 for a static size, or t and a number to specify an argnumber that will represent size_t for it eg %st1 for the first arg, since 0=return\n", argv[2],argv[2]);
+        fprintf(stderr, "Error: Array return types must have a specified size. Put a number at the end of the flag with no spaces, eg %s4 for a static size, or t and a number to specify an argnumber that will represent size_t for it eg %st1 for the first arg, since 0=return\n", argv[1],argv[1]);
         exit(1);
     }
 
@@ -257,16 +257,16 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         return NULL;
     }
 
-    // arg[3] is the function name
-    info->function_name = strdup(argv[3]);
+    // arg[2] is the function name
+    info->function_name = strdup(argv[2]);
     if (!info->function_name) {
         fprintf(stderr, "Error: Unable to allocate memory for function name\n");
         return NULL;
     }
     //TODO: maybe at some point we should be able to take a hex offset instead of a function name
     int args_used = 0;
-    parse_all_from_argvs(&info->info, argc-4, argv+4, &args_used, false, false);
-    if (args_used != argc-4){
+    parse_all_from_argvs(&info->info, argc-3, argv+3, &args_used, false, false);
+    if (args_used != argc-3){
         fprintf(stderr, "Error: Not all arguments were used in parsing\n");
         exit(1);
     }
