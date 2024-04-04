@@ -50,8 +50,36 @@ target_link_libraries(cliffi
     ${READLINE_LIBRARIES}
 )
 
+# Append the project root directory to CMAKE_PREFIX_PATH
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}")
+
+if(NOT LIBFFI_FOUND)
+set(libffi_DIR ${SOURCES})
+find_package(libffi REQUIRED)
+target_link_libraries(cliffi PRIVATE libffi::libffi )
+target_include_directories(cliffi PRIVATE libffi_INCLUDE_DIRS)
+find_package(libffi REQUIRED)
+message(STATUS "libffi include dirs: ${libffi_INCLUDE_DIRS}")
+
+message("attempting link libffi::libffi")
+
+endif()
+if (NOT READLINE_FOUND)
+find_package(readline REQUIRED)
+target_link_libraries(cliffi PRIVATE readline::readline )
+target_include_directories(cliffi PRIVATE readline_INCLUDE_DIRS)
+find_package(readline REQUIRED)
+message(STATUS "readline include dirs: ${readline_INCLUDE_DIRS}")
+message("attempting link readline::readline")
+endif()
+
+message(INTERFACE_INCLUDE_DIRECTORIES ${INTERFACE_INCLUDE_DIRECTORIES})
+
+
+
+
 if(DL_LIBRARY)
-  target_link_libraries(cliffi ${DL_LIBRARY})
+  target_link_libraries(cliffi PRIVATE ${DL_LIBRARY})
 endif()
 
 
