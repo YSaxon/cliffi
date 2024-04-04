@@ -1,2 +1,3 @@
 [requires]
 libffi/3.4.4
+readline/8.2
