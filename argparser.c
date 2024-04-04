@@ -228,38 +228,20 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         return NULL;
     }
 
-    parse_arg_type_from_flag(&info->info.return_var, argv[1]);
+    int args_used_by_return = 0;
+    parse_one_arg(&info->info.return_var, argc-1, argv+1, &args_used_by_return, true);
+    argc-=args_used_by_return;
+    argv+=args_used_by_return;
 
     if (info->info.return_var.type == TYPE_UNKNOWN) {
         fprintf(stderr, "Error: Unknown Return Type\n");
         exit(1);
         return NULL;
-    } else if (info->info.return_var.type == TYPE_STRUCT) {
-        // StructInfo* struct_info = calloc(1, sizeof(StructInfo));
-        StructInfo* struct_info = info->info.return_var.struct_info;
-        int struct_args_used = 0;
-        // i++; // skip the S: open tag
-        #ifdef DEBUG
-        printf("S tag encountered, parsing struct from args\n");
-        #endif
-        parse_all_from_argvs(&struct_info->info, argc-2, argv+2, &struct_args_used, true, true);
-
-        info->info.return_var.struct_info = struct_info;
-
-        argc-=struct_args_used + 1;
-        argv+=struct_args_used + 1;
-        //not necessary to loop through the pointer depth here, that will be handled by the make_raw_value_for_struct function
-    }
-    // parse_struct_from_flag(&info->return_var, argv[2]);
+    } 
     //check if return is an array without a specified size
     if (info->info.return_var.is_array==ARRAY_STATIC_SIZE_UNSET) {
         fprintf(stderr, "Error: Array return types must have a specified size. Put a number at the end of the flag with no spaces, eg %s4 for a static size, or t and a number to specify an argnumber that will represent size_t for it eg %st1 for the first arg, since 0=return\n", argv[1],argv[1]);
         exit(1);
-    }
-
-    if (info->info.return_var.type == TYPE_UNKNOWN) {
-        fprintf(stderr, "Error: Unsupported return type\n");
-        return NULL;
     }
 
     // arg[2] is the function name
@@ -270,8 +252,8 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     }
     //TODO: maybe at some point we should be able to take a hex offset instead of a function name
     int args_used = 0;
-    parse_all_from_argvs(&info->info, argc-3, argv+3, &args_used, false, false);
-    if (args_used != argc-3){
+    parse_all_from_argvs(&info->info, argc-3, argv+3, &args_used_by_return, false, false);
+    if (args_used_by_return != argc-3){
         fprintf(stderr, "Error: Not all arguments were used in parsing\n");
         exit(1);
     }
