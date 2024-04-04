@@ -4,6 +4,24 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#ifdef _WIN32
+    const char* library_extension = ".dll";
+#elif defined(__APPLE__)
+    const char* library_extension = ".dylib";
+#else
+    const char* library_extension = ".so";
+#endif
+
+// Function to check if a string ends with a specific substring
+int str_ends_with(const char* str, const char* suffix) {
+    if (!str || !suffix)
+        return 0;
+    size_t str_len = strlen(str);
+    size_t suffix_len = strlen(suffix);
+    if (suffix_len > str_len)
+        return 0;
+    return strncmp(str + str_len - suffix_len, suffix, suffix_len) == 0;
+}
 
 // Helper function to check if a file exists and is accessible
 static int file_exists(const char* path) {
@@ -60,6 +78,15 @@ char* resolve_library_path(const char* library_name) {
         free(full_path);
     }
 
-    // Library not found
-    return NULL;
+
+    // If we haven't found it yet, try appending the platform appropriate library extension and trying again
+    char* library_name_with_extension;
+    if (!str_ends_with(library_name, library_extension)) {
+        char library_name_with_extension[strlen(library_name) + strlen(library_extension) + 1];
+        snprintf(library_name_with_extension, sizeof(library_name_with_extension), "%s%s", library_name, library_extension);
+        return resolve_library_path(library_name_with_extension);
+    } else {
+        // Library not found
+        return NULL;
+    }
 }
