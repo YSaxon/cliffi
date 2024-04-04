@@ -7,6 +7,12 @@
 #include "invoke_handler.h"
 #include "return_formatter.h"
 #include "types_and_utils.h"
+#include <setjmp.h>
+#include <signal.h>
+#include "library_manager.h"
+
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #ifdef _WIN32
     #include <windows.h>
@@ -16,6 +22,22 @@
 
 const char* NAME = "cliffi";
 const char* VERSION = "0.9.3";
+
+sigjmp_buf jmpBuffer;
+
+void logSegfault() {
+    fprintf(stderr, "Segmentation fault occurred\n");
+}
+
+void handleSegfault(int signal) {
+    // Log the segfault
+    logSegfault();
+
+    // Perform cleanup if needed
+
+    // Jump back to the REPL loop
+    siglongjmp(jmpBuffer, 1);
+}
 
 void print_usage(char* argv0){
         printf( "%s %s\n", NAME, VERSION);
@@ -113,9 +135,159 @@ void print_usage(char* argv0){
         printf( "      %s some_lib.so v func_taking_all_varargs ... -i 3 -s hello\n", argv0);
 }
 
+
+int invoke_and_print_return_value(FunctionCallInfo* call_info, void (*func)(void)) {
+    int invoke_result = invoke_dynamic_function(call_info,func);
+    if (invoke_result != 0) {
+        fprintf(stderr, "Error: Function invocation failed\n");
+    } else {
+
+        // Step 4: Print the return value and any modified arguments
+
+        printf("Function returned: ");
+
+        // format_and_print_arg_type(&call_info->return_var);
+        format_and_print_arg_value(&call_info->info.return_var);
+        printf("\n");
+
+        for (int i = 0; i < call_info->info.arg_count; i++) {
+            // if it could have been modified, print it
+            // TODO keep track of the original value and compare
+            if (call_info->info.args[i].is_array || call_info->info.args[i].pointer_depth > 0) {
+                printf("Arg %d after function return: ", i);
+                format_and_print_arg_type(&call_info->info.args[i]);
+                printf(" ");
+                format_and_print_arg_value(&call_info->info.args[i]);
+                printf("\n");
+            }
+        }
+    }
+    return invoke_result;
+}
+
+void executeREPLCommand(char* command){
+    int argc;
+    char ** argv = history_tokenize(command);
+    for (argc = 0; argv[argc] != NULL; argc++);
+
+    if (argc < 3) {
+        fprintf(stderr, "Invalid command. Type 'help' for assistance.\n");
+        return;
+    }
+    FunctionCallInfo* call_info = parse_arguments(argc, argv);
+    log_function_call_info(call_info);
+    void* lib_handle = libManagerLoadLibrary(call_info->library_path);
+    if (lib_handle == NULL) {
+        fprintf(stderr, "Failed to load library: %s\n", call_info->library_path);
+        // freeFunctionCallInfo(call_info);
+        return;
+    }
+    void (*func)(void);
+    #ifdef _WIN32
+        *(FARPROC*)&func = GetProcAddress(lib_handle, call_info->function_name);
+    #else
+        *(void**)(&func) = dlsym(lib_handle, call_info->function_name);
+    #endif
+
+    if (!func) {
+        fprintf(stderr, "Failed to load symbol: %s\n", call_info->function_name);
+        #ifdef _WIN32
+            fprintf(stderr, "Failed to find function: %lu\n", GetLastError());
+            FreeLibrary(lib_handle);
+        #else
+            fprintf(stderr, "Failed to find function: %s\n", dlerror());
+            dlclose(lib_handle);
+        #endif
+        exit(1);
+    }
+
+    int invoke_result = invoke_and_print_return_value(call_info, func);
+}
+
+char** cliffi_completion(const char* text, int state) {
+    // if (!text || text[0] == '\0') {
+    //     return (char*[]){"test","complete",NULL};
+    // }
+    // else {
+    //     return (char*[]){"not","blank",NULL};
+    // }
+    // calculate what kind of token we are at
+    // if we are at the first token, we are looking for a library and we should delegate to rl_filename_completion_function (and also a list of opened libraries from the library manager)
+    // if we are at the second token, we are looking for a return type and we should complete typeflags
+    // if we are at the third token, we are looking for a function name and we should complete function names (I guess we could use dlsym to get the list of functions in the library)
+    // from there we would really need to apply the parser to see if we are in a typeflag or an argument etc, and go from there
+    }
+
+
+
+void startRepl() {
+    printf("cliffi %s\n", VERSION);
+    printf("Type 'help' for assistance.\n");
+    initializeLibraryManager();
+
+    // rl_completion_entry_function = (Function*)cliffi_completion;
+
+    rl_bind_key('\t', rl_complete);
+    using_history();
+    read_history(".cliffi_history");
+
+    char* command;
+
+    while ((command = readline("> ")) != NULL) {
+        command = trim_whitespace(command);
+        if (strlen(command) > 0) {
+            fprintf(stderr, "Command: %s\n", command);
+            HIST_ENTRY * last_command = history_get(history_length);
+            if (last_command == NULL || strcmp(command, last_command->line) != 0)
+            {
+                add_history(command);
+                write_history(".cliffi_history");
+            }
+            if (strcmp(command, "quit") == 0 || strcmp(command, "exit") == 0) {
+                free(command);
+                break;
+            } else if (strcmp(command, "help") == 0) {
+                print_usage("> ");
+            } else if (strcmp(command, "list") == 0) {
+                listOpenedLibraries();
+            } else if (strncmp(command, "close", 5) == 0) {
+                char* libraryName = command + 5;
+                while (*libraryName == ' ') {
+                    libraryName++;
+                }
+                closeLibrary(libraryName);
+            } else if (strcmp(command, "closeall") == 0) {
+                closeAllLibraries();
+            } else {
+                executeREPLCommand(command);
+            }
+        }
+
+        free(command);
+    }
+}
+
+
+
+
+
 int main(int argc, char* argv[]) {
+    bool doReplLoop = false;
     if (argc > 1 && strcmp(argv[1], "--help") == 0) {
         print_usage(argv[0]);
+        return 0;
+    }
+    else if (argc > 1 && strcmp(argv[1], "--repl") == 0) {
+        fprintf(stderr, "Starting REPL... Type 'exit' to quit:\n");
+        signal(SIGSEGV, handleSegfault);
+
+        // Start the REPL
+        if (sigsetjmp(jmpBuffer, 1) == 0) {
+            startRepl();
+        } else {
+            printf("Segfault occurred. Restarting REPL...\n");
+            startRepl();
+        }
         return 0;
     }
     else if (argc < 4) {
@@ -136,6 +308,8 @@ int main(int argc, char* argv[]) {
 
     // Step 1: Resolve the library path
     // For now we've delegated that call to parse_arguments
+
+
 
 
     // Step 2: Parse command-line arguments
@@ -188,31 +362,7 @@ int main(int argc, char* argv[]) {
         exit(1);
     }
 
-    int invoke_result = invoke_dynamic_function(call_info,func);
-    if (invoke_result != 0) {
-        fprintf(stderr, "Error: Function invocation failed\n");
-    } else {
-
-        // Step 4: Print the return value and any modified arguments
-
-        printf("Function returned: ");
-
-        // format_and_print_arg_type(&call_info->return_var);
-        format_and_print_arg_value(&call_info->info.return_var);
-        printf("\n");
-
-        for (int i = 0; i < call_info->info.arg_count; i++) {
-            // if it could have been modified, print it
-            // TODO keep track of the original value and compare
-            if (call_info->info.args[i].is_array || call_info->info.args[i].pointer_depth > 0) {
-                printf("Arg %d after function return: ", i);
-                format_and_print_arg_type(&call_info->info.args[i]);
-                printf(" ");
-                format_and_print_arg_value(&call_info->info.args[i]);
-                printf("\n");
-            }
-        }
-    }
+    int invoke_result = invoke_and_print_return_value(call_info, func);
 
     // Clean up
 
