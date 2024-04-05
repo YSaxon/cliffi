@@ -41,6 +41,7 @@ set(SOURCES
     library_path_resolver.c
     return_formatter.c
     library_manager.c
+    var_map.c
 )
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})

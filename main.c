@@ -10,6 +10,7 @@
 #include <setjmp.h>
 #include <signal.h>
 #include "library_manager.h"
+#include "var_map.h"
 
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -21,7 +22,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "0.10.0";
+const char* VERSION = "0.11.0";
 
 sigjmp_buf jmpBuffer;
 
@@ -218,13 +219,63 @@ char** cliffi_completion(const char* text, int state) {
     // from there we would really need to apply the parser to see if we are in a typeflag or an argument etc, and go from there
     }
 
+void printVariable(char* varName, ArgInfo* arg) {
+        format_and_print_arg_type(arg);
+        printf(" %s = ", varName);
+        format_and_print_arg_value(arg);
+        printf("\n");
+}
+
+void parseSetVariable(char* varCommand) {
+        char* varName = varCommand;
+        while (*varName == ' ') {
+            varName++;
+        }
+
+        char* varValue = strchr(varName, ' ');
+        if (varValue == NULL) {
+            fprintf(stderr, "Missing variable value.\n");
+            return;
+        } else {
+            *varValue = '\0';
+            varValue++;
+            while (*varValue == ' ') {
+                varValue++;
+            }
+        
+
+        if (strlen(varName) == 1 && charToType(*varName) != TYPE_UNKNOWN) {
+            fprintf(stderr, "Variable name cannot be a character used in parsing types, such as %s which is used for %s\n", varName, typeToString(charToType(*varName)));
+            return;
+        } else if (*varName == '-') {
+            fprintf(stderr, "Variable names cannot start with a dash.\n");
+            return;
+        } else if (isAllDigits(varName) || isHexFormat(varName) || isFloatingPoint(varName)) {
+            fprintf(stderr, "Variable names cannot be a number.\n");
+            return;
+        }
+
+
+        int argc;
+        char ** argv = history_tokenize(varValue);
+        for (argc = 0; argv[argc] != NULL; argc++);
+
+        int args_used = 0;
+        ArgInfo* arg = parse_one_arg(argc, argv, &args_used, false);
+        if (args_used+1 != argc) {
+            fprintf(stderr, "Invalid variable value.\n");
+            return;
+        }
+        printVariable(varName, arg);
+        setVar(varName, arg);
+        }
+}
 
 
 void startRepl() {
     printf("cliffi %s\n", VERSION);
     printf("Type 'help' for assistance.\n");
     initializeLibraryManager();
-
     // rl_completion_entry_function = (Function*)cliffi_completion;
 
     rl_bind_key('\t', rl_complete);
@@ -247,12 +298,20 @@ void startRepl() {
                 free(command);
                 break;
             } else if (strcmp(command, "help") == 0) {
-                printf("Commands:\n");
-                printf("  docs: Print the cliffi docs\n");
-                printf("  list: List all opened libraries\n");
-                printf("  close <library>: Close the specified library\n");
-                printf("  closeall: Close all opened libraries\n");
-                printf("  exit: Quit the REPL\n");
+                printf( "Running a command:\n"
+                        "  %s\n", BASIC_USAGE_STRING);
+                printf( "Documentation:\n"
+                        "  help: Print this help message\n"
+                        "  docs: Print the cliffi docs\n"
+                        "Variables:\n"
+                        "  set <var> <value>: Set a variable\n"
+                        "  print <var>: Print the value of a variable\n"
+                        "Shared Library Management:\n"
+                        "  list: List all opened libraries\n"
+                        "  close <library>: Close the specified library\n"
+                        "  closeall: Close all opened libraries\n"
+                        "REPL Management:\n"
+                        "  exit: Quit the REPL\n");
             } else if (strcmp(command, "docs") == 0) {
                 print_usage(">");
             } else if (strcmp(command, "list") == 0) {
@@ -265,14 +324,27 @@ void startRepl() {
                 closeLibrary(libraryName);
             } else if (strcmp(command, "closeall") == 0) {
                 closeAllLibraries();
+            } else if (strncmp(command, "set ", 4) == 0) {
+                char* set_var_command = command + 4;
+                parseSetVariable(set_var_command);
+            } else if (strncmp(command, "print ", 6) == 0) {
+                char* varName = command + 6;
+                ArgInfo* arg = getVar(varName);
+                if (arg == NULL) {
+                    fprintf(stderr, "Variable not found.\n");
+                } else {
+                    printVariable(varName, arg);
+                }
             } else {
                 executeREPLCommand(command);
             }
         }
-
         free(command);
     }
 }
+
+        
+
 
 
 

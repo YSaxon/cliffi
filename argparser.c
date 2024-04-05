@@ -2,6 +2,7 @@
 #include "invoke_handler.h"
 #include "library_path_resolver.h"
 #include "types_and_utils.h"
+#include "var_map.h"
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -132,6 +133,11 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
 ArgInfo* parse_one_arg(int argc, char* argv[], int *args_used, bool is_return){
         char* argStr = argv[0];
         
+        ArgInfo* storedVar = getVar(argStr);
+        if (storedVar != NULL) {
+            return storedVar;
+        }
+      
         ArgInfo* outArg = calloc(1,sizeof(ArgInfo));
         outArg->value = malloc(sizeof(void*));
 
