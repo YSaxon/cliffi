@@ -129,33 +129,39 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
 
 void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *args_used, bool is_return, bool is_struct);
 
-void parse_one_arg(ArgInfo* arg, int argc, char* argv[], int *args_used, bool is_return){
+ArgInfo* parse_one_arg(int argc, char* argv[], int *args_used, bool is_return){
         char* argStr = argv[0];
+        
+        ArgInfo* outArg = calloc(1,sizeof(ArgInfo));
+        outArg->value = malloc(sizeof(void*));
+
         int i = 0;
         if (is_return){ // is a return type, so we don't need to parse values or check for the - flag
-            parse_arg_type_from_flag(arg, argStr);
+            parse_arg_type_from_flag(outArg, argStr);
         } else if (argStr[0] == '-' && !isAllDigits(argStr+1) && !isHexFormat(argStr+1)) {
-            parse_arg_type_from_flag(arg, argStr+1);
+            parse_arg_type_from_flag(outArg, argStr+1);
 
-            if (arg->type != TYPE_STRUCT) argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
+            if (outArg->type != TYPE_STRUCT) argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
         
         } else { // no flag, so we need to infer the type from the value
-            infer_arg_type_from_value(arg, argStr);
+            infer_arg_type_from_value(outArg, argStr);
         }
 
-        if (!is_return && arg->type!=TYPE_STRUCT) {
-            convert_arg_value(arg, argStr);
-        } else if (arg->type==TYPE_STRUCT){
-            StructInfo* struct_info = arg->struct_info; // it's allocated inside parse_arg_type_from_flag
+        if (!is_return && outArg->type!=TYPE_STRUCT) {
+            convert_arg_value(outArg, argStr);
+        } else if (outArg->type==TYPE_STRUCT){
+            StructInfo* struct_info = outArg->struct_info; // it's allocated inside parse_arg_type_from_flag
+            outArg->struct_info->info.return_var = calloc(1,sizeof(ArgInfo));
             int struct_args_used = 0;
             i++; // skip the S: open tag
             parse_all_from_argvs(&struct_info->info, argc-i, argv+i, &struct_args_used, is_return, true);
 
             i+=struct_args_used;
-            arg->struct_info = struct_info;
+            outArg->struct_info = struct_info;
             // not setting a value here, that will be handled by the make_raw_value_for_struct function in the invoke handler module
         }
         *args_used += i;
+        return outArg;
 }
 
 void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *args_used, bool is_return, bool is_struct) {
@@ -168,7 +174,7 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
     int i;
     for (i=0; i < argc; i++) {
         char* argStr = argv[i];
-        ArgInfo arg = {.value = malloc(sizeof(void*))};
+        
         int pointer_depth = 0;
 
         if (strcmp(argStr, ":S") == 0){ // this terminates a struct flag
@@ -195,7 +201,7 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
             continue;
         }
 
-        parse_one_arg(&arg, argc-i, argv+i, &i, is_return);
+        ArgInfo* arg = parse_one_arg(argc-i, argv+i, &i, is_return);
 
         addArgToFunctionCallInfo(info, arg);
     }
@@ -228,7 +234,7 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     }
 
     int args_used_by_return = 0;
-    parse_one_arg(&info->info.return_var, argc-1, argv+1, &args_used_by_return, true);
+    info->info.return_var = parse_one_arg(argc-1, argv+1, &args_used_by_return, true);
     argc-=args_used_by_return;
     argv+=args_used_by_return;
 
