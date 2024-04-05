@@ -524,7 +524,7 @@ size_t typeToSize(ArgType type, int array_value_pointer_depth) {
         case TYPE_VOID: return 0;
         case TYPE_ARRAY: return sizeof(void*);
         // case TYPE_UNKNOWN: return 0;
-        default: fprintf(stderr, "Error: Unsupported type %c\n", typeToChar(type)); exit_or_restart(1);
+        default: fprintf(stderr, "Error: Unsupported type %c\n", typeToChar(type)); exit_or_restart(1); fprintf(stderr, "Error: we should never reach here"); exit(1);
     }
 }
 
@@ -643,6 +643,8 @@ size_t get_size_for_arginfo_sized_array(const ArgInfo* arg){
             fprintf(stderr, "Error: getSizeForSizeTArray was called on an arginfo with unsupported is_array mode %d\n", arg->is_array);
             exit_or_restart(1);
     }
+    fprintf(stderr, "Error: getSizeForSizeTArray fell through to the end of the function\n");
+    exit(1);
 }
 
 
