@@ -548,6 +548,7 @@ add_test(NAME repl_smoketest #
 COMMAND bash -c "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi --repl <<EOF
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i add 1 2
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i add 3 4
+EOF
 ")
 set_tests_properties(repl_smoketest PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")
 set_tests_properties(repl_smoketest PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 7")
@@ -558,6 +559,7 @@ COMMAND bash -c "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi --repl <<EOF
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global
+EOF
 ")
 set_tests_properties(repl_test_globals PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 1")
 set_tests_properties(repl_test_globals PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 2")
