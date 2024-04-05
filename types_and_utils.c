@@ -7,6 +7,7 @@
 #include <limits.h>
 #include "types_and_utils.h"
 #include "return_formatter.h"
+#include "main.h"
 
 char *trim_whitespace(char *str)
 // https://stackoverflow.com/a/122974
@@ -129,12 +130,12 @@ ArgType infer_arg_type_single(const char* argval){
             long long int test = strtoll(argval, NULL, 0);
             if (errno == ERANGE) {
                 fprintf(stderr, "Error: Value %s is out of range even for long long\n", argval);
-                exit(1);
+                exit_or_restart(1);
             }
             if (test > ULONG_MAX){
                 //todo implement longlong?
                 fprintf(stderr, "Error: Value %s is too large to fit into an unsigned long, and we haven't implemented longlong yet\n", argval);
-                exit(1);
+                exit_or_restart(1);
             } else if (test > LONG_MAX){
                 return TYPE_ULONG; // no alternative so long as we don't have longlong
             } else if (test > UINT_MAX){
@@ -158,7 +159,7 @@ ArgType infer_arg_type_single(const char* argval){
         if (length <= 8) return is_negative ? TYPE_LONG : TYPE_ULONG;
         else {
             fprintf(stderr, "Error: Hex string %s is %zu bytes, which is too long to fit into a single type. If you meant to specify an array or a string, flag it as such.\n", argval, length);
-            exit(1);
+            exit_or_restart(1);
         }
     }
 
@@ -213,7 +214,7 @@ void* hex_string_to_bytes(const char* hexStr) {
         if (val1 < 0 || val2 < 0) {
             // free(output); // Cleanup on error
             fprintf(stderr, "Error: Invalid hex character in string: %s\n", hexStr);
-            exit(1);
+            exit_or_restart(1);
         }
 
         output[j] = (unsigned char)((val1 << 4) + val2);
@@ -266,7 +267,7 @@ void convert_arg_value(ArgInfo* arg, const char* argStr) {
     void* convertedValue = convert_to_type(arg->type, argStr);
         if (convertedValue == NULL) {
             fprintf(stderr, "Error: Failed to convert argument value %s to type %c\n", argStr, typeToChar(arg->type));
-            exit(1);
+            exit_or_restart(1);
         }
 
     ArgType type = arg->type;
@@ -345,7 +346,7 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
             return;
         } else {
             fprintf(stderr, "Error: Argstr %s is interpreted as NULL. We cannot initialize a null array with no sizing info. If you WANT a null pointer you should use the pointer flag instead\n", argStr);
-            exit(1);
+            exit_or_restart(1);
         }
     }
 
@@ -372,17 +373,17 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
         {
             if (arg->array_value_pointer_depth > 0) {
                 fprintf(stderr, "Error: You can't use the hex array initialization method with an array of pointer types");
-                exit(1);
+                exit_or_restart(1);
             }
             //consider argstr to be a hex string containing the raw values for the array (mostly only useful for char arrays)
             int hexstring_bytes = (strlen(argStr) - 2) / 2;
             if (size_of_type == 0) {
                 fprintf(stderr, "Error: Unsupported type for array: %c\n with size of 0", typeToChar(arg->type));
-                exit(1);
+                exit_or_restart(1);
             }
             if (hexstring_bytes % size_of_type != 0) {
                 fprintf(stderr, "Error: Hex string bytes length %d is not a multiple of the size of the type %zu\n in hex string being converted to array %s", hexstring_bytes, size_of_type, argStr);
-                exit(1);
+                exit_or_restart(1);
             }
             array_size_implicit = hexstring_bytes / size_of_type;
             array_values = hex_string_to_bytes(argStr);
@@ -400,7 +401,7 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
             char* token = strtok_r(rest, ",", &rest);
             if (token == NULL) {
                 fprintf(stderr, "Error: Failed to tokenize array string %s, probably an off by one error\n", argStr);
-                exit(1);
+                exit_or_restart(1);
             }
             void* convertedValue = convert_to_type(arg->type, token);
             convertedValue = makePointerLevel(convertedValue, arg->array_value_pointer_depth);
@@ -437,7 +438,7 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
     }
     else {
         fprintf(stderr, "Error: Unsupported array size mode %d\n", arg->is_array);
-        exit(1);
+        exit_or_restart(1);
     }
 }
 
@@ -523,7 +524,7 @@ size_t typeToSize(ArgType type, int array_value_pointer_depth) {
         case TYPE_VOID: return 0;
         case TYPE_ARRAY: return sizeof(void*);
         // case TYPE_UNKNOWN: return 0;
-        default: fprintf(stderr, "Error: Unsupported type %c\n", typeToChar(type)); exit(1);
+        default: fprintf(stderr, "Error: Unsupported type %c\n", typeToChar(type)); exit_or_restart(1);
     }
 }
 
@@ -571,11 +572,11 @@ void convert_argnum_sized_array_to_arginfo_ptr(ArgInfo* arg,ArgInfoContainer* in
     if (arg->is_array==ARRAY_SIZE_AT_ARGNUM){
         if (arg->array_sizet_arg.argnum_of_size_t_to_be_replaced > info->arg_count){
             fprintf(stderr, "Error: array was specified to have its size_t be at argnum %d, but there are only %d args\n", arg->array_sizet_arg.argnum_of_size_t_to_be_replaced, info->arg_count);
-            exit(1);
+            exit_or_restart(1);
         }
         else if (arg->array_sizet_arg.argnum_of_size_t_to_be_replaced < 0){
             fprintf(stderr, "Error: array was specified to have its size_t be at argnum %d, but argnums must be positive\n", arg->array_sizet_arg.argnum_of_size_t_to_be_replaced);
-            exit(1);
+            exit_or_restart(1);
         } else {
             arg->is_array = ARRAY_SIZE_AT_ARGINFO_PTR; //TODO maybe we should replace 0 with R for return value?
             if (arg->array_sizet_arg.argnum_of_size_t_to_be_replaced==0) arg->array_sizet_arg.arginfo_of_size_t = (ArgInfo*)info->return_var; // 0 is the return value
@@ -623,7 +624,7 @@ size_t get_size_for_arginfo_sized_array(const ArgInfo* arg){
                     return (size_t) **(unsigned long**)size_t_param_val;
                 default:
                     fprintf(stderr, "Error: array was specified to have its size_t be another argument, but the arg at that position is not a numeric type\n");
-                    exit(1);
+                    exit_or_restart(1);
         }
         #endif
         case ARRAY_STATIC_SIZE:
@@ -631,16 +632,16 @@ size_t get_size_for_arginfo_sized_array(const ArgInfo* arg){
             return arg->static_or_implied_size;
         case ARRAY_STATIC_SIZE_UNSET:
             fprintf(stderr,"Error: getSizeForSizeTArray was called on an array on static_unset mode\n");
-            exit(1);
+            exit_or_restart(1);
         case ARRAY_SIZE_AT_ARGNUM:
             fprintf(stderr,"Error: getSizeForSizeTArray was called on an arginfo with is_array ARRAY_SIZE_AT_ARGNUM. Call convert_all_arrays_to_arginfo_ptr_sized_after_parsing() first.\n");
-            exit(1);
+            exit_or_restart(1);
         case NOT_ARRAY:
             fprintf(stderr,"Error: getSizeForSizeTArray was called on an arginfo with is_array NOT_ARRAY\n");
-            exit(1);
+            exit_or_restart(1);
         default:
             fprintf(stderr, "Error: getSizeForSizeTArray was called on an arginfo with unsupported is_array mode %d\n", arg->is_array);
-            exit(1);
+            exit_or_restart(1);
     }
 }
 

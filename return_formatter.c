@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "main.h"
 
 void print_char_buffer(const char *buffer, size_t length) {
     for (size_t i = 0; i < length; i++) {
@@ -69,7 +70,7 @@ void hexdump(const void *data, size_t size) {
     size_t size = typeToSize(type, 0);
     if (size == 0) {
         fprintf(stderr, "Size of type %s is 0\n", typeToString(type));
-        exit(1);
+        exit_or_restart(1);
     }
     if ((size_t)value % size != 0)  {
         alligned_copy = malloc(size);
@@ -114,13 +115,13 @@ void hexdump(const void *data, size_t size) {
             break;
         case TYPE_POINTER:
             fprintf(stderr, "Should not be printing pointer values directly");
-            exit(1);
+            exit_or_restart(1);
         case TYPE_VOID:
             printf("(void)");
             break;
         case TYPE_STRUCT:
             fprintf(stderr, "Should not be printing struct values directly");
-            exit(1);
+            exit_or_restart(1);
         default:
             printf("Unsupported type");
             break;

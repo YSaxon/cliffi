@@ -26,6 +26,9 @@ const char* VERSION = "0.11.2";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
+void exit_or_restart(int status) {
+    siglongjmp(jmpBuffer, status);
+}
 
 void logSegfault() {
     fprintf(stderr, "Segmentation fault occurred\n");
@@ -181,7 +184,7 @@ void* loadFunctionHandle(void* lib_handle, const char* function_name) {
         #else
         fprintf(stderr, "Failed to find function: %s\n", dlerror());
         #endif
-        exit(1);
+        exit_or_restart(1);
     }
     return func;
 }
@@ -356,13 +359,19 @@ void startRepl() {
 
 int main(int argc, char* argv[]) {
     bool doReplLoop = false;
+    signal(SIGSEGV, handleSegfault);
+    if (sigsetjmp(jmpBuffer, 1) != 0) {
+        fprintf(stderr, "Error occurred. Exiting...\n");
+        return 1;
+    }
+    
     if (argc > 1 && strcmp(argv[1], "--help") == 0) {
         print_usage(argv[0]);
         return 0;
     }
     else if (argc > 1 && strcmp(argv[1], "--repl") == 0) {
         initializeLibraryManager();
-        signal(SIGSEGV, handleSegfault);
+        // rl_completion_entry_function = (Function*)cliffi_completion;
 
         // Start the REPL
         if (sigsetjmp(jmpBuffer, 1) == 0) {

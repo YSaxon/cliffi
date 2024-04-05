@@ -1,6 +1,7 @@
 #include "argparser.h"
 #include "invoke_handler.h"
 #include "library_path_resolver.h"
+#include "main.h"
 #include "types_and_utils.h"
 #include "var_map.h"
 #include <stdbool.h>
@@ -51,7 +52,7 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
             }
             if (argStr[1 + pointer_depth + arg->struct_info->is_packed] != ':') {
                 fprintf(stderr, "Error: Struct flag must be followed by a colon and then a list of arguments, in flags %s\n", argStr);
-                exit(1);
+                exit_or_restart(1);
             }
         }
 
@@ -68,23 +69,23 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
         if (isAllDigits(&argStr[1+pointer_depth+array_value_pointer_depth]) || argStr[1+pointer_depth+array_value_pointer_depth] == 't') {
             //argStr[:2+pointer_depth] is the array flag + 'i' + argStr[2+pointer_depth:]
             fprintf(stderr, "Error: Array flag must be followed by a primitive type flag, and THEN it can be followed by a size or size_t argnum, so for instance ai4 or ait1 for an array of ints, whereas you have %s\n", argStr);
-            exit(1);
+            exit_or_restart(1);
         }
 
         explicitType = charToType(argStr[1 + pointer_depth+array_value_pointer_depth]);
 
         if (explicitType == TYPE_STRUCT){
             fprintf(stderr, "Error: Arrays of structs are not presently supported, in flags %s\n", argStr);
-            exit(1);
+            exit_or_restart(1);
         } else if (explicitType == TYPE_UNKNOWN) {
             fprintf(stderr, "Error: Unsupported argument type flag in flags %s\n", argStr);
-            exit(1);
+            exit_or_restart(1);
         } else if (explicitType == TYPE_ARRAY) {
             fprintf(stderr, "Error: Array types cannot be nested, in flags %s\n", argStr);
-            exit(1);
+            exit_or_restart(1);
         } else if (explicitType == TYPE_POINTER) {
             fprintf(stderr, "Error: Array flag in unsupported position in flags %s. Order must be -[p[p..]][a][primitive type flag]\n", argStr);
-            exit(1);
+            exit_or_restart(1);
         } 
 
 
@@ -101,7 +102,7 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
             } else {
                 //maybe in the future we'll allow just assuming its the next arg if it's not a number
                 fprintf(stderr, "Error: Array size flag t must be followed by a number in flags %s\n", argStr);
-                exit(1);
+                exit_or_restart(1);
             }
         } else {
             arg->is_array = ARRAY_STATIC_SIZE_UNSET;
@@ -115,11 +116,11 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
 
     if (explicitType == TYPE_UNKNOWN) {
         fprintf(stderr, "Error: Unsupported argument type flag in flags %s\n", argStr);
-        exit(1);
+        exit_or_restart(1);
     }
     else if (/*explicitType == TYPE_ARRAY ||*/ explicitType == TYPE_POINTER) {
         fprintf(stderr, "Error: Array or Pointer flag in unsupported position in flags %s. Order must be -[p[p..]][a][primitive type flag]\n", argStr);
-        exit(1);
+        exit_or_restart(1);
     }
 
     arg->type = explicitType;
@@ -186,7 +187,7 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
         if (strcmp(argStr, ":S") == 0){ // this terminates a struct flag
             if (!is_struct){
                 fprintf(stderr, "Error: Unexpected close struct flag :S\n");
-                exit(1);
+                exit_or_restart(1);
             }
             hit_struct_close = true;
             break;
@@ -195,13 +196,13 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
         if (strcmp(argStr, "...") == 0) {
             if (info->vararg_start != -1){
                 fprintf(stderr, "Error: Multiple varargs flags encountered\n");
-                exit(1);
+                exit_or_restart(1);
             } else if (is_return){
                 fprintf(stderr, "Error: Varargs flag encountered in return type\n");
-                exit(1);
+                exit_or_restart(1);
             } else if (is_struct){
                 fprintf(stderr, "Error: Varargs flag encountered in struct\n");
-                exit(1);
+                exit_or_restart(1);
             }
             info->vararg_start = info->arg_count;
             continue;
@@ -214,7 +215,7 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
 
     if (is_struct && !hit_struct_close){
         fprintf(stderr, "Error: Struct flag not closed with :S\n");
-        exit(1);
+        exit_or_restart(1);
     }
 
     *args_used = i;
@@ -236,7 +237,7 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     info->library_path = resolve_library_path(argv[0]);
     if (!info->library_path) {
         fprintf(stderr, "Error: Unable to resolve library path for %s\n", argv[0]);
-        return NULL;
+        exit_or_restart(1);
     }
 
     int args_used_by_return = 0;
@@ -246,13 +247,13 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
 
     if (info->info.return_var->type == TYPE_UNKNOWN) {
         fprintf(stderr, "Error: Unknown Return Type\n");
-        exit(1);
+        exit_or_restart(1);
         return NULL;
     } 
     //check if return is an array without a specified size
     if (info->info.return_var->is_array==ARRAY_STATIC_SIZE_UNSET) {
         fprintf(stderr, "Error: Array return types must have a specified size. Put a number at the end of the flag with no spaces, eg %s4 for a static size, or t and a number to specify an argnumber that will represent size_t for it eg %st1 for the first arg, since 0=return\n", argv[1],argv[1]);
-        exit(1);
+        exit_or_restart(1);
     }
 
     // arg[2] is the function name
@@ -266,7 +267,7 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     parse_all_from_argvs(&info->info, argc-3, argv+3, &args_used_by_return, false, false);
     if (args_used_by_return != argc-3){
         fprintf(stderr, "Error: Not all arguments were used in parsing\n");
-        exit(1);
+        exit_or_restart(1);
     }
     
     return info;
