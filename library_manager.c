@@ -36,57 +36,59 @@ void cleanupLibraryManager() {
     free(libraryMap.entries);
 }
 
-void* libManagerLoadLibrary(const char* libraryPath) {
-    void* handle = NULL;
 
-#ifdef _WIN32
-    handle = LoadLibrary(libraryPath);
+void* loadLibraryDirectly(const char* libraryPath) {
+    #ifdef _WIN32
+    void* handle = &LoadLibrary(libraryPath);
+    if (!handle) {
+            fprintf(stderr, "Failed to load library: %lu\n", GetLastError());
+            return NULL;
+    }
 #else
-    handle = dlopen(libraryPath, RTLD_LAZY);
+    void* handle = dlopen(libraryPath, RTLD_LAZY);
+    if (!handle) {
+            fprintf(stderr, "Failed to load library: %s\n", dlerror());
+            return NULL;
+    }
 #endif
+return handle;
+}
 
+LibraryEntry* getLibraryEntry(const char* libraryPath) {
+    for (size_t i = 0; i < libraryMap.count; i++) {
+        if (strcmp(libraryMap.entries[i].libraryPath, libraryPath) == 0) {
+            return &libraryMap.entries[i];
+        }
+    }
+    return NULL;
+}
+
+void setLibraryEntry(const char* libraryPath, void* handle) {
+    LibraryEntry* entry = getLibraryEntry(libraryPath);
+    if (entry == NULL) {
+        libraryMap.entries = realloc(libraryMap.entries, (libraryMap.count + 1) * sizeof(LibraryEntry));
+        entry = &libraryMap.entries[libraryMap.count];
+        entry->libraryPath = strdup(libraryPath);
+        libraryMap.count++;
+    }
+    entry->handle = handle;
+}
+
+void* getOrLoadLibrary(const char* libraryPath) {
+
+    LibraryEntry* entry = getLibraryEntry(libraryPath);
+    if (entry != NULL) {
+        return entry->handle;
+    }
+
+    void* handle = loadLibraryDirectly(libraryPath);
     if (handle != NULL) {
-        LibraryEntry* entry = NULL;
-        for (size_t i = 0; i < libraryMap.count; i++) {
-            if (strcmp(libraryMap.entries[i].libraryPath, libraryPath) == 0) {
-                entry = &libraryMap.entries[i];
-                break;
-            }
-        }
-
-        if (entry == NULL) {
-            libraryMap.entries = realloc(libraryMap.entries, (libraryMap.count + 1) * sizeof(LibraryEntry));
-            entry = &libraryMap.entries[libraryMap.count];
-            entry->libraryPath = strdup(libraryPath);
-            libraryMap.count++;
-        }
-
-        entry->handle = handle;
+        setLibraryEntry(libraryPath, handle);
     }
 
     return handle;
 }
 
-// void* getLibraryHandle(const char* libraryPath) {
-//     for (size_t i = 0; i < libraryMap.count; i++) {
-//         if (strcmp(libraryMap.entries[i].libraryPath, libraryPath) == 0) {
-//             return libraryMap.entries[i].handle;
-//         }
-//     }
-//     return NULL;
-// }
-
-void* getFunctionSymbol(void* libraryHandle, const char* functionName) {
-    void* symbol = NULL;
-
-#ifdef _WIN32
-    symbol = GetProcAddress((HMODULE)libraryHandle, functionName);
-#else
-    symbol = dlsym(libraryHandle, functionName);
-#endif
-
-    return symbol;
-}
 
 void closeLibrary(const char* libraryPath) {
     for (size_t i = 0; i < libraryMap.count; i++) {

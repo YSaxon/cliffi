@@ -22,7 +22,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "0.11.1";
+const char* VERSION = "0.11.2";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -168,6 +168,24 @@ int invoke_and_print_return_value(FunctionCallInfo* call_info, void (*func)(void
     return invoke_result;
 }
 
+void* loadFunctionHandle(void* lib_handle, const char* function_name) {
+    void (*func)(void);
+    #ifdef _WIN32
+    *(FARPROC*)&func = GetProcAddress(*lib_handle, function_name);
+    #else
+    *(void**)(&func) = dlsym(lib_handle, function_name);
+    #endif
+    if (!func) {
+        #ifdef _WIN32
+        fprintf(stderr, "Failed to find function: %lu\n", GetLastError());
+        #else
+        fprintf(stderr, "Failed to find function: %s\n", dlerror());
+        #endif
+        exit(1);
+    }
+    return func;
+}
+
 void executeREPLCommand(char* command){
     int argc;
     char ** argv = history_tokenize(command);
@@ -179,37 +197,19 @@ void executeREPLCommand(char* command){
     }
     FunctionCallInfo* call_info = parse_arguments(argc, argv);
     log_function_call_info(call_info);
-    void* lib_handle = libManagerLoadLibrary(call_info->library_path);
+    void* lib_handle = getOrLoadLibrary(call_info->library_path);
     if (lib_handle == NULL) {
         fprintf(stderr, "Failed to load library: %s\n", call_info->library_path);
-        // freeFunctionCallInfo(call_info);
         return;
     }
-    void (*func)(void);
-    #ifdef _WIN32
-        *(FARPROC*)&func = GetProcAddress(lib_handle, call_info->function_name);
-    #else
-        *(void**)(&func) = dlsym(lib_handle, call_info->function_name);
-    #endif
-
-    if (!func) {
-        fprintf(stderr, "Failed to load symbol: %s\n", call_info->function_name);
-        #ifdef _WIN32
-            fprintf(stderr, "Failed to find function: %lu\n", GetLastError());
-            FreeLibrary(lib_handle);
-        #else
-            fprintf(stderr, "Failed to find function: %s\n", dlerror());
-            dlclose(lib_handle);
-        #endif
-        exit(1);
-    }
+    void* func = loadFunctionHandle(lib_handle, call_info->function_name);
 
     int invoke_result = invoke_and_print_return_value(call_info, func);
 }
 
 char** cliffi_completion(const char* text, int state) {
     fprintf(stderr, "Not implemented");
-    exit(1);
+    return NULL;
     // if (!text || text[0] == '\0') {
     //     return (char*[]){"test","complete",NULL};
     // }
@@ -299,6 +299,7 @@ void startRepl() {
                 write_history(".cliffi_history");
             }
             if (strcmp(command, "quit") == 0 || strcmp(command, "exit") == 0) {
+                closeAllLibraries();
                 break;
             } else if (strcmp(command, "help") == 0) {
                 printf( "Running a command:\n"
@@ -360,14 +361,14 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     else if (argc > 1 && strcmp(argv[1], "--repl") == 0) {
-        fprintf(stderr, "Starting REPL... Type 'exit' to quit:\n");
+        initializeLibraryManager();
         signal(SIGSEGV, handleSegfault);
 
         // Start the REPL
         if (sigsetjmp(jmpBuffer, 1) == 0) {
             startRepl();
         } else {
-            printf("Segfault occurred. Restarting REPL...\n");
+            fprintf(stderr, "Error occurred. Restarting REPL...\n");
             startRepl();
         }
         return 0;
@@ -404,45 +405,9 @@ int main(int argc, char* argv[]) {
 
     // Step 3: Invoke the specified function
 
-    #ifdef _WIN32
-        HMODULE lib_handle;
-    #else
-        void* lib_handle;
-    #endif
+    void* lib_handle = loadLibraryDirectly(call_info->library_path);
 
-    // Loading the library
-    #ifdef _WIN32
-        lib_handle = LoadLibrary(call_info->library_path);
-        if (!lib_handle) {
-            fprintf(stderr, "Failed to load library: %lu\n", GetLastError());
-            return -1;
-        }
-    #else
-        lib_handle = dlopen(call_info->library_path, RTLD_LAZY);
-        if (!lib_handle) {
-            fprintf(stderr, "Failed to load library: %s\n", dlerror());
-            return -1;
-        }
-    #endif
-
-    void (*func)(void);
-    #ifdef _WIN32
-        *(FARPROC*)&func = GetProcAddress(lib_handle, call_info->function_name);
-    #else
-        *(void**)(&func) = dlsym(lib_handle, call_info->function_name);
-    #endif
-
-    if (!func) {
-        fprintf(stderr, "Failed to load symbol: %s\n", call_info->function_name);
-        #ifdef _WIN32
-            fprintf(stderr, "Failed to find function: %lu\n", GetLastError());
-            FreeLibrary(lib_handle);
-        #else
-            fprintf(stderr, "Failed to find function: %s\n", dlerror());
-            dlclose(lib_handle);
-        #endif
-        exit(1);
-    }
+    void* func = loadFunctionHandle(lib_handle, call_info->function_name);
 
     int invoke_result = invoke_and_print_return_value(call_info, func);
 
@@ -454,7 +419,7 @@ int main(int argc, char* argv[]) {
 
     // Wait to close the library until after we're done with everything in case it returns pointers to literals stored in the library
         #ifdef _WIN32
-            FreeLibrary(lib_handle);
+            FreeLibrary(*lib_handle);
         #else
             dlclose(lib_handle);
         #endif

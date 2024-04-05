@@ -5,9 +5,8 @@
 
 void initializeLibraryManager();
 void cleanupLibraryManager();
-void* libManagerLoadLibrary(const char* libraryPath);
-void* getLibraryHandle(const char* libraryPath);
-void* getFunctionSymbol(void* libraryHandle, const char* functionName);
+void* getOrLoadLibrary(const char* libraryPath);
+void* loadLibraryDirectly(const char* libraryPath);
 void closeLibrary(const char* libraryPath);
 void closeAllLibraries();
 void listOpenedLibraries();
