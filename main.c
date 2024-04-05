@@ -206,6 +206,8 @@ void executeREPLCommand(char* command){
 }
 
 char** cliffi_completion(const char* text, int state) {
+    fprintf(stderr, "Not implemented");
+    exit(1);
     // if (!text || text[0] == '\0') {
     //     return (char*[]){"test","complete",NULL};
     // }
@@ -295,7 +297,6 @@ void startRepl() {
                 write_history(".cliffi_history");
             }
             if (strcmp(command, "quit") == 0 || strcmp(command, "exit") == 0) {
-                free(command);
                 break;
             } else if (strcmp(command, "help") == 0) {
                 printf( "Running a command:\n"
