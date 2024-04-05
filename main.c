@@ -15,6 +15,14 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+#define use_backtrace
+#endif
+
+#ifdef use_backtrace
+#include <execinfo.h>
+#endif
+
 #ifdef _WIN32
     #include <windows.h>
 #else
@@ -26,7 +34,30 @@ const char* VERSION = "0.11.2";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
+
+#ifdef use_backtrace
+void printStackTrace() {
+    void *array[10];
+    size_t size;
+    char **strings;
+    size_t i;
+
+    size = backtrace(array, 10);
+    strings = backtrace_symbols(array, size);
+
+    fprintf(stderr, "Stack trace:\n");
+    for (i = 0; i < size; i++) {
+        fprintf(stderr, "%s\n", strings[i]);
+    }
+
+    free(strings);
+}
+#endif
+
 void exit_or_restart(int status) {
+    #ifdef use_backtrace
+    if (status != 0) printStackTrace();
+    #endif
     siglongjmp(jmpBuffer, status);
 }
 
