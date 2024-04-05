@@ -22,7 +22,8 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "0.11.0";
+const char* VERSION = "0.11.1";
+const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
 
@@ -40,9 +41,10 @@ void handleSegfault(int signal) {
     siglongjmp(jmpBuffer, 1);
 }
 
+
 void print_usage(char* argv0){
         printf( "%s %s\n", NAME, VERSION);
-        printf( "Usage: %s <library> <typeflag> <function_name> [<args>..  [... <varargs>..]]\n", argv0);
+        printf( "Usage: %s %s\n", argv0, BASIC_USAGE_STRING);
         printf( "  [--help]         Print this help message\n");
         printf( "  <library>        The path to the shared library containing the function to invoke\n"
                 "                   or the name of the library if it is in the system path\n");
@@ -371,7 +373,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     else if (argc < 4) {
-        fprintf(stderr, "%s %s\nUsage: %s [--help] <library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [... <varargs>..] ]\n", NAME,VERSION,argv[0]);
+        fprintf(stderr, "%s %s\nUsage: %s [--help] %s\n", NAME,VERSION,argv[0],BASIC_USAGE_STRING);
         return 1;
     }
 
