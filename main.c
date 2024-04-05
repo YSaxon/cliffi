@@ -280,14 +280,6 @@ void parseSetVariable(char* varCommand) {
 
 
 void startRepl() {
-    printf("cliffi %s\n", VERSION);
-    printf("Type 'help' for assistance.\n");
-    initializeLibraryManager();
-    // rl_completion_entry_function = (Function*)cliffi_completion;
-
-    rl_bind_key('\t', rl_complete);
-    using_history();
-    read_history(".cliffi_history");
 
     char* command;
 
@@ -358,7 +350,9 @@ void startRepl() {
 
 
 int main(int argc, char* argv[]) {
-    bool doReplLoop = false;
+
+    setbuf(stdout, NULL); // disable buffering for stdout
+    setbuf(stderr, NULL); // disable buffering for stderr
     signal(SIGSEGV, handleSegfault);
     if (sigsetjmp(jmpBuffer, 1) != 0) {
         fprintf(stderr, "Error occurred. Exiting...\n");
@@ -372,6 +366,10 @@ int main(int argc, char* argv[]) {
     else if (argc > 1 && strcmp(argv[1], "--repl") == 0) {
         initializeLibraryManager();
         // rl_completion_entry_function = (Function*)cliffi_completion;
+        rl_bind_key('\t', rl_complete);
+        using_history();
+        read_history(".cliffi_history");
+        fprintf(stderr, "cliffi %s. Starting REPL... Type 'help' for assistance. Type 'exit' to quit:\n", VERSION);
 
         // Start the REPL
         if (sigsetjmp(jmpBuffer, 1) == 0) {
@@ -395,8 +393,6 @@ int main(int argc, char* argv[]) {
         printf("argv[%d] = %s\n", i, argv[i]);
     }
     #endif
-    setbuf(stdout, NULL); // disable buffering for stdout
-    setbuf(stderr, NULL); // disable buffering for stderr
 
     // Step 1: Resolve the library path
     // For now we've delegated that call to parse_arguments
