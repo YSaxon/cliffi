@@ -469,12 +469,12 @@ void second_pass_arginfo_ptr_sized_null_array_initialization_inner(ArgInfo* arg)
 
 void second_pass_arginfo_ptr_sized_null_array_initialization(ArgInfoContainer* info){
     for (int i = 0; i < info->arg_count; i++) {
-        if (info->args[i].is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
-        second_pass_arginfo_ptr_sized_null_array_initialization_inner(&info->args[i]);
+        if (info->args[i]->is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
+        second_pass_arginfo_ptr_sized_null_array_initialization_inner(info->args[i]);
         }
     }
-    if (info->return_var.is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
-        second_pass_arginfo_ptr_sized_null_array_initialization_inner(&info->return_var);
+    if (info->return_var->is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
+        second_pass_arginfo_ptr_sized_null_array_initialization_inner(info->return_var);
     }
 }
 
@@ -578,20 +578,20 @@ void convert_argnum_sized_array_to_arginfo_ptr(ArgInfo* arg,ArgInfoContainer* in
             exit(1);
         } else {
             arg->is_array = ARRAY_SIZE_AT_ARGINFO_PTR; //TODO maybe we should replace 0 with R for return value?
-            if (arg->array_sizet_arg.argnum_of_size_t_to_be_replaced==0) arg->array_sizet_arg.arginfo_of_size_t = (ArgInfo*)&info->return_var; // 0 is the return value
-            else arg->array_sizet_arg.arginfo_of_size_t= &info->args[arg->array_sizet_arg.argnum_of_size_t_to_be_replaced-1]; // -1 because the argnums are 1 indexed
+            if (arg->array_sizet_arg.argnum_of_size_t_to_be_replaced==0) arg->array_sizet_arg.arginfo_of_size_t = (ArgInfo*)info->return_var; // 0 is the return value
+            else arg->array_sizet_arg.arginfo_of_size_t= info->args[arg->array_sizet_arg.argnum_of_size_t_to_be_replaced-1]; // -1 because the argnums are 1 indexed
         }
     }
 }
 
 void convert_all_arrays_to_arginfo_ptr_sized_after_parsing(ArgInfoContainer* info){
     for (int i = 0; i < info->arg_count; i++) {
-        if (info->args[i].is_array==ARRAY_SIZE_AT_ARGNUM){
-            convert_argnum_sized_array_to_arginfo_ptr(&info->args[i], info);
+        if (info->args[i]->is_array==ARRAY_SIZE_AT_ARGNUM){
+            convert_argnum_sized_array_to_arginfo_ptr(info->args[i], info);
         }
     }
-    if (info->return_var.is_array == ARRAY_SIZE_AT_ARGNUM) { // will always be false if the return value is NULL
-        convert_argnum_sized_array_to_arginfo_ptr(&info->return_var, info);
+    if (info->return_var->is_array == ARRAY_SIZE_AT_ARGNUM) { // will always be false if the return value is NULL
+        convert_argnum_sized_array_to_arginfo_ptr(info->return_var, info);
     }
 }
 
@@ -659,25 +659,25 @@ void log_function_call_info(FunctionCallInfo* info){
     printf("\tLibrary Path: %s\n", info->library_path);
     printf("\tFunction Name: %s\n", info->function_name);
     printf("\tReturn type: ");
-    format_and_print_arg_type(&info->info.return_var);
+    format_and_print_arg_type(info->info.return_var);
     printf("\n");
     printf("\tArg Count: %d\n", info->info.arg_count);
     for (int i = 0; i < info->info.arg_count; i++) {
         if (info->info.vararg_start==i) printf("\tVarargs start here\n");
-        printf("\tArg %d: %s ", i,info->info.args[i].explicitType? "(explicit)" : "(inferred)");
-        format_and_print_arg_type(&info->info.args[i]);//, format_buffer, buffer_size);
+        printf("\tArg %d: %s ", i,info->info.args[i]->explicitType? "(explicit)" : "(inferred)");
+        format_and_print_arg_type(info->info.args[i]);//, format_buffer, buffer_size);
         printf(" = ");
-        format_and_print_arg_value(&info->info.args[i]);//, format_buffer, buffer_size);
+        format_and_print_arg_value(info->info.args[i]);//, format_buffer, buffer_size);
         printf("\n");
     }
 
     // print as function signature
-    format_and_print_arg_type(&info->info.return_var);
+    format_and_print_arg_type(info->info.return_var);
     printf(" %s(", info->function_name);
     for (int i = 0; i < info->info.arg_count; i++) {
-        format_and_print_arg_type(&info->info.args[i]);
+        format_and_print_arg_type(info->info.args[i]);
         printf(" ");
-        format_and_print_arg_value(&info->info.args[i]);
+        format_and_print_arg_value(info->info.args[i]);
         if (i < info->info.arg_count - 1) printf(", ");
     }
     printf(")\n");
@@ -685,15 +685,15 @@ void log_function_call_info(FunctionCallInfo* info){
 
 // void convert_all_arrays_to_static_sized_after_function_return(FunctionCallInfo* call_info){
 //     for (int i = 0; i < call_info->arg_count; i++) {
-//     if (call_info->args[i].is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
-//         call_info->args[i].static_or_implied_size = get_size_for_arginfo_sized_array(&call_info->args[i]);
-//         call_info->args[i].is_array=ARRAY_STATIC_SIZE;
+//     if (call_info->args[i]->is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
+//         call_info->args[i]->static_or_implied_size = get_size_for_arginfo_sized_array(&call_info->args[i]);
+//         call_info->args[i]->is_array=ARRAY_STATIC_SIZE;
 //     }
 //     }
 //     // do the same for the return value
-//     if (call_info->return_var.is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
-//         call_info->return_var.static_or_implied_size = get_size_for_arginfo_sized_array(&call_info->return_var);
-//         call_info->return_var.is_array=ARRAY_STATIC_SIZE;
+//     if (call_info->return_var->is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
+//         call_info->return_var->static_or_implied_size = get_size_for_arginfo_sized_array(call_info->return_var);
+//         call_info->return_var->is_array=ARRAY_STATIC_SIZE;
 //     }
 // // }
 
@@ -727,9 +727,9 @@ void log_function_call_info(FunctionCallInfo* info){
 //         free(info->function_name);
 //         convert_all_arrays_to_static_sized_after_function_return(info); // get final sizes for any arrays before freeing
 //         for (int i = 0; i < info->arg_count; i++) {
-//             freeArgInfo(&info->args[i]);
+//             freeArgInfo(info->args[i]);
 //         }
-//         freeArgInfo(&info->return_var);
+//         freeArgInfo(info->return_var);
 //         free(info->args);
 //         free(info);
 //         }

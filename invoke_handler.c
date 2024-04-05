@@ -65,7 +65,7 @@ ffi_type* make_ffi_type_for_struct(const ArgInfo* arg){ // does not handle point
     struct_type->type = ispacked ? FFI_TYPE_STRUCT : FFI_TYPE_STRUCT;
     struct_type->elements = calloc((struct_info->info.arg_count + 1),sizeof(ffi_type*));
     for (int i = 0; i < struct_info->info.arg_count; i++) {
-        struct_type->elements[i] = arg_type_to_ffi_type(&struct_info->info.args[i], true);
+        struct_type->elements[i] = arg_type_to_ffi_type(struct_info->info.args[i], true);
         if (!struct_type->elements[i]) {
             fprintf(stderr, "Failed to convert struct field %d to ffi_type.\n", i);
             exit(1);
@@ -133,7 +133,7 @@ ffi_status get_packed_offset(const ArgInfo* struct_info, ffi_type* struct_type, 
     // for (int i = 0; i < struct_info->struct_info->info.arg_count; i++) {
     for (int i = 0; struct_type->elements[i]; i++) {
         offsets[i] = offset;
-        ffi_type* arg = arg_type_to_ffi_type(&struct_info->struct_info->info.args[i],true);
+        ffi_type* arg = arg_type_to_ffi_type(struct_info->struct_info->info.args[i],true);
         // if (arg->alignment) {
         //     arg->alignment = 1;
         // }
@@ -143,8 +143,8 @@ ffi_status get_packed_offset(const ArgInfo* struct_info, ffi_type* struct_type, 
             // struct_type->alignment = 1;
             // return FFI_OK;
             size_t* inner_offsets = {0};
-            if (struct_info->struct_info->info.args[i].type == TYPE_STRUCT){
-                get_packed_offset(&struct_info->struct_info->info.args[i], arg, inner_offsets);
+            if (struct_info->struct_info->info.args[i]->type == TYPE_STRUCT){
+                get_packed_offset(struct_info->struct_info->info.args[i], arg, inner_offsets);
             } else {
                 ffi_get_struct_offsets(FFI_DEFAULT_ABI, arg, inner_offsets);
             }
@@ -179,11 +179,11 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return){//, ffi
 
     for (int i = 0; i < struct_info->info.arg_count; i++) {
 
-       if (struct_info->info.args[i].type == TYPE_STRUCT) {
+       if (struct_info->info.args[i]->type == TYPE_STRUCT) {
             size_t inner_size;
-            if (struct_info->info.args[i].pointer_depth == 0) {
+            if (struct_info->info.args[i]->pointer_depth == 0) {
                 fprintf(stderr, "Warning, parsing a nested struct that is not a pointer type. Are you sure you meant to do this? Otherwise add a p\n");
-                ffi_type* inner_struct_type = make_ffi_type_for_struct(&struct_info->info.args[i]);
+                ffi_type* inner_struct_type = make_ffi_type_for_struct(struct_info->info.args[i]);
                 inner_size = inner_struct_type->size;
             } else {
                 inner_size = sizeof(void*);
@@ -191,34 +191,34 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return){//, ffi
 
             // not necessary to set the value_ptr for a struct
 
-            void* inner_struct_address = make_raw_value_for_struct(&struct_info->info.args[i],is_return);//, struct_type->elements[i]);
+            void* inner_struct_address = make_raw_value_for_struct(struct_info->info.args[i],is_return);//, struct_type->elements[i]);
             if (!is_return)  memcpy(raw_memory+offsets[i], inner_struct_address, inner_size);
 
             free(inner_struct_address);
 
 
-        } else if (struct_info->info.args[i].is_array) {
+        } else if (struct_info->info.args[i]->is_array) {
             // we need to step down one layer of pointers compared to the usual handling of arrays in functions
-            if (struct_info->info.args[i].pointer_depth > 0) {
+            if (struct_info->info.args[i]->pointer_depth > 0) {
                 size_t size = sizeof(void*);
-                if (!is_return) memcpy(raw_memory+offsets[i], struct_info->info.args[i].value->ptr_val, size);
-                free(struct_info->info.args[i].value);
-                struct_info->info.args[i].value = raw_memory+offsets[i];
+                if (!is_return) memcpy(raw_memory+offsets[i], struct_info->info.args[i]->value->ptr_val, size);
+                free(struct_info->info.args[i]->value);
+                struct_info->info.args[i]->value = raw_memory+offsets[i];
             }
             else {
-                size_t size = typeToSize(struct_info->info.args[i].type,struct_info->info.args[i].array_value_pointer_depth) * get_size_for_arginfo_sized_array(&struct_info->info.args[i]);
-                if (!is_return) memcpy(raw_memory+offsets[i], struct_info->info.args[i].value->ptr_val, size);
-                free(struct_info->info.args[i].value);
-                struct_info->info.args[i].value = raw_memory+offsets[i];
+                size_t size = typeToSize(struct_info->info.args[i]->type,struct_info->info.args[i]->array_value_pointer_depth) * get_size_for_arginfo_sized_array(struct_info->info.args[i]);
+                if (!is_return) memcpy(raw_memory+offsets[i], struct_info->info.args[i]->value->ptr_val, size);
+                free(struct_info->info.args[i]->value);
+                struct_info->info.args[i]->value = raw_memory+offsets[i];
             }
                 
             // above are bandaid fixes for the fact that we previously decided to handle arrays as pointer types since that is how they are passed to functions as arguments
 
         } else copy_primitive: {
-            size_t size = typeToSize(struct_info->info.args[i].type,0);
-            memcpy(raw_memory+offsets[i], struct_info->info.args[i].value, size);
-            free(struct_info->info.args[i].value);
-            struct_info->info.args[i].value = raw_memory+offsets[i];
+            size_t size = typeToSize(struct_info->info.args[i]->type,0);
+            memcpy(raw_memory+offsets[i], struct_info->info.args[i]->value, size);
+            free(struct_info->info.args[i]->value);
+            struct_info->info.args[i]->value = raw_memory+offsets[i];
         }
     }
 
@@ -251,13 +251,13 @@ void fix_struct_pointers(ArgInfo* struct_arg, void* raw_memory) {
     }
 
     for (int i = 0; i < struct_info->info.arg_count; i++) {
-        if (struct_info->info.args[i].type == TYPE_STRUCT) {
-            fix_struct_pointers(&struct_info->info.args[i], raw_memory+offsets[i]);
-        } else if (!struct_info->info.args[i].is_array) {
-            struct_info->info.args[i].value = raw_memory+offsets[i];
+        if (struct_info->info.args[i]->type == TYPE_STRUCT) {
+            fix_struct_pointers(struct_info->info.args[i], raw_memory+offsets[i]);
+        } else if (!struct_info->info.args[i]->is_array) {
+            struct_info->info.args[i]->value = raw_memory+offsets[i];
         } else { //is an array, so we need to copy it one level deeper since we handle arrays as pointers
-            struct_info->info.args[i].value = malloc(sizeof(void*));
-            struct_info->info.args[i].value->ptr_val = raw_memory+offsets[i];
+            struct_info->info.args[i]->value = malloc(sizeof(void*));
+            struct_info->info.args[i]->value->ptr_val = raw_memory+offsets[i];
         }
     }
 }
@@ -323,32 +323,32 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
     ffi_type* args[call_info->info.arg_count];
     void* values[call_info->info.arg_count];
     for (int i = 0; i < call_info->info.arg_count; ++i) {
-        args[i] = arg_type_to_ffi_type(&call_info->info.args[i],false);
+        args[i] = arg_type_to_ffi_type(call_info->info.args[i],false);
 
         // if the arg is past the vararg start, we need to upgrade it if it's < sizeof(int) or a float type
         bool is_vararg = call_info->info.vararg_start!=-1 && i >= call_info->info.vararg_start;
-        if (is_vararg) handle_promoting_vararg_if_necessary(&args[i], &call_info->info.args[i], i);
+        if (is_vararg) handle_promoting_vararg_if_necessary(&args[i], call_info->info.args[i], i);
 
         if (!args[i]) {
-            fprintf(stderr, "Failed to convert arg[%d].type = %c to ffi_type.\n", i, call_info->info.args[i].type);
+            fprintf(stderr, "Failed to convert arg[%d].type = %c to ffi_type.\n", i, call_info->info.args[i]->type);
             return -1;
         }
-        if (call_info->info.args[i].type != TYPE_STRUCT){//|| call_info->info.args[i].pointer_depth == 0) {
-            values[i] = call_info->info.args[i].value;
+        if (call_info->info.args[i]->type != TYPE_STRUCT){//|| call_info->info.args[i]->pointer_depth == 0) {
+            values[i] = call_info->info.args[i]->value;
         } else {
-            values[i] = make_raw_value_for_struct(&call_info->info.args[i], false);
+            values[i] = make_raw_value_for_struct(call_info->info.args[i], false);
         }
     }
 
-    ffi_type* return_type = arg_type_to_ffi_type(&call_info->info.return_var, false);
+    ffi_type* return_type = arg_type_to_ffi_type(call_info->info.return_var, false);
 
 
     void* rvalue;
-    if (call_info->info.return_var.type == TYPE_STRUCT) {
-        free(call_info->info.return_var.value);
-        rvalue = call_info->info.return_var.value = make_raw_value_for_struct(&call_info->info.return_var, true); // this also handles pointer_depth
+    if (call_info->info.return_var->type == TYPE_STRUCT) {
+        free(call_info->info.return_var->value);
+        rvalue = call_info->info.return_var->value = make_raw_value_for_struct(call_info->info.return_var, true); // this also handles pointer_depth
     } else {
-        rvalue = call_info->info.return_var.value;
+        rvalue = call_info->info.return_var->value;
     }
 
 
@@ -368,38 +368,38 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
     ffi_call(&cif, func, rvalue, values);
 
     for (int i = 0; i < call_info->info.arg_count; ++i) {
-        if (call_info->info.args[i].type == TYPE_STRUCT) {
-            fix_struct_pointers(&call_info->info.args[i], values[i]);
+        if (call_info->info.args[i]->type == TYPE_STRUCT) {
+            fix_struct_pointers(call_info->info.args[i], values[i]);
         }
     }
-    if (call_info->info.return_var.type == TYPE_STRUCT) {
-        fix_struct_pointers(&call_info->info.return_var, rvalue);
+    if (call_info->info.return_var->type == TYPE_STRUCT) {
+        fix_struct_pointers(call_info->info.return_var, rvalue);
     }
         #if defined(__s390x__)
         else if (return_type->size < ffi_type_slong.size){
-        if (call_info->info.return_var.type==TYPE_CHAR) {
-            call_info->info.return_var.value->c_val = (char)call_info->info.return_var.value->l_val;
-        } else if (call_info->info.return_var.type==TYPE_SHORT) {
-            call_info->info.return_var.value->s_val = (short)call_info->info.return_var.value->l_val;
-        } else if (call_info->info.return_var.type==TYPE_UCHAR) {
-            call_info->info.return_var.value->uc_val = (unsigned char)call_info->info.return_var.value->ul_val;
-        } else if (call_info->info.return_var.type==TYPE_USHORT) {
-            call_info->info.return_var.value->us_val = (unsigned short)call_info->info.return_var.value->ul_val;
-        } else if (call_info->info.return_var.type==TYPE_INT) {
-            call_info->info.return_var.value->i_val = (int)call_info->info.return_var.value->l_val;
-        } else if (call_info->info.return_var.type==TYPE_UINT) {
-            call_info->info.return_var.value->ui_val = (unsigned int)call_info->info.return_var.value->ul_val;
+        if (call_info->info.return_var->type==TYPE_CHAR) {
+            call_info->info.return_var->value->c_val = (char)call_info->info.return_var->value->l_val;
+        } else if (call_info->info.return_var->type==TYPE_SHORT) {
+            call_info->info.return_var->value->s_val = (short)call_info->info.return_var->value->l_val;
+        } else if (call_info->info.return_var->type==TYPE_UCHAR) {
+            call_info->info.return_var->value->uc_val = (unsigned char)call_info->info.return_var->value->ul_val;
+        } else if (call_info->info.return_var->type==TYPE_USHORT) {
+            call_info->info.return_var->value->us_val = (unsigned short)call_info->info.return_var->value->ul_val;
+        } else if (call_info->info.return_var->type==TYPE_INT) {
+            call_info->info.return_var->value->i_val = (int)call_info->info.return_var->value->l_val;
+        } else if (call_info->info.return_var->type==TYPE_UINT) {
+            call_info->info.return_var->value->ui_val = (unsigned int)call_info->info.return_var->value->ul_val;
         }}
         #elif defined(__mips__)
-        else if (return_type->size < ffi_type_sint.size && call_info->info.return_var.type != TYPE_VOID && call_info->info.return_var.type != TYPE_FLOAT) {
-        if (call_info->info.return_var.type==TYPE_CHAR) {
-            call_info->info.return_var.value->c_val = (char)call_info->info.return_var.value->i_val;
-        } else if (call_info->info.return_var.type==TYPE_SHORT) {
-            call_info->info.return_var.value->s_val = (short)call_info->info.return_var.value->i_val;
-        } else if (call_info->info.return_var.type==TYPE_UCHAR) {
-            call_info->info.return_var.value->uc_val = (unsigned char)call_info->info.return_var.value->ui_val;
-        } else if (call_info->info.return_var.type==TYPE_USHORT) {
-            call_info->info.return_var.value->us_val = (unsigned short)call_info->info.return_var.value->ui_val;
+        else if (return_type->size < ffi_type_sint.size & call_info->info.return_var->type != TYPE_VOID && call_info->info.return_var->type != TYPE_FLOAT) {
+        if (call_info->info.return_var->type==TYPE_CHAR) {
+            call_info->info.return_var->value->c_val = (char)call_info->info.return_var->value->i_val;
+        } else if (call_info->info.return_var->type==TYPE_SHORT) {
+            call_info->info.return_var->value->s_val = (short)call_info->info.return_var->value->i_val;
+        } else if (call_info->info.return_var->type==TYPE_UCHAR) {
+            call_info->info.return_var->value->uc_val = (unsigned char)call_info->info.return_var->value->ui_val;
+        } else if (call_info->info.return_var->type==TYPE_USHORT) {
+            call_info->info.return_var->value->us_val = (unsigned short)call_info->info.return_var->value->ui_val;
         }}
         #endif
 

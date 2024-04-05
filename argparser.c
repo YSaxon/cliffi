@@ -20,18 +20,16 @@ void addArgToFunctionCallInfo(ArgInfoContainer* info, ArgInfo* arg) {
     if (!info || !arg) return;
     if (!info->args) {
         // Allocate memory for a single ArgInfo struct
-        info->args = malloc(sizeof(ArgInfo));
+        info->args = malloc(sizeof(void*));
         if (!info->args) return;
-        // Copy the first ArgInfo struct into the allocated space
-        info->args[0] = *arg;
+        // Set the first element of the array to point to the new ArgInfo struct
+        info->args[0] = arg;
         info->arg_count = 1;
     } else {
         // Reallocate memory to accommodate one more ArgInfo struct
-        ArgInfo* temp = realloc(info->args, (info->arg_count + 1) * sizeof(ArgInfo));
-        if (!temp) return; // Handle reallocation failure
-        info->args = temp;
-        // Copy the new ArgInfo struct into the newly allocated space
-        info->args[info->arg_count] = *arg;
+        info->args = realloc(info->args, (info->arg_count + 1) * sizeof(void*));;
+        // Copy arg to the end of the array
+        info->args[info->arg_count] = arg;
         info->arg_count++;
     }
 }
@@ -199,7 +197,7 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
 
         parse_one_arg(&arg, argc-i, argv+i, &i, is_return);
 
-        addArgToFunctionCallInfo(info, &arg);
+        addArgToFunctionCallInfo(info, arg);
     }
 
     if (is_struct && !hit_struct_close){
@@ -217,7 +215,8 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
  
 FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     FunctionCallInfo* info = calloc(1, sizeof(FunctionCallInfo)); // using calloc to zero out the struct
-    info->info.return_var.value = malloc(sizeof(void*));
+    info->info.return_var = calloc(1,sizeof(ArgInfo));
+    info->info.return_var->value = malloc(sizeof(void*));
     int opt;
     char* argStr;
 
@@ -233,13 +232,13 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     argc-=args_used_by_return;
     argv+=args_used_by_return;
 
-    if (info->info.return_var.type == TYPE_UNKNOWN) {
+    if (info->info.return_var->type == TYPE_UNKNOWN) {
         fprintf(stderr, "Error: Unknown Return Type\n");
         exit(1);
         return NULL;
     } 
     //check if return is an array without a specified size
-    if (info->info.return_var.is_array==ARRAY_STATIC_SIZE_UNSET) {
+    if (info->info.return_var->is_array==ARRAY_STATIC_SIZE_UNSET) {
         fprintf(stderr, "Error: Array return types must have a specified size. Put a number at the end of the flag with no spaces, eg %s4 for a static size, or t and a number to specify an argnumber that will represent size_t for it eg %st1 for the first arg, since 0=return\n", argv[1],argv[1]);
         exit(1);
     }

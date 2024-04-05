@@ -66,9 +66,9 @@ typedef struct ArgInfo {
 
 
 typedef struct ArgInfoContainer {
-    ArgInfo* args;
+    ArgInfo** args;
     int arg_count;
-    ArgInfo return_var; // this and the next one really belong in FunctionCallInfo, but we need to use them in the parsing functions
+    ArgInfo* return_var; // this and the next one really belong in FunctionCallInfo, but we need to use them in the parsing functions
     int vararg_start; // -1 if no varargs, otherwise the index of the first vararg
 } ArgInfoContainer;
 

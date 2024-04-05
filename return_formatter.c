@@ -167,10 +167,10 @@ void hexdump(const void *data, size_t size) {
             printf("{ ");
             StructInfo* struct_info = arg->struct_info;
             for (int i = 0; i < struct_info->info.arg_count; i++) {
-                format_and_print_arg_type(&struct_info->info.args[i]);
+                format_and_print_arg_type(struct_info->info.args[i]);
                 printf(" ");
                 // void* override = struct_info->value_ptrs==NULL ? NULL : struct_info->value_ptrs[i];
-                format_and_print_arg_value(&struct_info->info.args[i]);
+                format_and_print_arg_value(struct_info->info.args[i]);
                 if (i < struct_info->info.arg_count - 1) {
                     printf(", ");
                 }
