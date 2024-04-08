@@ -62,6 +62,14 @@ elif [ "$OS" == "Android" ]; then
     echo "os.api_level=21" >> "$PROFILE_PATH"
 fi
 
+if [ -n "${ANDROID_NDK}" ]; then
+    echo "Setting Android NDK path to $ANDROID_NDK"
+    echo "[conf]" >> "$PROFILE_PATH"
+    echo "tools.android:ndk_path=$ANDROID_NDK" >> "$PROFILE_PATH"
+    sudo mkdir -p $ANDROID_NDK/build/cmake
+    sudo ln -s $ANDROID_NDK/Toolchain.cmake $ANDROID_NDK/build/cmake/android.toolchain.cmake
+fi
+
 # Update the [buildenv] section in the Conan profile
 {
     echo "[buildenv]"
