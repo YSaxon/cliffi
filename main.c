@@ -302,23 +302,15 @@ void printVariable(char* varName, ArgInfo* arg) {
         printf("\n");
 }
 
-void parseSetVariable(char* varCommand) {
-        char* varName = varCommand;
-        while (*varName == ' ') {
-            varName++;
-        }
+void parseSetVariableWithNameAndValue(char* varName, char* varValue) {
 
-        char* varValue = strchr(varName, ' ');
-        if (varValue == NULL) {
-            fprintf(stderr, "Missing variable value.\n");
+        if (varName==NULL || strlen(varName) == 0) {
+            fprintf(stderr, "Variable name cannot be empty.\n");
             return;
-        } else {
-            *varValue = '\0';
-            varValue++;
-            while (*varValue == ' ') {
-                varValue++;
-            }
-        
+        } else if (varValue == NULL || strlen(varValue) == 0) {
+            fprintf(stderr, "Variable value cannot be empty.\n");
+            return;
+        }
 
         if (strlen(varName) == 1 && charToType(*varName) != TYPE_UNKNOWN) {
             fprintf(stderr, "Variable name cannot be a character used in parsing types, such as %s which is used for %s\n", varName, typeToString(charToType(*varName)));
@@ -347,7 +339,27 @@ void parseSetVariable(char* varCommand) {
         }
         printVariable(varName, arg);
         setVar(varName, arg);
+        //Should we check if the variable already exists and free it? Or maybe keep a reference count?
+}
+
+void parseSetVariable(char* varCommand) {
+        char* varName = varCommand;
+        while (*varName == ' ') {
+            varName++;
         }
+
+        char* varValue = strchr(varName, ' ');
+        if (varValue == NULL) {
+            fprintf(stderr, "Missing variable value.\n");
+            return;
+        }
+        *varValue = '\0';
+        varValue++;
+        while (*varValue == ' ') {
+            varValue++;
+        }
+
+        parseSetVariableWithNameAndValue(varName, varValue);
 }
 
 
@@ -400,13 +412,23 @@ void startRepl() {
                 parseSetVariable(set_var_command);
             } else if (strncmp(command, "print ", 6) == 0) {
                 char* varName = command + 6;
+                printvar:; // label for goto
                 ArgInfo* arg = getVar(varName);
                 if (arg == NULL) {
                     fprintf(stderr, "Variable not found: %s.\n", varName);
                 } else {
                     printVariable(varName, arg);
                 }
-            } else {
+            // } else if (strncmp(strstr(command," ")," = ",3) == 0) {
+            //     char* varName = command;
+            //     char* varValue = strstr(command," = ") + 3;
+            //     *(varValue-3) = '\0'; // null terminate the varName
+            //     parseSetVariableWithNameAndValue(varName, varValue);
+            // } else if (!strstr(command, " ")) {
+            //     char* varName = command;
+            //     goto printvar;
+            }
+            else {
                 executeREPLCommand(command);
             }
         }
