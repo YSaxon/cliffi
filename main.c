@@ -16,7 +16,7 @@
 #include <readline/history.h>
 #include <unistd.h> // only used for forking for --repltest repl test harness mode
 
-#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+#if (defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))) && !defined(__ANDROID__)
 #define use_backtrace
 #endif
 
@@ -31,7 +31,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "0.12.4";
+const char* VERSION = "0.12.5";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
