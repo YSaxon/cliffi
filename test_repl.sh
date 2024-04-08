@@ -12,5 +12,4 @@ shift
 
 (for ARG in "$@"; do
     echo -n "$ARG "
-done ) | $COMMAND --repl
-
+done ) | $COMMAND --repl || { echo "Error: $COMMAND failed."; env; exit 1;}
