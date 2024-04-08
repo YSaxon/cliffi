@@ -39,7 +39,7 @@ void cleanupLibraryManager() {
 
 void* loadLibraryDirectly(const char* libraryPath) {
     #ifdef _WIN32
-    void* handle = &LoadLibrary(libraryPath);
+    void* handle = LoadLibrary(libraryPath);
     if (!handle) {
             fprintf(stderr, "Failed to load library: %lu\n", GetLastError());
             return NULL;

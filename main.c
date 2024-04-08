@@ -12,6 +12,12 @@
 #include "library_manager.h"
 #include "var_map.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+#define sigjmp_buf jmp_buf
+#define sigsetjmp(env, save) setjmp(env)
+#define siglongjmp(env, val) longjmp(env, val)
+#endif
+
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <unistd.h> // only used for forking for --repltest repl test harness mode
@@ -31,7 +37,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "0.12.5";
+const char* VERSION = "0.12.6";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -214,7 +220,7 @@ int invoke_and_print_return_value(FunctionCallInfo* call_info, void (*func)(void
 void* loadFunctionHandle(void* lib_handle, const char* function_name) {
     void (*func)(void);
     #ifdef _WIN32
-    *(FARPROC*)&func = GetProcAddress(*lib_handle, function_name);
+    *(FARPROC*)&func = GetProcAddress(lib_handle, function_name);
     #else
     *(void**)(&func) = dlsym(lib_handle, function_name);
     #endif
@@ -493,7 +499,7 @@ int main(int argc, char* argv[]) {
 
     // Wait to close the library until after we're done with everything in case it returns pointers to literals stored in the library
         #ifdef _WIN32
-            FreeLibrary(*lib_handle);
+            FreeLibrary(lib_handle);
         #else
             dlclose(lib_handle);
         #endif
