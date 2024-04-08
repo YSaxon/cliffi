@@ -20,7 +20,7 @@ jobs:
       - name: version
         id: version
         # parse the VERSION from main.c
-        run: echo ::set-output name=version::$(grep -oP 'VERSION = "\K[^"]+' main.c)-$(echo ${{ github.sha }} | cut -c1-7)
+        run: echo ::set-output name=version::$(grep -oP 'VERSION = "\K[^"]+' main.c)
 
       - name: Create Release
         id: create_release
