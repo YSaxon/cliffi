@@ -6,6 +6,6 @@ mkdir -p build
 rm -rf build/* CMakeCache.txt CMakeFiles
 conan install . --output-folder=build --build=missing -pr build -g=CMakeDeps
 cd build
-cmake ..
+cmake .. -DUSE_CONAN=ON
 make
 ctest --output-on-failure || ctest --rerun-failed --output-on-failure --extra-verbose
