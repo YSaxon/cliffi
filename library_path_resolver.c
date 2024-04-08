@@ -68,7 +68,11 @@ char* resolve_library_path(const char* library_name) {
     free(search_paths);
 
     // If the library wasn't found in LD_LIBRARY_PATH, check standard locations
-    const char* standard_paths[] = {"/usr/lib", "/lib", "/usr/local/lib", NULL};
+    const char* standard_paths[] = {"/usr/lib", "/lib", "/usr/local/lib", 
+    #ifdef __ANDROID__
+        "/system/lib", "/system/lib64", "/system/vendor/lib", "/system/vendor/lib64",
+    #endif
+    NULL};
     for (int i = 0; standard_paths[i] != NULL; i++) {
         char* full_path = malloc(strlen(standard_paths[i]) + strlen(library_name) + 2); // +2 for '/' and '\0'
         sprintf(full_path, "%s/%s", standard_paths[i], library_name);
