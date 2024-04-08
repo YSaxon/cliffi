@@ -90,6 +90,11 @@ set_target_properties(cliffitest PROPERTIES OUTPUT_NAME "cliffi_test")
 set_target_properties(cliffi PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 set_target_properties(cliffitest PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
+#copy test_repl.sh to build directory
+configure_file(test_repl.sh ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/test_repl.sh COPYONLY)
+#chmod +x test_repl.sh
+execute_process(COMMAND chmod +x ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/test_repl.sh)
+
 
 #===============================================================================
 add_test(NAME TestAddFunction
@@ -545,7 +550,7 @@ add_test(NAME test_p_packed_struct #
 
 
 add_test(NAME repl_smoketest #
-COMMAND ${CMAKE_SOURCE_DIR}/test_repl.sh ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi
+COMMAND test_repl.sh ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i add 1 2 \n
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i add 3 4 \n
 )
@@ -554,7 +559,7 @@ set_tests_properties(repl_smoketest PROPERTIES PASS_REGULAR_EXPRESSION "Function
 
 
 add_test(NAME repl_test_globals #
-COMMAND ${CMAKE_SOURCE_DIR}/test_repl.sh ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi
+COMMAND test_repl.sh ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global \n
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global \n
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global \n
@@ -564,7 +569,7 @@ set_tests_properties(repl_test_globals PROPERTIES PASS_REGULAR_EXPRESSION "Funct
 set_tests_properties(repl_test_globals PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")
 
 add_test(NAME repl_test_globals_after_libclose #
-COMMAND ${CMAKE_SOURCE_DIR}/test_repl.sh ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi
+COMMAND test_repl.sh ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global \n
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global \n
 close ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX}
@@ -576,7 +581,7 @@ set_tests_properties(repl_test_globals_after_libclose PROPERTIES PASS_REGULAR_EX
 
 
 add_test(NAME repl_test_variable_simple #
-COMMAND ${CMAKE_SOURCE_DIR}/test_repl.sh ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi
+COMMAND test_repl.sh ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi
 set var1 3 \n
 set var2 7 \n
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i add var1 var2 \n
@@ -584,7 +589,7 @@ ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMA
 set_tests_properties(repl_test_variable_simple PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 10")
 
 add_test(NAME repl_test_variable_complex #
-COMMAND ${CMAKE_SOURCE_DIR}/test_repl.sh ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi
+COMMAND test_repl.sh ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi
 set foo -S: 1 -ac10 h,e,l,l,o 1,2,3 4 :S \n
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_struct_with_embedded_array foo \n
 )
@@ -596,7 +601,7 @@ set_tests_properties(repl_test_variable_complex PROPERTIES PASS_REGULAR_EXPRESSI
 set_tests_properties(repl_test_variable_complex PROPERTIES PASS_REGULAR_EXPRESSION "s.s: hello")
 
 add_test(NAME repl_test_var_pointer #
-COMMAND ${CMAKE_SOURCE_DIR}/test_repl.sh ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi
+COMMAND test_repl.sh ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi
 set num -pi 1 \n
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_at_pointer num \n
 print num \n
@@ -607,7 +612,7 @@ set_tests_properties(repl_test_var_pointer PROPERTIES PASS_REGULAR_EXPRESSION "A
 set_tests_properties(repl_test_var_pointer PROPERTIES PASS_REGULAR_EXPRESSION "int. num = 2")
 
 add_test(NAME repl_test_voidpointer #)
-COMMAND ${CMAKE_SOURCE_DIR}/test_repl.sh ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi
+COMMAND test_repl.sh ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi
 set strvoidpointer -P 0 \n
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} strvoidpointer get_message \n
 print strvoidpointer \n
