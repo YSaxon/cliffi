@@ -27,6 +27,30 @@ Here we denoted that 2 should be a double by preceeding it with a -d flag. Thoug
 
 This is only rarely necessary with basic primitive types, but becomes more helpful for pointers, arrays, and structs.
 
+## REPL mode
+
+You can enter REPL mode by running
+```
+cliffi --repl
+```
+
+REPL mode has two advantages:
+* Persistence of state
+REPL mode does not automatically dlclose the library after each command, so global state will be retained.
+* Support for variables
+In REPL mode you can set variables and then use them in place of arguments (even return arguments).
+```
+cliffi --repl
+> set var 3
+> set var2 7
+> set return_var 0
+> testlib.so return_var add var var2
+> testlib.so return_var add return_var return_var
+> print return_var
+```
+At the end of this, return_var will equal 20.
+
+
 ### Primitive Types
 - v for void, only allowed as a return type, and does not accept prefixes
 - c for char
@@ -40,11 +64,19 @@ This is only rarely necessary with basic primitive types, but becomes more helpf
 - f for float
 - d for double
 - s for cstring (ie null terminated char*)
+- P for arbitrary pointer (void*) specified by address
 
 ### Pointers
 Pointers are specified with a number of `p` flags equal to the level of pointer.
 - `-pi` = *int
 - `-ppi` = **int
+
+This is not to be confused with the `P` _type_ above.
+`p` pointers are specified by their ultimate value, so `-pi 4` represents an `int*` to the value 4.
+`P` pointers are specified by their address, so `-P 0xdeadbeef` is a pointer to whatever is at 0xdeadbeef
+You can even mix them, so `-pP 0xdeadbeef` would be a pointer to a pointer to whatever is at 0xdeadbeef
+
+`P` pointers are especially useful in REPL mode for containing pointers to types you don't care to specify but will need to reuse
 
 ### Arrays
 Array values are specified as unspaced comma delimited values, like `1,2,3,4` or `this,"is an","array of",strings` or `4.3,3.1,9,0`
