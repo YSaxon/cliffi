@@ -80,16 +80,17 @@ void handleSegfault(int signal) {
 void print_usage(char* argv0){
         printf( "%s %s\n", NAME, VERSION);
         printf( "Usage: %s %s\n", argv0, BASIC_USAGE_STRING);
-        printf( "  [--help]         Print this help message\n");
-        printf( "  <library>        The path to the shared library containing the function to invoke\n"
-                "                   or the name of the library if it is in the system path\n");
-        printf( "  <typeflag>       The type of the return value of the function to invoke\n"
-                "                   v for void, i for int, s for string, etc\n");
-        printf( "  <function_name>  The name of the function to invoke\n");
-        printf( "  [-<typeflag>] <arg> The argument values to pass to the function\n"
+        printf( "  [--help]         Print this help message\n"
+                "  [--repl]         Start the REPL\n"
+                "  <library>        The path to the shared library containing the function to invoke\n"
+                "                   or the name of the library if it is in the system path\n"
+                "  <typeflag>       The type of the return value of the function to invoke\n"
+                "                   v for void, i for int, s for string, etc\n"
+                "  <function_name>  The name of the function to invoke\n"
+                "  [-<typeflag>] <arg> The argument values to pass to the function\n"
                 "                   Types will be inferred if not prefixed with flags\n"
-                "                   Flags look like -i for int, -s for string, etc\n");
-        printf( "  ...              Mark the position of varargs in the function signature if applicable\n");
+                "                   Flags look like -i for int, -s for string, etc\n"
+                "  ...              Mark the position of varargs in the function signature if applicable\n");
         printf( "\n"
                 "  BASIC EXAMPLES:\n"
                 "         %s libexample.so i addints 3 4\n", argv0);
@@ -443,7 +444,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     else if (argc < 4) {
-        fprintf(stderr, "%s %s\nUsage: %s [--help] %s\n", NAME,VERSION,argv[0],BASIC_USAGE_STRING);
+        fprintf(stderr, "%s %s\nUsage: %s [--help] [--repl] %s\n", NAME,VERSION,argv[0],BASIC_USAGE_STRING);
         return 1;
     }
 
