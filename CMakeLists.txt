@@ -91,11 +91,6 @@ set_target_properties(cliffitest PROPERTIES OUTPUT_NAME "cliffi_test")
 set_target_properties(cliffi PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 set_target_properties(cliffitest PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
-#copy test_repl.sh to build directory
-configure_file(test_repl.sh ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/test_repl.sh COPYONLY)
-#chmod +x test_repl.sh
-execute_process(COMMAND chmod +x ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/test_repl.sh)
-
 
 #===============================================================================
 add_test(NAME TestAddFunction
