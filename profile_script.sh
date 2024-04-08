@@ -92,7 +92,7 @@ if [ "$COMPILER" == "gcc" ]; then
 fi
 
 
-if ["$OS" == "Windows"]; then
+if [ "$OS" == "Windows" ]; then
     #delete readline from conanfile.txt
     echo "Removing readline from conanfile.txt since it doesn't work on Windows."
     sed -i '/readline/d' conanfile.txt

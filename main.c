@@ -469,7 +469,12 @@ int main(int argc, char* argv[]) {
     }
     #endif
     else if (argc < 4) {
-        fprintf(stderr, "%s %s\nUsage: %s [--help] [--repl] %s\n", NAME,VERSION,argv[0],BASIC_USAGE_STRING);
+        #ifdef use_readline
+        #define DASHDASHREPL " [--repl]"
+        #else
+        #define DASHDASHREPL ""
+        #endif
+        fprintf(stderr, "%s %s\nUsage: %s [--help]%s %s\n", NAME,VERSION,argv[0],DASHDASHREPL,BASIC_USAGE_STRING);
         return 1;
     }
 
