@@ -30,7 +30,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "0.11.2";
+const char* VERSION = "0.12.0";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -112,6 +112,7 @@ void print_usage(char* argv0){
         printf( "       %c for float, can also be specified by suffixing the value with f\n", TYPE_FLOAT);
         printf( "       %c for double, can also be specified by suffixing the value with d\n", TYPE_DOUBLE);
         printf( "       %c for cstring (ie null terminated char*)\n", TYPE_STRING);
+        printf( "       %c for arbitrary pointer (ie void*) specified by address\n", TYPE_VOIDPOINTER);
         printf("\n");
         printf( "  POINTERS AND ARRAYS AND STRUCTS:\n"
                 "     Typeflags can include additional flag prefixes to specify pointers, arrays or structs:\n"

@@ -155,7 +155,7 @@ ArgType infer_arg_type_single(const char* argval){
         length /= 2; // Two hex characters per byte
         if (length <= 1) return is_negative ? TYPE_CHAR : TYPE_UCHAR;
         if (length <= 2) return is_negative ? TYPE_SHORT : TYPE_USHORT;
-        if (length <= 4) return is_negative ? TYPE_INT : TYPE_UINT;
+        if (!is_negative && length <= sizeof(void*)) return TYPE_VOIDPOINTER; // voidpointer is more common for hex so if it fits we'll use that
         if (length <= 8) return is_negative ? TYPE_LONG : TYPE_ULONG;
         else {
             fprintf(stderr, "Error: Hex string %s is %zu bytes, which is too long to fit into a single type. If you meant to specify an array or a string, flag it as such.\n", argval, length);
@@ -248,6 +248,7 @@ void* convert_to_type(ArgType type, const char* argStr) {
         case TYPE_UINT: *(unsigned int*)result = (unsigned int)strtoul(argStr, NULL, 0); break;
         case TYPE_ULONG: *(unsigned long*)result = strtoul(argStr, NULL, 0); break;
         case TYPE_LONG: *(long*)result = strtol(argStr, NULL, 0); break;
+        case TYPE_VOIDPOINTER: *(void**)result = (void*)strtol(argStr, NULL, 0); break;
         case TYPE_STRING: *(char**)result = strdup(argStr); break;
         default:
             free(result);
@@ -282,6 +283,7 @@ void convert_arg_value(ArgInfo* arg, const char* argStr) {
         case TYPE_UINT: arg->value->ui_val = *(unsigned int*)convertedValue; break;
         case TYPE_ULONG: arg->value->ul_val = *(unsigned long*)convertedValue; break;
         case TYPE_LONG: arg->value->l_val = *(long*)convertedValue; break;
+        case TYPE_VOIDPOINTER: arg->value->ptr_val = *(void**)convertedValue; break;
         case TYPE_STRING: arg->value->str_val = *(char**)convertedValue; break;
         default:
             fprintf(stderr, "Unsupported argument type. Cannot assign value.\n");
@@ -498,6 +500,7 @@ char* typeToString(ArgType type) {
         case TYPE_DOUBLE: return "double";
         case TYPE_STRING: return "cstring";
         case TYPE_POINTER: return "pointer";
+        case TYPE_VOIDPOINTER: return "(void*)";
         case TYPE_VOID: return "void";
         case TYPE_ARRAY: return "array";
         case TYPE_UNKNOWN: return "unknown";
@@ -521,6 +524,7 @@ size_t typeToSize(ArgType type, int array_value_pointer_depth) {
         case TYPE_DOUBLE: return sizeof(double);
         case TYPE_STRING: return sizeof(char*);
         case TYPE_POINTER: return sizeof(void*);
+        case TYPE_VOIDPOINTER: return sizeof(void*);
         case TYPE_VOID: return 0;
         case TYPE_ARRAY: return sizeof(void*);
         // case TYPE_UNKNOWN: return 0;
@@ -542,6 +546,7 @@ char* typeToFormatSpecifier(ArgType type) {
         case TYPE_DOUBLE: return "%lf";
         case TYPE_STRING: return "%s";
         case TYPE_POINTER: return "%p  (likely mistake)";
+        case TYPE_VOIDPOINTER: return "%p";
         case TYPE_VOID: return "(void)  (likely mistake)";
         default: return "%x  (unsupported type)";
     }
@@ -561,6 +566,7 @@ ArgType charToType(char c) {
         case 'd': return TYPE_DOUBLE;
         case 's': return TYPE_STRING;
         case 'p': return TYPE_POINTER;
+        case 'P': return TYPE_VOIDPOINTER;
         case 'v': return TYPE_VOID;
         case 'a': return TYPE_ARRAY;
         case 'S': return TYPE_STRUCT;

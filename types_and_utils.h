@@ -20,6 +20,7 @@ typedef enum {
     TYPE_DOUBLE = 'd',
     TYPE_STRING = 's',  // For null terminated strings (char*)
     TYPE_POINTER = 'p', // For parsing pointers only, not an actual type
+    TYPE_VOIDPOINTER = 'P', // For representing arbitrary pointers by their addresses
     TYPE_ARRAY = 'a',   // For parsing only, not an actual type
     TYPE_VOID = 'v',    // For parsing return types only
     TYPE_UNKNOWN = -1,   // For representing unknown types when parsing

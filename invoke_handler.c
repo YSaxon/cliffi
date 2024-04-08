@@ -100,6 +100,7 @@ ffi_type* primitive_argtype_to_ffi_type(const ArgType type) {
         case TYPE_DOUBLE: return &ffi_type_double;
         case TYPE_STRING: return &ffi_type_pointer;
         case TYPE_POINTER: return &ffi_type_pointer;
+        case TYPE_VOIDPOINTER: return &ffi_type_pointer;
         case TYPE_VOID: return &ffi_type_void;
         // Add mappings for other types
         default:
