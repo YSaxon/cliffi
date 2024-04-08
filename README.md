@@ -36,8 +36,10 @@ cliffi --repl
 
 REPL mode has two advantages:
 * Persistence of state
+
 REPL mode does not automatically dlclose the library after each command, so global state will be retained.
 * Support for variables
+
 In REPL mode you can set variables and then use them in place of arguments (even return arguments).
 ```
 cliffi --repl
