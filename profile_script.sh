@@ -91,5 +91,12 @@ if [ "$COMPILER" == "gcc" ]; then
     fi
 fi
 
+
+if ["$OS" == "Windows"]; then
+    #delete readline from conanfile.txt
+    echo "Removing readline from conanfile.txt since it doesn't work on Windows."
+    sed -i '/readline/d' conanfile.txt
+fi
+
 echo "Updated Conan profile at $PROFILE_PATH"
 

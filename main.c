@@ -12,15 +12,22 @@
 #include "library_manager.h"
 #include "var_map.h"
 
+
+#if !defined(_WIN32) && !defined(_WIN64)
+#define use_readline
+#endif
+
 #if defined(_WIN32) || defined(_WIN64)
 #define sigjmp_buf jmp_buf
 #define sigsetjmp(env, save) setjmp(env)
 #define siglongjmp(env, val) longjmp(env, val)
 #endif
 
+#ifdef use_readline
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <unistd.h> // only used for forking for --repltest repl test harness mode
+#endif
 
 #if (defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))) && !defined(__ANDROID__)
 #define use_backtrace
@@ -93,7 +100,9 @@ void print_usage(char* argv0){
         printf( "%s %s\n", NAME, VERSION);
         printf( "Usage: %s %s\n", argv0, BASIC_USAGE_STRING);
         printf( "  [--help]         Print this help message\n"
+        #ifdef use_readline
                 "  [--repl]         Start the REPL\n"
+        #endif
                 "  <library>        The path to the shared library containing the function to invoke\n"
                 "                   or the name of the library if it is in the system path\n"
                 "  <typeflag>       The type of the return value of the function to invoke\n"
@@ -234,6 +243,8 @@ void* loadFunctionHandle(void* lib_handle, const char* function_name) {
     }
     return func;
 }
+
+#ifdef use_readline
 
 void executeREPLCommand(char* command){
     int argc;
@@ -388,7 +399,7 @@ void startRepl() {
     }
 }
 
-        
+#endif 
 
 
 
@@ -409,6 +420,7 @@ int main(int argc, char* argv[]) {
         print_usage(argv[0]);
         return 0;
     }
+    #ifdef use_readline
     if (argc > 1 && strcmp(argv[1], "--repltest") == 0){
         int pipefd[2];
         if (pipe(pipefd) == -1) {
@@ -455,6 +467,7 @@ int main(int argc, char* argv[]) {
         }
         return 0;
     }
+    #endif
     else if (argc < 4) {
         fprintf(stderr, "%s %s\nUsage: %s [--help] [--repl] %s\n", NAME,VERSION,argv[0],BASIC_USAGE_STRING);
         return 1;
