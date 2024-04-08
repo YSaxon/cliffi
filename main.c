@@ -14,6 +14,7 @@
 
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <unistd.h> // only used for forking for --repltest repl test harness mode
 
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
 #define use_backtrace
@@ -395,7 +396,36 @@ int main(int argc, char* argv[]) {
         print_usage(argv[0]);
         return 0;
     }
-    else if (argc > 1 && strcmp(argv[1], "--repl") == 0) {
+    if (argc > 1 && strcmp(argv[1], "--repltest") == 0){
+        int pipefd[2];
+        if (pipe(pipefd) == -1) {
+            perror("pipe");
+            return 1;
+        }
+
+        pid_t pid = fork();
+        if (pid == -1) {
+            perror("fork");
+            return 1;
+        }
+
+        if (pid == 0) { // Child process
+            close(pipefd[1]); // Close write end of pipe
+            dup2(pipefd[0], STDIN_FILENO); // Redirect STDIN to read from pipe
+            close(pipefd[0]); // Close read end, not needed anymore
+            goto replmode;
+        } else { // Parent process
+            close(pipefd[0]); // Close the write end of the pipe
+            for (int i = 2; i < argc; i++) {
+                write(pipefd[1], argv[i], strlen(argv[i]));
+                write(pipefd[1], " ", 1);
+            }
+            close(pipefd[1]); // Close the write end of the pipe
+            waitpid(pid, NULL, 0);
+            return 0;
+        }
+    } 
+    else if (argc > 1 && strcmp(argv[1], "--repl") == 0) replmode: {
         initializeLibraryManager();
         // rl_completion_entry_function = (Function*)cliffi_completion;
         rl_bind_key('\t', rl_complete);
