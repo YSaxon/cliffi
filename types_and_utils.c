@@ -153,10 +153,11 @@ ArgType infer_arg_type_single(const char* argval){
         size_t length = strlen(without_negative_sign);
         if (without_negative_sign[0] == '0' && (without_negative_sign[1] == 'x' || without_negative_sign[1] == 'X')) length-=2; // Skip 0x (if present) 
         length /= 2; // Two hex characters per byte
-        if (length <= 1) return is_negative ? TYPE_CHAR : TYPE_UCHAR;
-        if (length <= 2) return is_negative ? TYPE_SHORT : TYPE_USHORT;
+        if (length <= sizeof(char)) return is_negative ? TYPE_CHAR : TYPE_UCHAR;
+        if (length <= sizeof(short)) return is_negative ? TYPE_SHORT : TYPE_USHORT;
         if (!is_negative && length <= sizeof(void*)) return TYPE_VOIDPOINTER; // voidpointer is more common for hex so if it fits we'll use that
-        if (length <= 8) return is_negative ? TYPE_LONG : TYPE_ULONG;
+        if (length <= sizeof(int)) return is_negative ? TYPE_INT : TYPE_UINT;
+        if (length <= sizeof(long)) return is_negative ? TYPE_LONG : TYPE_ULONG;
         else {
             fprintf(stderr, "Error: Hex string %s is %zu bytes, which is too long to fit into a single type. If you meant to specify an array or a string, flag it as such.\n", argval, length);
             exit_or_restart(1);

@@ -44,6 +44,12 @@ void printStackTrace() {
     size_t i;
 
     size = backtrace(array, 10);
+
+    if (size == 0) {
+        // fprintf(stderr, "No stack trace available\n");
+        return;
+    }
+
     strings = backtrace_symbols(array, size);
 
     fprintf(stderr, "Stack trace:\n");
@@ -229,7 +235,7 @@ void executeREPLCommand(char* command){
     for (argc = 0; argv[argc] != NULL; argc++);
 
     if (argc < 3) {
-        fprintf(stderr, "Invalid command. Type 'help' for assistance.\n");
+        fprintf(stderr, "Invalid command '%s'. Type 'help' for assistance.\n", command);
         return;
     }
     FunctionCallInfo* call_info = parse_arguments(argc, argv);
@@ -364,7 +370,7 @@ void startRepl() {
                 char* varName = command + 6;
                 ArgInfo* arg = getVar(varName);
                 if (arg == NULL) {
-                    fprintf(stderr, "Variable not found.\n");
+                    fprintf(stderr, "Variable not found: %s.\n", varName);
                 } else {
                     printVariable(varName, arg);
                 }

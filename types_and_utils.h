@@ -24,7 +24,7 @@ typedef enum {
     TYPE_ARRAY = 'a',   // For parsing only, not an actual type
     TYPE_VOID = 'v',    // For parsing return types only
     TYPE_UNKNOWN = -1,   // For representing unknown types when parsing
-    TYPE_STRUCT = 'S'  
+    TYPE_STRUCT = 'S',
 } ArgType;
 
 
