@@ -6,6 +6,11 @@ enable_testing()
 # Set C standard
 set(CMAKE_C_STANDARD 99)
 
+
+if(NOT WIN32)
+set(USE_REPL_MODE ON)
+endif()
+
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to 'Release' as none was specified.")
@@ -548,6 +553,7 @@ add_test(NAME test_p_packed_struct #
     set_tests_properties(test_p_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->s[1]: b")
     set_tests_properties(test_p_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->d: 4.50*")
 
+if(USE_REPL_MODE)
 
 add_test(NAME repl_smoketest #
 COMMAND cliffi --repltest
@@ -620,6 +626,8 @@ ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMA
 )
 set_tests_properties(repl_test_voidpointer PROPERTIES PASS_REGULAR_EXPRESSION "strvoidpointer = 0?x?[0-9a-f]{4,}")
 set_tests_properties(repl_test_voidpointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?Hello, cliffi.Hello, cliffi.\"?")
+
+endif()
 
 
 # add_test(NAME TestAddFunctionWithSH
