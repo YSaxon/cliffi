@@ -44,7 +44,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "0.12.6";
+const char* VERSION = "0.12.7";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;

@@ -58,7 +58,6 @@ list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build")
 
 
 if(NOT LIBFFI_FOUND OR DEFINED USE_FIND_PACKAGE)
-set(libffi_DIR ${SOURCES})
 set(libffi_DIR ${CMAKE_SOURCE_DIR}/build)
 set(ENV{libffi_DIR} ${CMAKE_SOURCE_DIR}/build)
 find_package(libffi REQUIRED)
@@ -66,9 +65,10 @@ target_link_libraries(cliffi PRIVATE libffi::libffi)
 message(STATUS "libffi include dirs: ${libffi_INCLUDE_DIRS}")
 endif()
 
-if (NOT READLINE_FOUND OR DEFINED USE_FIND_PACKAGE)
+
 if (NOT WIN32 AND (NOT READLINE_FOUND OR DEFINED USE_FIND_PACKAGE))
 set(readline_DIR ${CMAKE_SOURCE_DIR}/build)
+set(ENV{readline_DIR} ${CMAKE_SOURCE_DIR}/build)
 find_package(readline REQUIRED)
 target_link_libraries(cliffi PRIVATE readline::readline)
 message(STATUS "readline include dirs: ${readline_INCLUDE_DIRS}")
