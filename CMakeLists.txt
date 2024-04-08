@@ -621,3 +621,11 @@ ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMA
 set_tests_properties(repl_test_voidpointer PROPERTIES PASS_REGULAR_EXPRESSION "strvoidpointer = 0?x?[0-9a-f]{4,}")
 set_tests_properties(repl_test_voidpointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?Hello, cliffi.Hello, cliffi.\"?")
 
+
+add_test(NAME TestAddFunctionWithSH
+         COMMAND sh cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i add 1 2)
+set_tests_properties(TestAddFunctionWithSH PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")
+
+add_test(NAME TestAddFunctionWithSH2
+         COMMAND env sh cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i add 1 2)
+set_tests_properties(TestAddFunctionWithSH2 PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")

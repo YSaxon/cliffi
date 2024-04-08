@@ -8,5 +8,4 @@ conan install . --output-folder=build --build=missing -pr build -g=CMakeDeps
 cd build
 cmake ..
 make
-ctest --output-on-failure
-ctest --rerun-failed --output-on-failure --extra-verbose
+ctest --output-on-failure || ctest --rerun-failed --output-on-failure --extra-verbose
