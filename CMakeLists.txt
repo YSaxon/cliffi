@@ -563,6 +563,18 @@ set_tests_properties(repl_test_globals PROPERTIES PASS_REGULAR_EXPRESSION "Funct
 set_tests_properties(repl_test_globals PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 2")
 set_tests_properties(repl_test_globals PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")
 
+add_test(NAME repl_test_globals_after_libclose #
+COMMAND ${CMAKE_SOURCE_DIR}/test_repl.sh ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global \n
+close ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX}
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global \n
+)
+set_tests_properties(repl_test_globals_after_libclose PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 1")
+set_tests_properties(repl_test_globals_after_libclose PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 2")
+set_tests_properties(repl_test_globals_after_libclose PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 1")
+
+
 add_test(NAME repl_test_variable_simple #
 COMMAND ${CMAKE_SOURCE_DIR}/test_repl.sh ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/cliffi
 set var1 3 \n
