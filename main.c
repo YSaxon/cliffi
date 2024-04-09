@@ -27,6 +27,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <unistd.h> // only used for forking for --repltest repl test harness mode
+#include <wordexp.h> //only used for tokenizing in the repl
 #endif
 
 #if (defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))) && !defined(__ANDROID__)
@@ -44,7 +45,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.0.2";
+const char* VERSION = "v1.0.3";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -247,9 +248,11 @@ void* loadFunctionHandle(void* lib_handle, const char* function_name) {
 #ifdef use_readline
 
 int tokenize(const char* str, int* argc, char*** argv) {
-    *argv = history_tokenize(str);
-    for (*argc = 0; (*argv)[*argc] != NULL; (*argc)++);
-    return 0;
+    wordexp_t p;
+    int result = wordexp(str, &p, 0);
+    *argc = p.we_wordc;
+    *argv = p.we_wordv;
+    return result;
 }
 
 void executeREPLCommand(char* command){
