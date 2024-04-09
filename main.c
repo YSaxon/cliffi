@@ -246,10 +246,19 @@ void* loadFunctionHandle(void* lib_handle, const char* function_name) {
 
 #ifdef use_readline
 
+int tokenize(const char* str, int* argc, char*** argv) {
+    *argv = history_tokenize(str);
+    for (*argc = 0; (*argv)[*argc] != NULL; (*argc)++);
+    return 0;
+}
+
 void executeREPLCommand(char* command){
     int argc;
-    char ** argv = history_tokenize(command);
-    for (argc = 0; argv[argc] != NULL; argc++);
+    char ** argv;
+    if (tokenize(command, &argc, &argv)!=0) {
+        fprintf(stderr, "Error: Tokenization failed for command\n");
+        return;
+    }
 
     if (argc < 3) {
         fprintf(stderr, "Invalid command '%s'. Type 'help' for assistance.\n", command);
@@ -321,8 +330,11 @@ void parseSetVariable(char* varCommand) {
 
 
         int argc;
-        char ** argv = history_tokenize(varValue);
-        for (argc = 0; argv[argc] != NULL; argc++);
+        char ** argv;
+        if (tokenize(varValue, &argc, &argv)!=0) {
+            fprintf(stderr, "Error: Tokenization failed for variable value\n");
+            return;
+        }
 
         int args_used = 0;
         ArgInfo* arg = parse_one_arg(argc, argv, &args_used, false);
