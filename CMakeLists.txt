@@ -660,6 +660,17 @@ var2 \n
 )
 set_tests_properties(repl_test_variable_set_to_another PROPERTIES FAIL_REGULAR_EXPRESSION "int var2 = 4")
 
+add_test(NAME repl_test_tokenizer #
+COMMAND cliffi --repltest
+set var1 \"test string foo\" \n
+set var2 a\\ b\\ c \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} s concat var1 \" and bar and \\ slash\" \n
+print var2 \n
+)
+set_tests_properties(repl_test_tokenizer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?test string foo and bar and . slash")
+set_tests_properties(repl_test_tokenizer PROPERTIES PASS_REGULAR_EXPRESSION "var2 = \"?a b c")
+
+
 endif()
 
 
