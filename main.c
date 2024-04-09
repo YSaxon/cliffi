@@ -50,7 +50,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.1.5";
+const char* VERSION = "v1.1.6";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -239,7 +239,7 @@ void* loadFunctionHandle(void* lib_handle, const char* function_name) {
     if (temp != NULL) {
         memcpy(&func, &temp, sizeof(temp)); // to fix warning re dereferencing type-punned pointer
     } else {
-        fprintf(stderr, "Failed to find function: %lu\n", GetLastError());
+        void (*func)(void) = NULL; // Initialize func to NULL
     }
 
     #else
