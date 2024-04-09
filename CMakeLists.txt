@@ -627,6 +627,19 @@ ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMA
 set_tests_properties(repl_test_voidpointer PROPERTIES PASS_REGULAR_EXPRESSION "strvoidpointer = 0?x?[0-9a-f]{4,}")
 set_tests_properties(repl_test_voidpointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?Hello, cliffi.Hello, cliffi.\"?")
 
+
+add_test(NAME repl_test_variable_simple_syntactic_sugar #
+COMMAND cliffi --repltest
+var1 = 3 \n
+var2  =  7 \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} var2 add var1 var2 \n
+var2 \n
+)
+set_tests_properties(repl_test_variable_simple_syntactic_sugar PROPERTIES PASS_REGULAR_EXPRESSION "int var2 = 7")
+set_tests_properties(repl_test_variable_simple_syntactic_sugar PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 10")
+set_tests_properties(repl_test_variable_simple_syntactic_sugar PROPERTIES PASS_REGULAR_EXPRESSION "int var2 = 10")
+
+
 endif()
 
 
