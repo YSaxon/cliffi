@@ -316,7 +316,7 @@ void executeREPLCommand(char* command){
     if (argc == 1) {
         parsePrintVariable(argv[0]);
         return;
-    } else if (argc == 3 && strcmp(argv[1], "=") == 0) {
+    } else if (argc >= 3 && strcmp(argv[1], "=") == 0) {
         parseSetVariableWithNameAndValue(argv[0], argc-2, argv+2);
         return;
     }
