@@ -639,6 +639,14 @@ set_tests_properties(repl_test_variable_simple_syntactic_sugar PROPERTIES PASS_R
 set_tests_properties(repl_test_variable_simple_syntactic_sugar PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 10")
 set_tests_properties(repl_test_variable_simple_syntactic_sugar PROPERTIES PASS_REGULAR_EXPRESSION "int var2 = 10")
 
+add_test(NAME repl_test_variable_set_to_another #)
+COMMAND cliffi --repltest
+set var1 3 \n
+set var2 var1 \n
+set var1 4 \n
+var2 \n
+)
+set_tests_properties(repl_test_variable_set_to_another PROPERTIES FAIL_REGULAR_EXPRESSION "int var2 = 4")
 
 endif()
 
