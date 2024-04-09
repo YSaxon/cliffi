@@ -316,8 +316,8 @@ struct struct_with_embedded_array_pointer{
 void test_struct_with_char_pointer(struct struct_with_embedded_array_pointer s){
     hexdump(&s, sizeof(struct struct_with_embedded_array_pointer));
     printf("s: %s\n", *s.s);
-    for (int i = 0; i < 10; i++){
-        printf("s.s[%d]: %c\n", i, *s.s[i]);
+    for (int i = 0; i < 10; i++){ // 10th element is null terminator
+        printf("s.s[%d]: %c\n", i, (*s.s)[i]);
     }
 }
 
@@ -330,9 +330,10 @@ struct struct_with_embedded_array_pointer return_struct_with_embedded_array_poin
 
 void test_p_struct_with_char_pointer(struct struct_with_embedded_array_pointer *s){
     hexdump(s, sizeof(struct struct_with_embedded_array_pointer));
+    hexdump(s->s, 10);
     printf("s: %s\n", *s->s);
-    for (int i = 0; i < 10; i++){
-        printf("s.s[%d]: %c\n", i, *s->s[i]);
+    for (int i = 0; i < 10; i++){ // 10th element is null terminator
+        printf("s.s[%d]: %c\n", i, (*s->s)[i]);
     }
 }
 
