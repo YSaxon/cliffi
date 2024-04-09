@@ -590,7 +590,7 @@ struct PackedStruct* get_p_packed_struct() {
 }
 
 void test_packed_struct(struct PackedStruct s) {
-    printf("sizeof(struct PackedStruct): %lu\n", sizeof(struct PackedStruct));
+    printf("sizeof(struct PackedStruct): %zu\n", sizeof(struct PackedStruct));
     hexdump(&s, sizeof(struct PackedStruct));
     printf("s.c: %c\n", s.c);
     printf("s.i: %d\n", s.i);
