@@ -354,15 +354,9 @@ char** cliffi_completion(const char* text, int state) {
 
 void parseSetVariable(char* varCommand) {
 
-        char* varValue = strchr(varCommand, ' ');
-        if (varValue == NULL || strlen(varValue) == 0){
-            fprintf(stderr, "Error: Missing variable value.\n");
-            return;
-        }
-
         int argc;
         char ** argv;
-        if (tokenize(varValue, &argc, &argv)!=0) {
+        if (tokenize(varCommand, &argc, &argv)!=0) {
             fprintf(stderr, "Error: Tokenization failed for variable value\n");
             return;
         }
