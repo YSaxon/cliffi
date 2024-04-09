@@ -27,7 +27,11 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <unistd.h> // only used for forking for --repltest repl test harness mode
+#if !defined(__ANDROID__)
 #include <wordexp.h> //only used for tokenizing in the repl
+#else
+#include "wordexp.h" // cmakelists will download this for android to the build dir
+#endif
 #endif
 
 #if (defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))) && !defined(__ANDROID__)
@@ -45,7 +49,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.1.1";
+const char* VERSION = "v1.1.2";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
