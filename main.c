@@ -50,7 +50,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.1.8";
+const char* VERSION = "v1.1.9";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -233,13 +233,11 @@ int invoke_and_print_return_value(FunctionCallInfo* call_info, void (*func)(void
 }
 
 void* loadFunctionHandle(void* lib_handle, const char* function_name) {
-    void (*func)(void);
+    void (*func)(void) = NULL;
     #ifdef _WIN32
     FARPROC temp = GetProcAddress(lib_handle, function_name);
     if (temp != NULL) {
         memcpy(&func, &temp, sizeof(temp)); // to fix warning re dereferencing type-punned pointer
-    } else {
-        void* func = NULL; // Initialize func to NULL
     }
 
     #else
