@@ -44,7 +44,7 @@ char* resolve_library_path(const char* library_name) {
 
     // Attempt to find the library relative to the current directory
     char* relative_path = malloc(strlen(library_name) + 3); // +3 for './', '/', and '\0'
-    sprintf(relative_path, "./%s", library_name);
+    snprintf(relative_path, strlen(library_name) + 3, "./%s", library_name);
     if (file_exists(relative_path)) {
         return relative_path;
     }
@@ -57,7 +57,7 @@ char* resolve_library_path(const char* library_name) {
 
     while (path != NULL) {
         char* full_path = malloc(strlen(path) + strlen(library_name) + 2); // +2 for '/' and '\0'
-        sprintf(full_path, "%s/%s", path, library_name);
+        snprintf(full_path, strlen(path) + strlen(library_name) + 2, "%s/%s", path, library_name);
         if (file_exists(full_path)) {
             free(search_paths);
             return full_path;
@@ -75,7 +75,7 @@ char* resolve_library_path(const char* library_name) {
     NULL};
     for (int i = 0; standard_paths[i] != NULL; i++) {
         char* full_path = malloc(strlen(standard_paths[i]) + strlen(library_name) + 2); // +2 for '/' and '\0'
-        sprintf(full_path, "%s/%s", standard_paths[i], library_name);
+        snprintf(full_path, strlen(standard_paths[i]) + strlen(library_name) + 2, "%s/%s", standard_paths[i], library_name);
         if (file_exists(full_path)) {
             return full_path;
         }
