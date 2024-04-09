@@ -19,18 +19,10 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Android" AND ANDROID_ABI STREQUAL "armeabi-v7a")
-    message("compiling for Android")
-    set(LIBFFI_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libffi-3.4.6-android-27-armeabi-v7a/include)
-    set(LIBFFI_STATIC_LIB ${CMAKE_SOURCE_DIR}/libffi-3.4.6-android-27-armeabi-v7a/lib/libffi.a)
-    set(LIBFFI_LIBRARIES ${LIBFFI_STATIC_LIB})
-else()
-    message("Not Hardcoded")
-    find_package(PkgConfig REQUIRED)
-    pkg_search_module(LIBFFI libffi)
-    pkg_search_module(READLINE readline)
-endif()
 
+find_package(PkgConfig REQUIRED)
+pkg_search_module(LIBFFI libffi)
+pkg_search_module(READLINE readline)
 
 find_library(DL_LIBRARY NAMES dl)
 
