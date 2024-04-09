@@ -27,6 +27,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <unistd.h> // only used for forking for --repltest repl test harness mode
+#include <sys/wait.h> // same as above
 #if !defined(__ANDROID__)
 #include <wordexp.h> //only used for tokenizing in the repl
 #else
@@ -49,7 +50,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.1.2";
+const char* VERSION = "v1.1.3";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
