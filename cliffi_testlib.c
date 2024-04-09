@@ -162,7 +162,7 @@ void test_complex_struct(ComplexStruct s){
 }
 
 void test_p_complex_struct(ComplexStruct* s){
-    hexdump(&s, sizeof(ComplexStruct));
+    hexdump(s, sizeof(ComplexStruct));
     printf("s->c: %c\n", s->c);
     printf("s->x: %d\n", s->x);
     printf("s->y: %f\n", s->y);
