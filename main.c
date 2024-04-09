@@ -50,7 +50,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.1.3";
+const char* VERSION = "v1.1.3test";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
