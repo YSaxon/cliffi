@@ -32,7 +32,7 @@ void destroyVarMap(varMap* map) {
 
 ArgInfo* getVarWithMap(varMap* map, const char* name) {
     for (int i = 0; i < map->size; i++) {
-        if (strncmp(map->entries[i].name, name, MAX_NAME_LENGTH) == 0) {
+        if (strncmp(map->entries[i].name, name, MAX_NAME_LENGTH-1) == 0) {
             return map->entries[i].value;
         }
     }
@@ -52,7 +52,7 @@ void setVarWithMap(varMap* map, const char* name, ArgInfo* value) {
         map->entries = (mapEntry*)realloc(map->entries, sizeof(mapEntry) * map->capacity);
     }
 
-    strncpy(map->entries[map->size].name, name, MAX_NAME_LENGTH);
+    strncpy(map->entries[map->size].name, name, MAX_NAME_LENGTH-1);
     map->entries[map->size].value = value;
     map->size++;
 }
