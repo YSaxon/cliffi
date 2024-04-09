@@ -255,6 +255,55 @@ int tokenize(const char* str, int* argc, char*** argv) {
     return result;
 }
 
+void printVariableWithArgInfo(char* varName, ArgInfo* arg) {
+        format_and_print_arg_type(arg);
+        printf(" %s = ", varName);
+        format_and_print_arg_value(arg);
+        printf("\n");
+}
+
+void parsePrintVariable(char* varName) {
+    ArgInfo* arg = getVar(varName);
+    if (arg == NULL) {
+        fprintf(stderr, "Error printing var: Variable %s not found.\n", varName);
+    } else {
+        printVariableWithArgInfo(varName, arg);
+    }
+}
+
+void parseSetVariableWithNameAndValue(char* varName, int varValueCount, char** varValues) {
+
+        if (varName==NULL || strlen(varName) == 0) {
+            fprintf(stderr, "Variable name cannot be empty.\n");
+            return;
+        } else if (varValues== NULL || varValueCount == 0 || strlen(varValues[0]) == 0) {
+            fprintf(stderr, "Variable value cannot be empty.\n");
+            return;
+        }
+
+        if (strlen(varName) == 1 && charToType(*varName) != TYPE_UNKNOWN) {
+            fprintf(stderr, "Variable name cannot be a character used in parsing types, such as %s which is used for %s\n", varName, typeToString(charToType(*varName)));
+            return;
+        } else if (*varName == '-') {
+            fprintf(stderr, "Variable names cannot start with a dash.\n");
+            return;
+        } else if (isAllDigits(varName) || isHexFormat(varName) || isFloatingPoint(varName)) {
+            fprintf(stderr, "Variable names cannot be a number.\n");
+            return;
+        }
+
+        int args_used = 0;
+        ArgInfo* arg = parse_one_arg(varValueCount, varValues, &args_used, false);
+        if (args_used+1 != varValueCount) {
+            fprintf(stderr, "Invalid variable value.\n");
+            //maybe free the arg?
+            return;
+        }
+        printVariableWithArgInfo(varName, arg);
+        setVar(varName, arg);
+        //Should we check if the variable already existed and free the previous value? Or maybe keep a reference count?
+}
+
 void executeREPLCommand(char* command){
     int argc;
     char ** argv;
@@ -262,6 +311,14 @@ void executeREPLCommand(char* command){
         fprintf(stderr, "Error: Tokenization failed for command\n");
         return;
     }
+
+    // syntactic sugar for set <var> <value> and print <var>
+    if (argc == 1) {
+        parsePrintVariable(argv[0]);
+    } else if (argc == 3 && strcmp(argv[1], "=") == 0) {
+        parseSetVariableWithNameAndValue(argv[0], argc-2, argv+2);
+    }
+
 
     if (argc < 3) {
         fprintf(stderr, "Invalid command '%s'. Type 'help' for assistance.\n", command);
@@ -295,45 +352,6 @@ char** cliffi_completion(const char* text, int state) {
     // from there we would really need to apply the parser to see if we are in a typeflag or an argument etc, and go from there
     }
 
-void printVariableWithArgInfo(char* varName, ArgInfo* arg) {
-        format_and_print_arg_type(arg);
-        printf(" %s = ", varName);
-        format_and_print_arg_value(arg);
-        printf("\n");
-}
-
-void parseSetVariableWithNameAndValue(char* varName, int varValueCount, char** varValues) {
-
-        if (varName==NULL || strlen(varName) == 0) {
-            fprintf(stderr, "Variable name cannot be empty.\n");
-            return;
-        } else if (varValues== NULL || varValueCount == 0 || strlen(varValues[0]) == 0) {
-            fprintf(stderr, "Variable value cannot be empty.\n");
-            return;
-        }
-
-        if (strlen(varName) == 1 && charToType(*varName) != TYPE_UNKNOWN) {
-            fprintf(stderr, "Variable name cannot be a character used in parsing types, such as %s which is used for %s\n", varName, typeToString(charToType(*varName)));
-            return;
-        } else if (*varName == '-') {
-            fprintf(stderr, "Variable names cannot start with a dash.\n");
-            return;
-        } else if (isAllDigits(varName) || isHexFormat(varName) || isFloatingPoint(varName)) {
-            fprintf(stderr, "Variable names cannot be a number.\n");
-            return;
-        }
-
-        int args_used = 0;
-        ArgInfo* arg = parse_one_arg(varValueCount, varValues, &args_used, false);
-        if (args_used+1 != varValueCount) {
-            fprintf(stderr, "Invalid variable value.\n");
-            return;
-        }
-        printVariableWithArgInfo(varName, arg);
-        setVar(varName, arg);
-        //Should we check if the variable already exists and free it? Or maybe keep a reference count?
-}
-
 void parseSetVariable(char* varCommand) {
 
         char* varValue = strchr(varCommand, ' ');
@@ -350,38 +368,6 @@ void parseSetVariable(char* varCommand) {
         }
 
         parseSetVariableWithNameAndValue(argv[0], argc-1, argv+1);
-}
-
-bool tryParseSetVariableWithEqualsSyntax(const char* command){
-    // test for " = " in the command
-    char* equals = strstr(command, " = ");
-    if (equals == NULL) {
-        return false;
-    }
-    int argc;
-    char** argv;
-    if (tokenize(command, &argc, &argv)!=0) {
-        fprintf(stderr, "Error: Tokenization failed when trying to process equals syntax for setting variable\n");
-        return false;
-    }
-    char* equals_sign = trim_whitespace(argv[1]);
-    if (strcmp(equals_sign, "=") != 0) {
-        return false;
-    }
-    char* varName = argv[0];
-    char** varValues = argv + 2;
-    int varValueCount = argc - 2;
-    parseSetVariableWithNameAndValue(varName,varValueCount,varValues);
-    return true;
-}
-
-void parsePrintVariable(char* varName) {
-    ArgInfo* arg = getVar(varName);
-    if (arg == NULL) {
-        fprintf(stderr, "Error print var: Variable %s not found.\n", varName);
-    } else {
-        printVariableWithArgInfo(varName, arg);
-    }
 }
 
 void startRepl() {
@@ -431,14 +417,10 @@ void startRepl() {
             } else if (strncmp(command, "set ", 4) == 0) {
                 char* set_var_command = command + 4;
                 parseSetVariable(set_var_command);
-            } else if (tryParseSetVariableWithEqualsSyntax(command)) {
-                continue;
             } else if (strncmp(command, "print ", 6) == 0) {
                 parsePrintVariable(command + 6);
-            } else if (strstr(command, " ")) {
-                parsePrintVariable(command);
             } else {
-                executeREPLCommand(command);
+                executeREPLCommand(command); // also handles syntactic sugar for set and print
             }
         }
         free(command);
