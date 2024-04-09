@@ -140,7 +140,7 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *args_used, bool is_return){
         }
       
         ArgInfo* outArg = calloc(1,sizeof(ArgInfo));
-        outArg->value = malloc(sizeof(void*));
+        outArg->value = malloc(sizeof(*outArg->value));
 
         int i = 0;
         if (is_return){ // is a return type, so we don't need to parse values or check for the - flag
@@ -227,7 +227,7 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
 FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     FunctionCallInfo* info = calloc(1, sizeof(FunctionCallInfo)); // using calloc to zero out the struct
     info->info.return_var = calloc(1,sizeof(ArgInfo));
-    info->info.return_var->value = malloc(sizeof(void*));
+    info->info.return_var->value = malloc(sizeof(*info->info.return_var->value));
 
     // arg[1] is the library path
     info->library_path = resolve_library_path(argv[0]);

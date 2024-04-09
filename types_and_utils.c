@@ -312,7 +312,6 @@ for (int i = 0; i < arg->pointer_depth; i++) {
 
 
 void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr){
-    arg->value = malloc(sizeof(void*));
 
     // multiple scenarios to deal with:
     // sizing:

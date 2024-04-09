@@ -258,7 +258,7 @@ void fix_struct_pointers(ArgInfo* struct_arg, void* raw_memory) {
         } else if (!struct_info->info.args[i]->is_array) {
             struct_info->info.args[i]->value = raw_memory+offsets[i];
         } else { //is an array, so we need to copy it one level deeper since we handle arrays as pointers
-            struct_info->info.args[i]->value = malloc(sizeof(void*));
+            struct_info->info.args[i]->value = malloc(sizeof(*struct_info->info.args[i]->value));
             struct_info->info.args[i]->value->ptr_val = raw_memory+offsets[i];
         }
     }
