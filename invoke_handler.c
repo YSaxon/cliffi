@@ -393,7 +393,7 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
             call_info->info.return_var->value->ui_val = (unsigned int)call_info->info.return_var->value->ul_val;
         }}
         #elif defined(__mips__)
-        else if (return_type->size < ffi_type_sint.size & call_info->info.return_var->type != TYPE_VOID && call_info->info.return_var->type != TYPE_FLOAT) {
+        else if (return_type->size < ffi_type_sint.size && call_info->info.return_var->type != TYPE_VOID && call_info->info.return_var->type != TYPE_FLOAT) {
         if (call_info->info.return_var->type==TYPE_CHAR) {
             call_info->info.return_var->value->c_val = (char)call_info->info.return_var->value->i_val;
         } else if (call_info->info.return_var->type==TYPE_SHORT) {
