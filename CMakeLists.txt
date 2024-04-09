@@ -60,6 +60,10 @@ set(SOURCES
 )
 if(ANDROID)
 file(DOWNLOAD https://raw.githubusercontent.com/termux/termux-packages/master/packages/libandroid-wordexp/wordexp.c ${CMAKE_SOURCE_DIR}/wordexp.c)
+#patch /data/data/com.termux/files/usr/bin/sh -> sh in wordexp.c
+file(READ ${CMAKE_SOURCE_DIR}/wordexp.c WORDEXP_C)
+string(REPLACE "/data/data/com.termux/files/usr/bin/sh" "sh" WORDEXP_C "${WORDEXP_C}")
+file(WRITE ${CMAKE_SOURCE_DIR}/wordexp.c "${WORDEXP_C}")
 file(DOWNLOAD https://raw.githubusercontent.com/termux/termux-packages/master/packages/libandroid-wordexp/wordexp.h ${CMAKE_SOURCE_DIR}/wordexp.h)
 list(APPEND SOURCES wordexp.c)
 endif()
