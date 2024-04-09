@@ -235,7 +235,13 @@ int invoke_and_print_return_value(FunctionCallInfo* call_info, void (*func)(void
 void* loadFunctionHandle(void* lib_handle, const char* function_name) {
     void (*func)(void);
     #ifdef _WIN32
-    *(FARPROC*)&func = GetProcAddress(lib_handle, function_name);
+    FARPROC temp = GetProcAddress(lib_handle, function_name);
+    if (temp != NULL) {
+        memcpy(&func, &temp, sizeof(temp)); // to fix warning re dereferencing type-punned pointer
+    } else {
+        fprintf(stderr, "Failed to find function: %lu\n", GetLastError());
+    }
+
     #else
     *(void**)(&func) = dlsym(lib_handle, function_name);
     #endif
