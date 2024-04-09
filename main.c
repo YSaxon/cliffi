@@ -50,7 +50,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.1.3test";
+const char* VERSION = "v1.1.4";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -341,6 +341,9 @@ void executeREPLCommand(char* command){
     void* func = loadFunctionHandle(lib_handle, call_info->function_name);
 
     int invoke_result = invoke_and_print_return_value(call_info, func);
+    if (invoke_result != 0) {
+        fprintf(stderr, "Error: Function invocation failed\n");
+    }
 }
 
 char** cliffi_completion(const char* text, int state) {

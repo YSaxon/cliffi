@@ -182,8 +182,6 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
     for (i=0; i < argc; i++) {
         char* argStr = argv[i];
         
-        int pointer_depth = 0;
-
         if (strcmp(argStr, ":S") == 0){ // this terminates a struct flag
             if (!is_struct){
                 fprintf(stderr, "Error: Unexpected close struct flag :S\n");
@@ -230,8 +228,6 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     FunctionCallInfo* info = calloc(1, sizeof(FunctionCallInfo)); // using calloc to zero out the struct
     info->info.return_var = calloc(1,sizeof(ArgInfo));
     info->info.return_var->value = malloc(sizeof(void*));
-    int opt;
-    char* argStr;
 
     // arg[1] is the library path
     info->library_path = resolve_library_path(argv[0]);
@@ -263,7 +259,6 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         return NULL;
     }
     //TODO: maybe at some point we should be able to take a hex offset instead of a function name
-    int args_used = 0;
     parse_all_from_argvs(&info->info, argc-3, argv+3, &args_used_by_return, false, false);
     if (args_used_by_return != argc-3){
         fprintf(stderr, "Error: Not all arguments were used in parsing\n");

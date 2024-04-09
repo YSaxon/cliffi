@@ -216,7 +216,7 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return){//, ffi
                 
             // above are bandaid fixes for the fact that we previously decided to handle arrays as pointer types since that is how they are passed to functions as arguments
 
-        } else copy_primitive: {
+        } else {
             size_t size = typeToSize(struct_info->info.args[i]->type,0);
             memcpy(raw_memory+offsets[i], struct_info->info.args[i]->value, size);
             free(struct_info->info.args[i]->value);

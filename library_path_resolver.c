@@ -84,7 +84,6 @@ char* resolve_library_path(const char* library_name) {
 
 
     // If we haven't found it yet, try appending the platform appropriate library extension and trying again
-    char* library_name_with_extension;
     if (!str_ends_with(library_name, library_extension)) {
         char library_name_with_extension[strlen(library_name) + strlen(library_extension) + 1];
         snprintf(library_name_with_extension, sizeof(library_name_with_extension), "%s%s", library_name, library_extension);

@@ -275,7 +275,6 @@ void convert_arg_value(ArgInfo* arg, const char* argStr) {
             exit_or_restart(1);
         }
 
-    ArgType type = arg->type;
     switch (arg->type) {
         case TYPE_INT: arg->value->i_val = *(int*)convertedValue; break;
         case TYPE_FLOAT: arg->value->f_val = *(float*)convertedValue; break;
