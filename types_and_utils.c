@@ -249,7 +249,10 @@ void* convert_to_type(ArgType type, const char* argStr) {
         case TYPE_UINT: *(unsigned int*)result = (unsigned int)strtoul(argStr, NULL, 0); break;
         case TYPE_ULONG: *(unsigned long*)result = strtoul(argStr, NULL, 0); break;
         case TYPE_LONG: *(long*)result = strtol(argStr, NULL, 0); break;
-        case TYPE_VOIDPOINTER: *(void**)result = (void*)strtol(argStr, NULL, 0); break;
+        case TYPE_VOIDPOINTER: 
+            if (sizeof(void*)<=sizeof(long)) *(void**)result = (void*)strtoul(argStr, NULL, 0);
+            else *(void**)result = (void*)strtoull(argStr, NULL, 0);
+            break;
         case TYPE_STRING: *(char**)result = strdup(argStr); break;
         default:
             free(result);
