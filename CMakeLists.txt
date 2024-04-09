@@ -48,6 +48,12 @@ set(SOURCES
     library_manager.c
     var_map.c
 )
+if(ANDROID)
+file(DOWNLOAD https://raw.githubusercontent.com/termux/termux-packages/master/packages/libandroid-wordexp/wordexp.c ${CMAKE_SOURCE_DIR}/wordexp.c)
+file(DOWNLOAD https://raw.githubusercontent.com/termux/termux-packages/master/packages/libandroid-wordexp/wordexp.h ${CMAKE_SOURCE_DIR}/wordexp.h)
+list(APPEND SOURCES wordexp.c)
+endif()
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
