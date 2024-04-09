@@ -28,11 +28,7 @@
 #include <readline/history.h>
 #include <unistd.h> // only used for forking for --repltest repl test harness mode
 #include <sys/wait.h> // same as above
-#if !defined(__ANDROID__)
-#include <wordexp.h> //only used for tokenizing in the repl
-#else
-#include "wordexp.h" // cmakelists will download this for android to the build dir
-#endif
+#include "tokenize.h"
 #endif
 
 #if (defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))) && !defined(__ANDROID__)
@@ -50,7 +46,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.1.11";
+const char* VERSION = "v1.1.12";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -256,34 +252,6 @@ void* loadFunctionHandle(void* lib_handle, const char* function_name) {
 }
 
 #ifdef use_readline
-
-void printWordexError(int result){
-    switch (result) {
-        case 0: // WRDE_OK
-            return;
-        case WRDE_NOSPACE:
-            fprintf(stderr, "Error: Ran out of memory.\n"); break;
-        case WRDE_BADCHAR:
-            fprintf(stderr, "Error: A metachar appears in the wrong place.\n"); break;
-        case WRDE_BADVAL:
-            fprintf(stderr, "Error: Undefined var reference with WRDE_UNDEF.\n"); break;
-        case WRDE_CMDSUB:
-            fprintf(stderr, "Error: Command substitution with WRDE_NOCMD.\n"); break;
-        case WRDE_SYNTAX:
-            fprintf(stderr, "Error: Shell syntax error.\n"); break;
-        default:
-            fprintf(stderr, "Error: Unknown wordexp error: %d.\n",result); break;
-    }
-}
-
-int tokenize(const char* str, int* argc, char*** argv) {
-    wordexp_t p;
-    int result = wordexp(str, &p, 0);
-    *argc = p.we_wordc;
-    *argv = p.we_wordv;
-    printWordexError(result);
-    return result;
-}
 
 void printVariableWithArgInfo(char* varName, ArgInfo* arg) {
         format_and_print_arg_type(arg);
