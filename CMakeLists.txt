@@ -696,6 +696,19 @@ set_tests_properties(repl_test_load_store_dump_memory PROPERTIES FAIL_REGULAR_EX
 endif()
 
 
+add_test(NAME repl_test_struct_variables_nested_structs # larger = {int double char char*}  containing = {char larger int}
+COMMAND cliffi --repltest
+set foo -S: 1 2.2 a hello :S \n
+set containing -S: q foo 5 :S \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_nested_large_struct containing \n
+)
+set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.c: q")
+set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.s.x: 1")
+set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.s.y: 2.20*")
+set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.s.c: a")
+set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.s.s: hello")
+set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.x: 5")
+
 # add_test(NAME TestAddFunctionWithSH
 # COMMAND sh cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i add 1 2)
 # set_tests_properties(TestAddFunctionWithSH PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")
