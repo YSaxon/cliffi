@@ -46,7 +46,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.2.2";
+const char* VERSION = "v1.3.0";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -591,6 +591,33 @@ void parseLoadMemoryToVar(char* loadCommand){
     setVar(varName, arg);
 }
 
+void parseCalculateOffset(char* calculateCommand){
+    int argc;
+    char ** argv;
+    tokenize(calculateCommand, &argc, &argv);
+    // <var> <library> <symbol> <address>
+    if (argc < 4) {
+        fprintf(stderr, "Error: Invalid number of arguments for calculate_offset\n");
+        return;
+    }
+    char* varName = argv[0];
+    char* libraryName = argv[1];
+    char* symbolName = argv[2];
+    char* addressStr = argv[3];
+    void* address = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
+    //possibly should pass this through the parser to get the actual path of the library
+    void* lib_handle = getOrLoadLibrary(libraryName);
+    void* symbol_handle = loadFunctionHandle(lib_handle, symbolName);
+    uintptr_t symbol_address = (uintptr_t)symbol_handle;
+    uintptr_t offset = (uintptr_t)address - symbol_address;
+    printf("Offset for %s in %s at %p is %lu\n", varName, libraryName, address, offset);
+    // it's a little convoluted but we'll just convert to a string and call a func to convert it back
+    char offsetStr[32];
+    char* varValues[2] = {"-P", offsetStr};
+    sprintf(offsetStr, "-P %lu", offset);
+    parseSetVariableWithNameAndValue(varName, 2, varValues);
+}
+
 void startRepl() {
 
     char* command;
@@ -621,6 +648,8 @@ void startRepl() {
                         "  store <address> <value>: Set the value of a memory address\n"
                         "  dump <type> <address>: Print the value at a memory address\n"
                         "  load <var> <type> <address>: Load the value at a memory address into a variable\n"
+                        "  calculate_offset <variable> <library> <symbol> <address>:"
+                        "      Calculate a memory offset by comparing the address of a known symbol\n"
                         "Shared Library Management:\n"
                         "  list: List all opened libraries\n"
                         "  close <library>: Close the specified library\n"
@@ -650,6 +679,8 @@ void startRepl() {
                 parseDumpMemory(command + 5);
             } else if (strncmp(command, "load ",5) == 0) {
                 parseLoadMemoryToVar(command + 5);
+            } else if (strncmp(command, "calculate_offset ", 17) == 0) {
+                parseCalculateOffset(command + 17);
             } else {
                 executeREPLCommand(command); // also handles syntactic sugar for set and print
             }
