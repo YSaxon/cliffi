@@ -46,7 +46,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.3.0";
+const char* VERSION = "v1.3.1";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -614,7 +614,7 @@ void parseCalculateOffset(char* calculateCommand){
     // it's a little convoluted but we'll just convert to a string and call a func to convert it back
     char offsetStr[32];
     char* varValues[2] = {"-P", offsetStr};
-    sprintf(offsetStr, "-P %lu", offset);
+    sprintf(offsetStr, "-P %zu", offset);
     parseSetVariableWithNameAndValue(varName, 2, varValues);
 }
 
