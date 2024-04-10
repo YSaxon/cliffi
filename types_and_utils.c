@@ -62,6 +62,13 @@ void* makePointerLevel(void* value, int pointer_depth) {
     return value;
 }
 
+void* dereferencePointerLevels(void* value, int pointer_depth) {
+    for (int i = 0; i < pointer_depth; i++) {
+        value = *(void**)value;
+    }
+    return value;
+}
+
 bool isAllDigits(const char* str) {
     return str && *str && strspn(str, "0123456789") == strlen(str);
 }

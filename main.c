@@ -333,13 +333,26 @@ void parseStoreToMemoryWithAddressAndValue(char* addressStr, int varValueCount, 
         exit_or_restart(1); return;
     }
     
-    if(arg->type == TYPE_STRUCT) arg->value->ptr_val = make_raw_value_for_struct(arg, false);
-
-    memcpy(destAddress, arg->value, typeToSize(arg->type, arg->pointer_depth));
-
+    if(arg->type == TYPE_STRUCT) {
+        //temporarily store the struct in a raw value and copy it to the destination address
+        // arg->value->ptr_val = make_raw_value_for_struct(arg, false);
+        void* raw_struct = make_raw_value_for_struct(arg, false);
+        size_t size = arg->pointer_depth==0? get_size_of_struct(arg): sizeof(void*);
+        memcpy(destAddress, raw_struct, size);
+    }
+    else if (arg->is_array) { // if it's an array then the pointer to the raw value is stored in the ptr_val field
+        if (arg->array_value_pointer_depth > 0) {
+            memcpy(destAddress, arg->value->ptr_val, sizeof(void*));
+        } else {
+            size_t array_len = get_size_for_arginfo_sized_array(arg);
+            memcpy(destAddress, arg->value->ptr_val, array_len * typeToSize(arg->type, arg->array_value_pointer_depth));
+    }} else {
+        memcpy(destAddress, arg->value, typeToSize(arg->type, arg->array_value_pointer_depth));
+    }
     printVariableWithArgInfo(addressStr, arg);
     
 }
+
 
 ArgInfo* parseLoadMemoryToArgWithType(char* addressStr, int typeArgc, char** typeArgv){
     if (addressStr==NULL || strlen(addressStr) == 0) {
@@ -362,10 +375,12 @@ ArgInfo* parseLoadMemoryToArgWithType(char* addressStr, int typeArgc, char** typ
     void* sourceAddress = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
 
     //possibly we also want to check if its an array and if so copy it's address instead of the value since we use pointer types for arrays (as if it was inside a struct)
-    if (arg->type != TYPE_STRUCT) {
-        memcpy(arg->value, sourceAddress, typeToSize(arg->type, arg->pointer_depth));
-    } else {
+    if (arg->is_array) {
+        arg->value->ptr_val = sourceAddress;
+    } else if (arg->type == TYPE_STRUCT) {
         fix_struct_pointers(arg, sourceAddress);
+    } else {
+        memcpy(arg->value, sourceAddress, typeToSize(arg->type, arg->pointer_depth));
     }
     return arg;
 }

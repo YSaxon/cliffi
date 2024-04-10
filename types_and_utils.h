@@ -107,4 +107,7 @@ void convert_all_arrays_to_arginfo_ptr_sized_after_parsing(ArgInfoContainer* fun
 void second_pass_arginfo_ptr_sized_null_array_initialization(ArgInfoContainer* call_info);
 char* trim_whitespace(char* str);
 
+void* makePointerLevel(void* value, int pointer_depth);
+void* dereferencePointerLevels(void* value, int pointer_depth);
+
 #endif /* ARG_TOOLS_H */

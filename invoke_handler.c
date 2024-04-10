@@ -85,6 +85,15 @@ ffi_type* make_ffi_type_for_struct(const ArgInfo* arg){ // does not handle point
     return struct_type;
 }
 
+size_t get_size_of_struct(const ArgInfo* arg) {
+    if (arg->type != TYPE_STRUCT) {
+        fprintf(stderr, "get_size_of_struct called with non-struct argument.\n");
+        exit_or_restart(1); return 0;
+    }
+    ffi_type* struct_type = make_ffi_type_for_struct(arg);
+    return struct_type->size;
+}
+
 
 ffi_type* primitive_argtype_to_ffi_type(const ArgType type) {
     switch (type) {
