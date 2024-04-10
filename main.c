@@ -269,6 +269,80 @@ void parsePrintVariable(char* varName) {
     }
 }
 
+void parseSetMemoryWithAddressAndValue(char* addressStr, int varValueCount, char** varValues) {
+    
+    if (addressStr==NULL || strlen(addressStr) == 0) {
+        fprintf(stderr, "Memory address cannot be empty.\n");
+        exit_or_restart(1);
+    }
+    if (varValues== NULL || varValueCount == 0 || strlen(varValues[0]) == 0) {
+        fprintf(stderr, "Variable value cannot be empty.\n");
+        exit_or_restart(1);
+    }
+
+    void* destAddress;
+    if (sizeof(void*) <= sizeof(long)) {
+        destAddress = (void*)(uintptr_t)strtoul(addressStr, NULL, 0);
+    } else {
+        destAddress  = (void*)(uintptr_t)strtoull(addressStr, NULL, 0);
+    }
+
+    int args_used = 0;
+    ArgInfo* arg = parse_one_arg(varValueCount, varValues, &args_used, false);
+    if (args_used+1 != varValueCount) {
+        fprintf(stderr, "Invalid variable value.\n");
+        free(arg);
+        exit_or_restart(1); return;
+    }
+    
+    if(arg->type == TYPE_STRUCT) arg->value->ptr_val = make_raw_value_for_struct(arg, false);
+
+    memcpy(destAddress, arg->value, typeToSize(arg->type, arg->pointer_depth));
+
+    printVariableWithArgInfo(addressStr, arg);
+    
+}
+void parsePrintMemoryWithAddressAndType(char* addressStr, int varValueCount, char** varValues) {
+    if (addressStr==NULL || strlen(addressStr) == 0) {
+        fprintf(stderr, "Memory address cannot be empty.\n");
+        exit_or_restart(1);
+    }
+    if (varValues== NULL || varValueCount == 0 || strlen(varValues[0]) == 0) {
+        fprintf(stderr, "Variable value cannot be empty.\n");
+        exit_or_restart(1);
+    }
+
+    void* sourceAddress;
+    if (sizeof(void*) <= sizeof(long)) {
+        sourceAddress = (void*)(uintptr_t)strtoul(addressStr, NULL, 0);
+    } else {
+        sourceAddress  = (void*)(uintptr_t)strtoull(addressStr, NULL, 0);
+    }
+
+    int args_used = 0;
+    ArgInfo* arg = parse_one_arg(varValueCount, varValues, &args_used, true);
+    if (args_used+1 != varValueCount) {
+        fprintf(stderr, "Invalid type. Specify it as if it were a return type (ie types only, no dashes).\n");
+        free(arg);
+        exit_or_restart(1); return;
+    }
+
+    //possibly we also want to check if its an array and if so copy it's address instead of the value since we use pointer types for arrays (as if it was inside a struct)
+    if (arg->type != TYPE_STRUCT) {
+        memcpy(arg->value, sourceAddress, typeToSize(arg->type, arg->pointer_depth));
+    } else {
+        fix_struct_pointers(arg, sourceAddress);
+    }
+
+    printf("(");
+    format_and_print_arg_type(arg);
+    printf("*) %s = ", addressStr);
+    format_and_print_arg_type(arg);
+    printf(" ");
+    format_and_print_arg_value(arg);
+    printf("\n");
+}
+
 void parseSetVariableWithNameAndValue(char* varName, int varValueCount, char** varValues) {
 
         if (varName==NULL || strlen(varName) == 0) {
@@ -367,6 +441,28 @@ void parseSetVariable(char* varCommand) {
         parseSetVariableWithNameAndValue(argv[0], argc-1, argv+1);
 }
 
+void parseSetMemory(char* memCommand) {
+    int argc;
+    char ** argv;
+    if (tokenize(memCommand, &argc, &argv)!=0) {
+        fprintf(stderr, "Error: Tokenization failed for memory value\n");
+        return;
+    }
+
+    parseSetMemoryWithAddressAndValue(argv[0], argc-1, argv+1);
+
+}
+
+void parsePrintMemory(char* memCommand) {
+    int argc;
+    char ** argv;
+    tokenize(memCommand, &argc, &argv);
+
+    parsePrintMemoryWithAddressAndType(argv[0], argc-1, argv+1);
+
+}
+
+
 void startRepl() {
 
     char* command;
@@ -416,6 +512,10 @@ void startRepl() {
                 parseSetVariable(set_var_command);
             } else if (strncmp(command, "print ", 6) == 0) {
                 parsePrintVariable(command + 6);
+            } else if (strncmp(command, "setmem ", 7) == 0) {
+                parseSetMemory(command + 7);
+            } else if (strncmp(command, "printmem ", 9) == 0) {
+                parsePrintMemory(command + 9);
             } else {
                 executeREPLCommand(command); // also handles syntactic sugar for set and print
             }
