@@ -756,6 +756,31 @@ int increment_global() {
     return ++global_int;
 }
 
+void* get_address_of_global() {
+    return &global_int;
+}
+
+
+char global_buffer1[500] = {0};
+char global_buffer2[500] = {0};
+
+void* get_address_of_global_buffer1() {
+    return global_buffer1;
+}
+void* get_address_of_global_buffer2() {
+    return global_buffer2;
+}
+
+char global_string[200] = "Hello, world!";
+char* get_global_string() {
+    return global_string;
+}
+
+char (*global_string_ptr)[200] = &global_string;
+
+char (*get_global_string_ptr())[200] {
+    return global_string_ptr;
+}
 
 // Entry point to prevent the compiler from complaining when compiling as a shared library
 // This function will not be called; it's just to satisfy the linker.
