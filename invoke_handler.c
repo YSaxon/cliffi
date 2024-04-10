@@ -322,8 +322,15 @@ void handle_promoting_vararg_if_necessary(ffi_type** arg_type_ptr, ArgInfo* arg,
 int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
 
     ffi_cif cif;
-    ffi_type* args[call_info->info.arg_count];
-    void* values[call_info->info.arg_count];
+    ffi_type** args = malloc(call_info->info.arg_count * sizeof(ffi_type*));
+    void** values = malloc(call_info->info.arg_count * sizeof(void*));
+    if (args == NULL || values == NULL) {
+        fprintf(stderr, "Memory allocation failed in invoke_dynamic_function.\n");
+        if (args != NULL) free(args);
+        if (values != NULL) free(values);
+        exit_or_restart(-1);
+        return -1;
+    }
     for (int i = 0; i < call_info->info.arg_count; ++i) {
         args[i] = arg_type_to_ffi_type(call_info->info.args[i],false);
 
@@ -333,7 +340,9 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
 
         if (!args[i]) {
             fprintf(stderr, "Failed to convert arg[%d].type = %c to ffi_type.\n", i, call_info->info.args[i]->type);
-            return -1;
+            if (args != NULL) free(args);
+            if (values != NULL) free(values);
+            exit_or_restart(1); return -1;
         }
         if (call_info->info.args[i]->type != TYPE_STRUCT){//|| call_info->info.args[i]->pointer_depth == 0) {
             values[i] = call_info->info.args[i]->value;
@@ -364,7 +373,9 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
 
     if (status != FFI_OK) {
         fprintf(stderr, "ffi_prep_cif failed. Return status = %s\n", ffi_status_to_string(status));
-        exit_or_restart(1);
+        if (args != NULL) free(args);
+        if (values != NULL) free(values);
+        exit_or_restart(1); return -1;
     }
 
     ffi_call(&cif, func, rvalue, values);
@@ -404,6 +415,7 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
             call_info->info.return_var->value->us_val = (unsigned short)call_info->info.return_var->value->ui_val;
         }}
         #endif
-
+    if (args != NULL) free(args);
+    if (values != NULL) free(values);
     return 0;
 }
