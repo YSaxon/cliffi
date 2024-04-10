@@ -271,6 +271,41 @@ void parsePrintVariable(char* varName) {
 void* getAddressFromAddressStringOrNameOfCoercableVariable(char* addressStr){
     void* address = NULL;
 
+    if(addressStr==NULL || strlen(addressStr) == 0) {
+        fprintf(stderr, "Memory address cannot be empty.\n");
+        exit_or_restart(1);
+    }
+
+    if (addressStr[0] == '-') {
+        fprintf(stderr, "Memory address cannot be negative and variables can't start with a dash.\n");
+        exit_or_restart(1);
+    }
+
+    //check for a + or * operand
+    char* operand_str = strchr(addressStr, '+');
+    if (operand_str==NULL) {
+        operand_str = strchr(addressStr, '*'); // delayed inner recursive method gets calculated first
+    }
+    if (operand_str != NULL) {
+        char operand = *operand_str;
+        *operand_str = '\0';
+        operand_str++;
+        void* operand_1 = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
+        void* operand_2 = getAddressFromAddressStringOrNameOfCoercableVariable(operand_str);
+        if (operand_1 == NULL || operand_2 == NULL) {
+            fprintf(stderr, "Error: Invalid addition, one or more strings was not a valid address.\n");
+            exit_or_restart(1);
+        }
+        if (operand == '*') {
+            return (void*)((uintptr_t)operand_1 * (uintptr_t)operand_2);
+        } else if (operand == '+') {
+            return (void*)((uintptr_t)operand_1 + (uintptr_t)operand_2);
+        } else {
+            fprintf(stderr, "Error: Should be impossible to reach this code, %c", operand);
+            exit_or_restart(1);
+        }
+    }
+
     if (isHexFormat(addressStr) || isAllDigits(addressStr)){ 
         if (sizeof(void*) <= sizeof(long)) {
             address = (void*)(uintptr_t)strtoul(addressStr, NULL, 0);
