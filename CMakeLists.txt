@@ -670,7 +670,29 @@ print var2 \n
 set_tests_properties(repl_test_tokenizer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?test string foo and bar and . slash")
 set_tests_properties(repl_test_tokenizer PROPERTIES PASS_REGULAR_EXPRESSION "var2 = \"?a b c")
 
-
+add_test(NAME repl_test_load_store_dump_memory
+COMMAND cliffi --repltest
+set global_address -P 0 \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} global_address get_address_of_global \n
+global_address \n
+load global_int i global_address \n
+dump i global_address \n
+store global_address 42 \n
+dump i global_address \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_at_pointer global_address \n
+dump i global_address \n
+print global_int \n
+load global_int i global_address \n
+store global_address 88 \n
+print global_int \n
+)
+set_tests_properties(repl_test_load_store_dump_memory PROPERTIES PASS_REGULAR_EXPRESSION "global_address = 0?x?[0-9a-f]{4,}")
+set_tests_properties(repl_test_load_store_dump_memory PROPERTIES PASS_REGULAR_EXPRESSION "int global_int = 1")
+set_tests_properties(repl_test_load_store_dump_memory PROPERTIES PASS_REGULAR_EXPRESSION "global_address = (int )?42")
+set_tests_properties(repl_test_load_store_dump_memory PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 43")
+set_tests_properties(repl_test_load_store_dump_memory PROPERTIES PASS_REGULAR_EXPRESSION "int global_int = 43")
+set_tests_properties(repl_test_load_store_dump_memory PROPERTIES FAIL_REGULAR_EXPRESSION "int global_int = 88")
 endif()
 
 

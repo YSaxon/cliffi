@@ -268,6 +268,49 @@ void parsePrintVariable(char* varName) {
         printVariableWithArgInfo(varName, arg);
     }
 }
+void* getAddressFromAddressStringOrNameOfCoercableVariable(char* addressStr){
+    void* address = NULL;
+
+    if (isHexFormat(addressStr) || isAllDigits(addressStr)){ 
+        if (sizeof(void*) <= sizeof(long)) {
+            address = (void*)(uintptr_t)strtoul(addressStr, NULL, 0);
+        } else {
+            address  = (void*)(uintptr_t)strtoull(addressStr, NULL, 0);
+        }
+    } else {
+        // if it's not a number, it must be a variable name
+        ArgInfo* var = getVar(addressStr);
+        if (var == NULL) {
+            fprintf(stderr, "%s is neither a valid pointer address nor an existing variable.\n", addressStr);
+            exit_or_restart(1);
+        } else {
+            switch (var->type) {
+                case TYPE_INT:
+                    address = (void*)(uintptr_t)*(int*)dereferencePointerLevels(var->value, var->pointer_depth);
+                    break;
+                case TYPE_LONG:
+                    address = (void*)(uintptr_t)*(long*)dereferencePointerLevels(var->value, var->pointer_depth);
+                    break;
+                case TYPE_UINT:
+                    address = (void*)(uintptr_t)*(unsigned int*)dereferencePointerLevels(var->value, var->pointer_depth);
+                    break;
+                case TYPE_ULONG:
+                    address = (void*)(uintptr_t)*(unsigned long*)dereferencePointerLevels(var->value, var->pointer_depth);
+                    break;
+                case TYPE_VOIDPOINTER:
+                    address = dereferencePointerLevels(var->value->ptr_val, var->pointer_depth);
+                    break;
+                default:
+                    fprintf(stderr, "Error: %s is not a (void*) type, (nor any other type that could be coerced to a pointer).\n", addressStr);
+                    exit_or_restart(1); return NULL;
+                }
+            }
+            if (var->pointer_depth > 0) {
+                fprintf(stderr, "Warning: %s is specified with 'p' indirection. We are dereferencing it %d level(s) and using %p as the address\n", addressStr, var->pointer_depth, address);
+            }
+    }
+    return address;
+}
 
 void parseStoreToMemoryWithAddressAndValue(char* addressStr, int varValueCount, char** varValues) {
     
@@ -280,12 +323,7 @@ void parseStoreToMemoryWithAddressAndValue(char* addressStr, int varValueCount, 
         exit_or_restart(1);
     }
 
-    void* destAddress;
-    if (sizeof(void*) <= sizeof(long)) {
-        destAddress = (void*)(uintptr_t)strtoul(addressStr, NULL, 0);
-    } else {
-        destAddress  = (void*)(uintptr_t)strtoull(addressStr, NULL, 0);
-    }
+    void* destAddress = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
 
     int args_used = 0;
     ArgInfo* arg = parse_one_arg(varValueCount, varValues, &args_used, false);
@@ -313,13 +351,6 @@ ArgInfo* parseLoadMemoryToArgWithType(char* addressStr, int typeArgc, char** typ
         exit_or_restart(1);
     }
 
-    void* sourceAddress;
-    if (sizeof(void*) <= sizeof(long)) {
-        sourceAddress = (void*)(uintptr_t)strtoul(addressStr, NULL, 0);
-    } else {
-        sourceAddress  = (void*)(uintptr_t)strtoull(addressStr, NULL, 0);
-    }
-
     int args_used = 0;
     ArgInfo* arg = parse_one_arg(typeArgc, typeArgv, &args_used, true);
     if (args_used+1 != typeArgc) {
@@ -327,6 +358,8 @@ ArgInfo* parseLoadMemoryToArgWithType(char* addressStr, int typeArgc, char** typ
         free(arg);
         exit_or_restart(1); return NULL;
     }
+
+    void* sourceAddress = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
 
     //possibly we also want to check if its an array and if so copy it's address instead of the value since we use pointer types for arrays (as if it was inside a struct)
     if (arg->type != TYPE_STRUCT) {
@@ -375,7 +408,7 @@ void parseSetVariableWithNameAndValue(char* varName, int varValueCount, char** v
         if (args_used+1 != varValueCount) {
             fprintf(stderr, "Invalid variable value.\n");
             free(arg);
-            exit_or_restart(1);
+            exit_or_restart(1); return;
         }
         printVariableWithArgInfo(varName, arg);
         setVar(varName, arg);
