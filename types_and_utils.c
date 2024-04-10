@@ -608,9 +608,10 @@ void convert_all_arrays_to_arginfo_ptr_sized_after_parsing(ArgInfoContainer* inf
 }
 
 size_t get_size_for_arginfo_sized_array(const ArgInfo* arg){
-    void* size_t_param_val = &arg->array_sizet_arg.arginfo_of_size_t->value;
+    void* size_t_param_val; // can't declare it in the middle of the switch case, but not assigning here to avoid UB when it's not used
     switch(arg->is_array){
         case ARRAY_SIZE_AT_ARGINFO_PTR:
+            size_t_param_val = &arg->array_sizet_arg.arginfo_of_size_t->value;
             for (int i = 0; i < arg->array_sizet_arg.arginfo_of_size_t->pointer_depth; i++) {
                 if (!size_t_param_val) return 0;
                 size_t_param_val = *(void**)size_t_param_val;
