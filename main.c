@@ -46,7 +46,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.3.1";
+const char* VERSION = "v1.3.2";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -610,7 +610,7 @@ void parseCalculateOffset(char* calculateCommand){
     void* symbol_handle = loadFunctionHandle(lib_handle, symbolName);
     uintptr_t symbol_address = (uintptr_t)symbol_handle;
     uintptr_t offset = (uintptr_t)address - symbol_address;
-    printf("Offset for %s in %s at %p is %lu\n", varName, libraryName, address, offset);
+    printf("Offset for %s in %s at %p is %zu\n", varName, libraryName, address, offset);
     // it's a little convoluted but we'll just convert to a string and call a func to convert it back
     char offsetStr[32];
     char* varValues[2] = {"-P", offsetStr};
