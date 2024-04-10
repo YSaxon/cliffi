@@ -46,7 +46,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.3.3";
+const char* VERSION = "v1.4.0";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -618,6 +618,22 @@ void parseCalculateOffset(char* calculateCommand){
     parseSetVariableWithNameAndValue(varName, 2, varValues);
 }
 
+void parseHexdump(char* hexdumpCommand){
+    int argc;
+    char ** argv;
+    tokenize(hexdumpCommand, &argc, &argv);
+    // <address> <size>
+    if (argc < 2) {
+        fprintf(stderr, "Error: Invalid number of arguments for hexdump\n");
+        return;
+    }
+    char* addressStr = argv[0];
+    char* sizeStr = argv[1];
+    void* address = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
+    size_t size = strtoul(sizeStr, NULL, 0);
+    hexdump(address, size);
+}
+
 void startRepl() {
 
     char* command;
@@ -650,6 +666,7 @@ void startRepl() {
                         "  load <var> <type> <address>: Load the value at a memory address into a variable\n"
                         "  calculate_offset <variable> <library> <symbol> <address>:"
                         "      Calculate a memory offset by comparing the address of a known symbol\n"
+                        "  hexdump <address> <size>: Print a hexdump of memory\n"
                         "Shared Library Management:\n"
                         "  list: List all opened libraries\n"
                         "  close <library>: Close the specified library\n"
@@ -681,6 +698,8 @@ void startRepl() {
                 parseLoadMemoryToVar(command + 5);
             } else if (strncmp(command, "calculate_offset ", 17) == 0) {
                 parseCalculateOffset(command + 17);
+            } else if (strncmp(command, "hexdump ", 8) == 0) {
+                parseHexdump(command + 8);
             } else {
                 executeREPLCommand(command); // also handles syntactic sugar for set and print
             }
