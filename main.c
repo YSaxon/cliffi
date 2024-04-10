@@ -46,7 +46,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.1.12";
+const char* VERSION = "v1.2.0";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -269,7 +269,7 @@ void parsePrintVariable(char* varName) {
     }
 }
 
-void parseSetMemoryWithAddressAndValue(char* addressStr, int varValueCount, char** varValues) {
+void parseStoreToMemoryWithAddressAndValue(char* addressStr, int varValueCount, char** varValues) {
     
     if (addressStr==NULL || strlen(addressStr) == 0) {
         fprintf(stderr, "Memory address cannot be empty.\n");
@@ -302,13 +302,14 @@ void parseSetMemoryWithAddressAndValue(char* addressStr, int varValueCount, char
     printVariableWithArgInfo(addressStr, arg);
     
 }
-void parsePrintMemoryWithAddressAndType(char* addressStr, int varValueCount, char** varValues) {
+
+ArgInfo* parseLoadMemoryToArgWithType(char* addressStr, int typeArgc, char** typeArgv){
     if (addressStr==NULL || strlen(addressStr) == 0) {
         fprintf(stderr, "Memory address cannot be empty.\n");
         exit_or_restart(1);
     }
-    if (varValues== NULL || varValueCount == 0 || strlen(varValues[0]) == 0) {
-        fprintf(stderr, "Variable value cannot be empty.\n");
+    if (typeArgv== NULL || typeArgc == 0 || strlen(typeArgv[0]) == 0) {
+        fprintf(stderr, "Variable type cannot be empty.\n");
         exit_or_restart(1);
     }
 
@@ -320,11 +321,11 @@ void parsePrintMemoryWithAddressAndType(char* addressStr, int varValueCount, cha
     }
 
     int args_used = 0;
-    ArgInfo* arg = parse_one_arg(varValueCount, varValues, &args_used, true);
-    if (args_used+1 != varValueCount) {
+    ArgInfo* arg = parse_one_arg(typeArgc, typeArgv, &args_used, true);
+    if (args_used+1 != typeArgc) {
         fprintf(stderr, "Invalid type. Specify it as if it were a return type (ie types only, no dashes).\n");
         free(arg);
-        exit_or_restart(1); return;
+        exit_or_restart(1); return NULL;
     }
 
     //possibly we also want to check if its an array and if so copy it's address instead of the value since we use pointer types for arrays (as if it was inside a struct)
@@ -333,7 +334,11 @@ void parsePrintMemoryWithAddressAndType(char* addressStr, int varValueCount, cha
     } else {
         fix_struct_pointers(arg, sourceAddress);
     }
+    return arg;
+}
 
+void parseDumpMemoryWithAddressAndType(char* addressStr, int varValueCount, char** varValues) {
+    ArgInfo* arg = parseLoadMemoryToArgWithType(addressStr, varValueCount, varValues);
     printf("(");
     format_and_print_arg_type(arg);
     printf("*) %s = ", addressStr);
@@ -341,35 +346,36 @@ void parsePrintMemoryWithAddressAndType(char* addressStr, int varValueCount, cha
     printf(" ");
     format_and_print_arg_value(arg);
     printf("\n");
+    free(arg);
 }
 
 void parseSetVariableWithNameAndValue(char* varName, int varValueCount, char** varValues) {
 
         if (varName==NULL || strlen(varName) == 0) {
             fprintf(stderr, "Variable name cannot be empty.\n");
-            return;
+            exit_or_restart(1);
         } else if (varValues== NULL || varValueCount == 0 || strlen(varValues[0]) == 0) {
             fprintf(stderr, "Variable value cannot be empty.\n");
-            return;
+            exit_or_restart(1);
         }
 
         if (strlen(varName) == 1 && charToType(*varName) != TYPE_UNKNOWN) {
             fprintf(stderr, "Variable name cannot be a character used in parsing types, such as %s which is used for %s\n", varName, typeToString(charToType(*varName)));
-            return;
+            exit_or_restart(1);
         } else if (*varName == '-') {
             fprintf(stderr, "Variable names cannot start with a dash.\n");
-            return;
+            exit_or_restart(1);
         } else if (isAllDigits(varName) || isHexFormat(varName) || isFloatingPoint(varName)) {
             fprintf(stderr, "Variable names cannot be a number.\n");
-            return;
+            exit_or_restart(1);
         }
 
         int args_used = 0;
         ArgInfo* arg = parse_one_arg(varValueCount, varValues, &args_used, false);
         if (args_used+1 != varValueCount) {
             fprintf(stderr, "Invalid variable value.\n");
-            //maybe free the arg?
-            return;
+            free(arg);
+            exit_or_restart(1);
         }
         printVariableWithArgInfo(varName, arg);
         setVar(varName, arg);
@@ -386,24 +392,32 @@ void executeREPLCommand(char* command){
 
     // syntactic sugar for set <var> <value> and print <var>
     if (argc == 1) {
-        parsePrintVariable(argv[0]);
+        if (isHexFormat(argv[0])){
+            fprintf(stderr, "You can't print a memory address with specifying a type, try again with: dump <type> %s\n", argv[0]);
+        } else {
+            parsePrintVariable(argv[0]);
+        }
         return;
     } else if (argc >= 3 && strcmp(argv[1], "=") == 0) {
-        parseSetVariableWithNameAndValue(argv[0], argc-2, argv+2);
+        if (isHexFormat(argv[0])){
+            parseStoreToMemoryWithAddressAndValue(argv[0], argc-2, argv+2);
+        } else {
+            parseSetVariableWithNameAndValue(argv[0], argc-2, argv+2);
+        }
         return;
     }
 
 
     if (argc < 3) {
         fprintf(stderr, "Invalid command '%s'. Type 'help' for assistance.\n", command);
-        return;
+        exit_or_restart(1);
     }
     FunctionCallInfo* call_info = parse_arguments(argc, argv);
     log_function_call_info(call_info);
     void* lib_handle = getOrLoadLibrary(call_info->library_path);
     if (lib_handle == NULL) {
         fprintf(stderr, "Failed to load library: %s\n", call_info->library_path);
-        return;
+        exit_or_restart(1);
     }
     void* func = loadFunctionHandle(lib_handle, call_info->function_name);
 
@@ -430,38 +444,69 @@ char** cliffi_completion(const char* text, int state) {
     }
 
 void parseSetVariable(char* varCommand) {
-
         int argc;
         char ** argv;
-        if (tokenize(varCommand, &argc, &argv)!=0) {
-            fprintf(stderr, "Error: Tokenization failed for variable value\n");
+        tokenize(varCommand, &argc, &argv);
+        // <var> <value>
+        if (argc < 2) {
+            fprintf(stderr, "Error: Invalid number of arguments for set\n");
             return;
         }
-
-        parseSetVariableWithNameAndValue(argv[0], argc-1, argv+1);
+        char* varName = argv[0]; // first argument is the variable name
+        int value_args = argc-1; // all but the first argument
+        char** value_argv = argv+1; // starts after the first argument
+        parseSetVariableWithNameAndValue(varName, value_args, value_argv);
 }
 
-void parseSetMemory(char* memCommand) {
-    int argc;
-    char ** argv;
-    if (tokenize(memCommand, &argc, &argv)!=0) {
-        fprintf(stderr, "Error: Tokenization failed for memory value\n");
-        return;
-    }
-
-    parseSetMemoryWithAddressAndValue(argv[0], argc-1, argv+1);
-
-}
-
-void parsePrintMemory(char* memCommand) {
+void parseStoreToMemory(char* memCommand) {
     int argc;
     char ** argv;
     tokenize(memCommand, &argc, &argv);
-
-    parsePrintMemoryWithAddressAndType(argv[0], argc-1, argv+1);
+    // <address> <value>
+    if (argc < 2) {
+        fprintf(stderr, "Error: Invalid number of arguments for storemem\n");
+        return;
+    }
+    char* address = argv[0]; // first argument is the address
+    int value_args = argc-1; // all but the first argument
+    char** value_argv = argv+1; // starts after the first argument
+    parseStoreToMemoryWithAddressAndValue(address, value_args, value_argv);
 
 }
 
+void parseDumpMemory(char* memCommand) {
+    int argc;
+    char ** argv;
+    tokenize(memCommand, &argc, &argv);
+    // <type> <address>
+    if (argc < 2) {
+        fprintf(stderr, "Error: Invalid number of arguments for dumpmem\n");
+        return;
+    }
+    char* address = argv[argc-1]; // last argument is the address
+    int type_args = argc-1; // all but the last argument
+    char** type_argv = argv; // starts at the first argument
+    parseDumpMemoryWithAddressAndType(address, type_args, type_argv);
+
+}
+
+void parseLoadMemoryToVar(char* loadCommand){
+    int argc;
+    char ** argv;
+    tokenize(loadCommand, &argc, &argv);
+    // <var> <type> <address> 
+    if (argc < 3) {
+        fprintf(stderr, "Error: Invalid number of arguments for loadmem\n");
+        return;
+    }
+    char* varName = argv[0];
+    char* address = argv[argc-1]; // last argument is the address
+    int type_args = argc-2; // all but the first and last argument
+    char** type_argv = argv+1; // starts after the first argument 
+    ArgInfo* arg = parseLoadMemoryToArgWithType(address, type_args, type_argv);
+    printVariableWithArgInfo(varName, arg);
+    setVar(varName, arg);
+}
 
 void startRepl() {
 
@@ -489,6 +534,10 @@ void startRepl() {
                         "Variables:\n"
                         "  set <var> <value>: Set a variable\n"
                         "  print <var>: Print the value of a variable\n"
+                        "Memory Management:\n"
+                        "  store <address> <value>: Set the value of a memory address\n"
+                        "  dump <type> <address>: Print the value at a memory address\n"
+                        "  load <var> <type> <address>: Load the value at a memory address into a variable\n"
                         "Shared Library Management:\n"
                         "  list: List all opened libraries\n"
                         "  close <library>: Close the specified library\n"
@@ -512,10 +561,12 @@ void startRepl() {
                 parseSetVariable(set_var_command);
             } else if (strncmp(command, "print ", 6) == 0) {
                 parsePrintVariable(command + 6);
-            } else if (strncmp(command, "setmem ", 7) == 0) {
-                parseSetMemory(command + 7);
-            } else if (strncmp(command, "printmem ", 9) == 0) {
-                parsePrintMemory(command + 9);
+            } else if (strncmp(command, "store ", 6) == 0) {
+                parseStoreToMemory(command + 6);
+            } else if (strncmp(command, "dump ", 5) == 0) {
+                parseDumpMemory(command + 5);
+            } else if (strncmp(command, "load ",5) == 0) {
+                parseLoadMemoryToVar(command + 5);
             } else {
                 executeREPLCommand(command); // also handles syntactic sugar for set and print
             }
