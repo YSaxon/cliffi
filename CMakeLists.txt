@@ -693,7 +693,6 @@ set_tests_properties(repl_test_load_store_dump_memory PROPERTIES PASS_REGULAR_EX
 set_tests_properties(repl_test_load_store_dump_memory PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 43")
 set_tests_properties(repl_test_load_store_dump_memory PROPERTIES PASS_REGULAR_EXPRESSION "int global_int = 43")
 set_tests_properties(repl_test_load_store_dump_memory PROPERTIES FAIL_REGULAR_EXPRESSION "int global_int = 88")
-endif()
 
 
 add_test(NAME repl_test_struct_variables_nested_structs # larger = {int double char char*}  containing = {char larger int}
@@ -728,6 +727,7 @@ set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_R
 set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.s.s: hello")
 set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.x: 5")
 
+endif()
 
 # add_test(NAME TestAddFunctionWithSH
 # COMMAND sh cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i add 1 2)
