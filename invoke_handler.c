@@ -17,6 +17,16 @@
 
 ffi_type* arg_type_to_ffi_type(const ArgInfo* arg, bool is_inside_struct); // putting this declaration here instead of header since it's only used in this file
 
+void free_ffi_type(ffi_type* ffitype) {
+    if (ffitype->type == FFI_TYPE_STRUCT){ // otherwise don't free it as it's probably an address of a static type rather than a malloc'd one
+        for (int i = 0; ffitype->elements[i]; i++) {
+            free_ffi_type(ffitype->elements[i]);
+        }
+        free(ffitype->elements);
+        free(ffitype);
+    }
+}
+
 ffi_type* create_raw_array_type_for_use_inside_structs(size_t n, ffi_type *array_element_type) {
     ffi_type array_type;
     ffi_type **elements;
@@ -91,7 +101,9 @@ size_t get_size_of_struct(const ArgInfo* arg) {
         exit_or_restart(1); return 0;
     }
     ffi_type* struct_type = make_ffi_type_for_struct(arg);
-    return struct_type->size;
+    size_t size_to_return = struct_type->size;
+    free_ffi_type(struct_type);
+    return size_to_return;
 }
 
 
@@ -165,6 +177,7 @@ ffi_status get_packed_offset(const ArgInfo* struct_info, ffi_type* struct_type, 
 
         }
         offset += arg->size;
+        free_ffi_type(arg);
     }
     struct_type->size = offset;
     struct_type->alignment = 1;
@@ -183,6 +196,7 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return){//, ffi
     }
 
     void* raw_memory = calloc(1,struct_type->size);
+    free_ffi_type(struct_type);
     if (!raw_memory) {
         fprintf(stderr, "Failed to allocate memory for struct.\n");
         exit_or_restart(1);
@@ -194,8 +208,7 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return){//, ffi
             size_t inner_size;
             if (struct_info->info.args[i]->pointer_depth == 0) {
                 fprintf(stderr, "Warning, parsing a nested struct that is not a pointer type. Are you sure you meant to do this? Otherwise add a p\n");
-                ffi_type* inner_struct_type = make_ffi_type_for_struct(struct_info->info.args[i]);
-                inner_size = inner_struct_type->size;
+                inner_size = get_size_of_struct(struct_info->info.args[i]);
             } else {
                 inner_size = sizeof(void*);
             }
@@ -256,6 +269,7 @@ void fix_struct_pointers(ArgInfo* struct_arg, void* raw_memory) {
 
     ffi_type* struct_type = make_ffi_type_for_struct(struct_arg);
     ffi_status struct_status = struct_arg->struct_info->is_packed? get_packed_offset(struct_arg,struct_type,offsets) : ffi_get_struct_offsets(FFI_DEFAULT_ABI, struct_type, offsets);
+    free_ffi_type(struct_type);
     if (struct_status != FFI_OK) {
         fprintf(stderr, "Failed to get struct offsets.\n");
         exit_or_restart(1);
@@ -388,6 +402,11 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
     }
 
     ffi_call(&cif, func, rvalue, values);
+
+    free_ffi_type(return_type);
+    for (int i = 0; i < call_info->info.arg_count; ++i) {
+        free_ffi_type(args[i]);
+    }
 
     for (int i = 0; i < call_info->info.arg_count; ++i) {
         if (call_info->info.args[i]->type == TYPE_STRUCT) {
