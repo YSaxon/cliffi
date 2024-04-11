@@ -20,3 +20,7 @@ cmake_install.cmake
 .cache/
 
 avd/
+
+coverage-html/
+
+coverage.info
