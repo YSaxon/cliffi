@@ -153,28 +153,16 @@ ffi_type* arg_type_to_ffi_type(const ArgInfo* arg, bool inside_struct) {
 
 ffi_status get_packed_offset(const ArgInfo* struct_info, ffi_type* struct_type, size_t* offsets){
     size_t offset = 0;
-    // for (int i = 0; i < struct_info->struct_info->info.arg_count; i++) {
     for (int i = 0; struct_type->elements[i]; i++) {
         offsets[i] = offset;
         ffi_type* arg = arg_type_to_ffi_type(struct_info->struct_info->info.args[i],true);
-        // if (arg->alignment) {
-        //     arg->alignment = 1;
-        // }
         if (arg->size == 0) {
-            // fprintf(stderr, "Failed to get size for struct field %d.\n", i);
-            // struct_type->size = 0; // meaning we don't know the size yet
-            // struct_type->alignment = 1;
-            // return FFI_OK;
             size_t* inner_offsets = {0};
             if (struct_info->struct_info->info.args[i]->type == TYPE_STRUCT){
                 get_packed_offset(struct_info->struct_info->info.args[i], arg, inner_offsets);
             } else {
                 ffi_get_struct_offsets(FFI_DEFAULT_ABI, arg, inner_offsets);
             }
-            // fprintf(stderr,"while getting packed offsets, found inner struct at field %d\n", i);
-            // fprintf(stderr, "alignment: %d\n", arg->alignment);
-            // fprintf(stderr, "size: %zu\n", arg->size);
-
         }
         offset += arg->size;
         free_ffi_type(arg);
