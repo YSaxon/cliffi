@@ -314,7 +314,7 @@ void* getAddressFromAddressStringOrNameOfCoercableVariable(char* addressStr) {
         ArgInfo* var = getVar(addressStr);
         if (var == NULL) {
             fprintf(stderr, "%s is neither a valid pointer address nor an existing variable.\n", addressStr);
-            exit_or_restart(1);
+            exit_or_restart(1); return NULL;
         } else {
             switch (var->type) {
             case TYPE_INT:
