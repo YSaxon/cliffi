@@ -46,7 +46,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.4.2";
+const char* VERSION = "v1.5.0";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -671,6 +671,9 @@ void startRepl() {
                         "  list: List all opened libraries\n"
                         "  close <library>: Close the specified library\n"
                         "  closeall: Close all opened libraries\n"
+                        "Shell commands:\n"
+                        "  !<command>: Run a shell command\n"
+                        "  shell: Drop into an interactive shell\n"
                         "REPL Management:\n"
                         "  exit: Quit the REPL\n");
             } else if (strcmp(command, "docs") == 0) {
@@ -700,6 +703,16 @@ void startRepl() {
                 parseCalculateOffset(command + 17);
             } else if (strncmp(command, "hexdump ", 8) == 0) {
                 parseHexdump(command + 8); // could also be done by dump aC<size> <address>
+            } else if (command[0] == '!') {
+                system(command + 1); // could also be done via libc.so v system "<command>" but this is more direct and convenient
+            } else if (strcmp(command, "shell") == 0) {
+                // if $SHELL is set, run that
+                if (getenv("SHELL") != NULL) {
+                    system(getenv("SHELL"));
+                } else {
+                    fprintf(stderr, "Warning: SHELL environment variable not set. Running an unprefixed 'sh -i'\n");
+                    system("sh -i");
+                }
             } else {
                 executeREPLCommand(command); // also handles alternate forms of set (<varname>) and print (<varname> = <value>)
             }
