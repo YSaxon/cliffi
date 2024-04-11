@@ -658,8 +658,8 @@ void startRepl() {
                         "  help: Print this help message\n"
                         "  docs: Print the cliffi docs\n"
                         "Variables:\n"
-                        "  set <var> <value>: Set a variable\n"
-                        "  print <var>: Print the value of a variable\n"
+                        "  set <var> <value>: Set a variable. Alternate form: <var> = <value>\n"
+                        "  print <var>: Print the value of a variable. Alternate form: <var>\n"
                         "Memory Management:\n"
                         "  store <address> <value>: Set the value of a memory address\n"
                         "  dump <type> <address>: Print the value at a memory address\n"
@@ -699,9 +699,9 @@ void startRepl() {
             } else if (strncmp(command, "calculate_offset ", 17) == 0) {
                 parseCalculateOffset(command + 17);
             } else if (strncmp(command, "hexdump ", 8) == 0) {
-                parseHexdump(command + 8);
+                parseHexdump(command + 8); // could also be done by dump aC<size> <address>
             } else {
-                executeREPLCommand(command); // also handles syntactic sugar for set and print
+                executeREPLCommand(command); // also handles alternate forms of set (<varname>) and print (<varname> = <value>)
             }
         }
         free(command);
