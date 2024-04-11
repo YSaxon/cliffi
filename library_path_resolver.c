@@ -5,11 +5,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #ifdef _WIN32
-    const char* library_extension = ".dll";
+const char* library_extension = ".dll";
 #elif defined(__APPLE__)
-    const char* library_extension = ".dylib";
+const char* library_extension = ".dylib";
 #else
-    const char* library_extension = ".so";
+const char* library_extension = ".so";
 #endif
 
 // Function to check if a string ends with a specific substring
@@ -68,11 +68,11 @@ char* resolve_library_path(const char* library_name) {
     free(search_paths);
 
     // If the library wasn't found in LD_LIBRARY_PATH, check standard locations
-    const char* standard_paths[] = {"/usr/lib", "/lib", "/usr/local/lib", 
-    #ifdef __ANDROID__
-        "/system/lib", "/system/lib64", "/system/vendor/lib", "/system/vendor/lib64",
-    #endif
-    NULL};
+    const char* standard_paths[] = {"/usr/lib", "/lib", "/usr/local/lib",
+#ifdef __ANDROID__
+                                    "/system/lib", "/system/lib64", "/system/vendor/lib", "/system/vendor/lib64",
+#endif
+                                    NULL};
     for (int i = 0; standard_paths[i] != NULL; i++) {
         char* full_path = malloc(strlen(standard_paths[i]) + strlen(library_name) + 2); // +2 for '/' and '\0'
         snprintf(full_path, strlen(standard_paths[i]) + strlen(library_name) + 2, "%s/%s", standard_paths[i], library_name);
@@ -81,7 +81,6 @@ char* resolve_library_path(const char* library_name) {
         }
         free(full_path);
     }
-
 
     // If we haven't found it yet, try appending the platform appropriate library extension and trying again
     if (!str_ends_with(library_name, library_extension)) {

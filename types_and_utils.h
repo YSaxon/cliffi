@@ -2,12 +2,11 @@
 #define ARG_TOOLS_H
 
 #include <stdbool.h>
+#include <stddef.h> // For size_t
 #include <stdint.h> // For fixed-width integer types
-#include <stddef.h>  // For size_t
-
 
 typedef enum {
-    //note that we can't use number chars (eg '1') as flags without conflicting with implicit representation of negative numbers
+    // note that we can't use number chars (eg '1') as flags without conflicting with implicit representation of negative numbers
     TYPE_CHAR = 'c',
     TYPE_SHORT = 'h',
     TYPE_INT = 'i',
@@ -18,17 +17,16 @@ typedef enum {
     TYPE_ULONG = 'L',
     TYPE_FLOAT = 'f',
     TYPE_DOUBLE = 'd',
-    TYPE_STRING = 's',  // For null terminated strings (char*)
-    TYPE_POINTER = 'p', // For parsing pointers only, not an actual type
+    TYPE_STRING = 's',      // For null terminated strings (char*)
+    TYPE_POINTER = 'p',     // For parsing pointers only, not an actual type
     TYPE_VOIDPOINTER = 'P', // For representing arbitrary pointers by their addresses
-    TYPE_ARRAY = 'a',   // For parsing only, not an actual type
-    TYPE_VOID = 'v',    // For parsing return types only
-    TYPE_UNKNOWN = -1,   // For representing unknown types when parsing
+    TYPE_ARRAY = 'a',       // For parsing only, not an actual type
+    TYPE_VOID = 'v',        // For parsing return types only
+    TYPE_UNKNOWN = -1,      // For representing unknown types when parsing
     TYPE_STRUCT = 'S',
 } ArgType;
 
-
-typedef enum{
+typedef enum {
     NOT_ARRAY, // evaluates as false
     ARRAY_STATIC_SIZE_UNSET,
     ARRAY_STATIC_SIZE,
@@ -37,7 +35,7 @@ typedef enum{
 } arrayMode;
 
 typedef struct ArgInfo {
-    ArgType type;  // Argument type
+    ArgType type;      // Argument type
     bool explicitType; // True if the type was explicitly specified
     union {
         char c_val;
@@ -52,10 +50,10 @@ typedef struct ArgInfo {
         double d_val;
         char* str_val; // For strings
         void* ptr_val; // For pointers or complex data
-    } *value;
-    int pointer_depth; // For pointer types, indicates how many levels of indirection
+    }* value;
+    int pointer_depth;             // For pointer types, indicates how many levels of indirection
     int array_value_pointer_depth; // For array types, indicates how many levels of indirection for the value pointers
-    arrayMode is_array; // For pointer types, indicates if the pointer is an array
+    arrayMode is_array;            // For pointer types, indicates if the pointer is an array
     size_t static_or_implied_size; // For array types, indicates the size of the array
     union {
         int argnum_of_size_t_to_be_replaced; // For array types, indicates which argument to use as the size_t, -1 = RETURN VAL, 0 = FIRST ARG, 1 = SECOND ARG, etc.
@@ -65,17 +63,16 @@ typedef struct ArgInfo {
     struct StructInfo* struct_info; // For struct types, contains the struct info, since we can't set the ptr_val until we calculate the raw memory for the struct later
 } ArgInfo;
 
-
 typedef struct ArgInfoContainer {
     ArgInfo** args;
     int arg_count;
     ArgInfo* return_var; // this and the next one really belong in FunctionCallInfo, but we need to use them in the parsing functions
-    int vararg_start; // -1 if no varargs, otherwise the index of the first vararg
+    int vararg_start;    // -1 if no varargs, otherwise the index of the first vararg
 } ArgInfoContainer;
 
 typedef struct StructInfo {
     struct ArgInfoContainer info;
-    //possibly we should save a pointer to the struct's memory, so we can free it later
+    // possibly we should save a pointer to the struct's memory, so we can free it later
     bool is_packed;
 } StructInfo;
 typedef struct FunctionCallInfo {

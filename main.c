@@ -1,17 +1,16 @@
+#include "argparser.h"
+#include "invoke_handler.h"
+#include "library_manager.h"
+#include "library_path_resolver.h"
+#include "return_formatter.h"
+#include "types_and_utils.h"
+#include "var_map.h"
+#include <setjmp.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "library_path_resolver.h"
-#include "argparser.h"
-#include "invoke_handler.h"
-#include "return_formatter.h"
-#include "types_and_utils.h"
-#include <setjmp.h>
-#include <signal.h>
-#include "library_manager.h"
-#include "var_map.h"
-
 
 #if !defined(_WIN32) && !defined(_WIN64)
 #define use_readline
@@ -24,11 +23,11 @@
 #endif
 
 #ifdef use_readline
-#include <readline/readline.h>
-#include <readline/history.h>
-#include <unistd.h> // only used for forking for --repltest repl test harness mode
-#include <sys/wait.h> // same as above
 #include "tokenize.h"
+#include <readline/history.h>
+#include <readline/readline.h>
+#include <sys/wait.h> // same as above
+#include <unistd.h>   // only used for forking for --repltest repl test harness mode
 #endif
 
 #if (defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))) && !defined(__ANDROID__)
@@ -40,9 +39,9 @@
 #endif
 
 #ifdef _WIN32
-    #include <windows.h>
+#include <windows.h>
 #else
-    #include <dlfcn.h>
+#include <dlfcn.h>
 #endif
 
 const char* NAME = "cliffi";
@@ -53,9 +52,9 @@ sigjmp_buf jmpBuffer;
 
 #ifdef use_backtrace
 void printStackTrace() {
-    void *array[10];
+    void* array[10];
     size_t size;
-    char **strings;
+    char** strings;
     size_t i;
 
     size = backtrace(array, 10);
@@ -77,9 +76,9 @@ void printStackTrace() {
 #endif
 
 void exit_or_restart(int status) {
-    #ifdef use_backtrace
+#ifdef use_backtrace
     if (status != 0) printStackTrace();
-    #endif
+#endif
     siglongjmp(jmpBuffer, status);
 }
 
@@ -97,110 +96,108 @@ void handleSegfault(int signal) {
     siglongjmp(jmpBuffer, 1);
 }
 
-
-void print_usage(char* argv0){
-        printf( "%s %s\n", NAME, VERSION);
-        printf( "Usage: %s %s\n", argv0, BASIC_USAGE_STRING);
-        printf( "  [--help]         Print this help message\n"
-        #ifdef use_readline
-                "  [--repl]         Start the REPL\n"
-        #endif
-                "  <library>        The path to the shared library containing the function to invoke\n"
-                "                   or the name of the library if it is in the system path\n"
-                "  <typeflag>       The type of the return value of the function to invoke\n"
-                "                   v for void, i for int, s for string, etc\n"
-                "  <function_name>  The name of the function to invoke\n"
-                "  [-<typeflag>] <arg> The argument values to pass to the function\n"
-                "                   Types will be inferred if not prefixed with flags\n"
-                "                   Flags look like -i for int, -s for string, etc\n"
-                "  ...              Mark the position of varargs in the function signature if applicable\n");
-        printf( "\n"
-                "  BASIC EXAMPLES:\n"
-                "         %s libexample.so i addints 3 4\n", argv0);
-        printf( "         %s path/to/libexample.so v dofoo\n", argv0);
-        printf( "         %s ./libexample.so s concatstrings -s hello -s world\n", argv0);
-        printf( "         %s libexample.so s concatstrings hello world\n", argv0);
-        printf( "         %s libexample.so d multdoubles -d 1.5 1.5d\n", argv0);
-        printf( "         %s libc.so i printf 'Here is a number: %%.3f' ... 4.5", argv0);
-        printf( "\n");
-        printf( "  TYPES:\n"
-                "     The primitive typeflags are:\n");
-        printf( "       %c for void, only allowed as a return type, and does not accept prefixes\n", TYPE_VOID);
-        printf( "       %c for char\n", TYPE_CHAR);
-        printf( "       %c for short\n", TYPE_SHORT);
-        printf( "       %c for int\n", TYPE_INT);
-        printf( "       %c for long\n", TYPE_LONG);
-        printf( "       %c for unsigned char\n", TYPE_UCHAR);
-        printf( "       %c for unsigned short\n", TYPE_USHORT);
-        printf( "       %c for unsigned int\n", TYPE_UINT);
-        printf( "       %c for unsigned long\n", TYPE_ULONG);
-        printf( "       %c for float, can also be specified by suffixing the value with f\n", TYPE_FLOAT);
-        printf( "       %c for double, can also be specified by suffixing the value with d\n", TYPE_DOUBLE);
-        printf( "       %c for cstring (ie null terminated char*)\n", TYPE_STRING);
-        printf( "       %c for arbitrary pointer (ie void*) specified by address\n", TYPE_VOIDPOINTER);
-        printf("\n");
-        printf( "  POINTERS AND ARRAYS AND STRUCTS:\n"
-                "     Typeflags can include additional flag prefixes to specify pointers, arrays or structs:\n"
-                "     <typeflag> = [p[p..]]<primitive_type>\n"
-                "     <typeflag> = [p[p..]][a<size>|t<argnum>][p[p..]]<primitive_type>\n"
-                "     <typeflag> = [p[p..]]S: <arg> <arg>.. :S \n"
-                "   POINTERS:\n"
-                "       p[p..]   The argument is a pointer to [an array of / a struct of] specified type\n"
-                "                The number of p's indicates the pointer depth\n"
-                "   ARRAYS:\n"
-                "       Arrays can be used for both arguments and return values.\n"
-                "       In arguments, the size can be optionally inferred from the values.\n"
-                "       In return values, the size must be specified\n"
-                "            Values can be specified as unspaced comma delimitted or as a single unbroken hex value\n"
-                "       a<type> <v>,<v>,..   The argument is an array of the specified type and inferred size (only valid for arguments)\n"
-                "       a<type> 0xdeadbe..   The argument is an array of the specified type and inferred size (only valid for arguments)\n"
-                "            Sizes are given explicitly following the type character flag and can be static or dynamic\n"
-                "       a<type><size>        The array is of the following static <size>\n"
-                "       a<type>t<argnum>     (Notice the `t` flag!) The size of the array is dependent on the value of <argnum>\n"
-                "                            <argnum> is 0 for return value or n for the nth (1-indexed) argument \n"
-                "       In arguments, where the size is specified, the value can be given as NULL, if the function is expected to allocate the array\n"
-                "       Note that pa<type> means a pointer to an array of type, while ap<type> means an array of <type> pointers \n"
-                "   ARRAY EXAMPLES:\n");
-        printf( "     * For a function: int return_buffer(char** outbuff) which returns size\n");
-        printf( "     %s libexample.so v return_buffer -past2 NULL -pi 0\n", argv0);
-        printf( "     * Or alternatively if it were: void return_buffer(char** outbuff, size_t* outsize)\n");
-        printf( "     %s libexample.so i return_buffer -past0 NULL\n", argv0);
-        printf( "     * For a function: int add_all_ints(int** nums, size_t size) which returns sum\n");
-        printf( "     %s libexample.so i add_all_ints -ai 1,2,3,4,5 -i 5\n", argv0);
-        printf( "\n");
-        printf( "   STRUCTS:\n"
-                "      Structs can be used for both arguments and return values\n"
-                "      The general syntax is [-]S[K]: <arg> [<arg>..] :S \n"
-                "      For arguments the dash is included and values are given (with optional typeflags)\n"
-                "      -S[K]: [-typeflag] <arg> [[-typeflag] <arg>..] S: \n"
-                "      For return values the dash is omitted and only dashless typeflags are given\n"
-                "      S[K]: <typeflag> [<typeflag>..] :S\n"
-                "      The optional K following the S denotes a pacKed struct, ie __attribute__((packed)), where the fields are unpadded\n"
-                "      As always, the S: can be prefixed with p's to indicate struct pointers of arbitrary depth\n"
-                "      Nested structs are permitted but be careful with the open and close tags\n"
-                "    STRUCT EXAMPLES:\n"
-                "      Given a struct: struct mystruct { int x; char* s; }\n"
-                "      * For a function: void print_struct(struct mystruct s)\n"
-                "      %s libexample.so v print_struct -S: 3 \"hello world\" :S\n", argv0);
-        printf( "      * For a function: struct mystruct return_struct(int x, char* s)\n"
-                "      %s libexample.so S: i s :S 5 \"hello world\"\n", argv0);
-        printf( "      * For a function: modifyStruct(struct mystruct* s)\n"
-                "      %s libexample.so v modifyStruct -pS: 3 \"hello world\" :S\n", argv0);
-        printf( "\n");
-        printf( "  VARARGS:\n"
-                "     If a function takes varargs the position of the varargs should be specified with the `...` flag\n"
-                "     The `...` flag may sometimes be the first arg if the function takes all varargs, or the last for a function that takes varargs where none are being passed\n"
-                "     The varargs themselves are the same as any other function args and can be with or without typeflags\n"
-                "     (Floats and types shorter than int will be upgraded for you automatically)\n"
-                "    VARARGS EXAMPLES:\n"
-                "      %s libc.so i printf 'Hello %%s, your number is: %%.3f' ... bob 4.5\n", argv0);
-        printf( "      %s libc.so i printf 'This is just a static string' ... \n", argv0);
-        printf( "      %s some_lib.so v func_taking_all_varargs ... -i 3 -s hello\n", argv0);
+void print_usage(char* argv0) {
+    printf("%s %s\n", NAME, VERSION);
+    printf("Usage: %s %s\n", argv0, BASIC_USAGE_STRING);
+    printf("  [--help]         Print this help message\n"
+#ifdef use_readline
+           "  [--repl]         Start the REPL\n"
+#endif
+           "  <library>        The path to the shared library containing the function to invoke\n"
+           "                   or the name of the library if it is in the system path\n"
+           "  <typeflag>       The type of the return value of the function to invoke\n"
+           "                   v for void, i for int, s for string, etc\n"
+           "  <function_name>  The name of the function to invoke\n"
+           "  [-<typeflag>] <arg> The argument values to pass to the function\n"
+           "                   Types will be inferred if not prefixed with flags\n"
+           "                   Flags look like -i for int, -s for string, etc\n"
+           "  ...              Mark the position of varargs in the function signature if applicable\n");
+    printf("\n"
+           "  BASIC EXAMPLES:\n");
+    printf("         %s libexample.so i addints 3 4\n", argv0);
+    printf("         %s path/to/libexample.so v dofoo\n", argv0);
+    printf("         %s ./libexample.so s concatstrings -s hello -s world\n", argv0);
+    printf("         %s libexample.so s concatstrings hello world\n", argv0);
+    printf("         %s libexample.so d multdoubles -d 1.5 1.5d\n", argv0);
+    printf("         %s libc.so i printf 'Here is a number: %%.3f' ... 4.5", argv0);
+    printf("\n");
+    printf("  TYPES:\n"
+           "     The primitive typeflags are:\n");
+    printf("       %c for void, only allowed as a return type, and does not accept prefixes\n", TYPE_VOID);
+    printf("       %c for char\n", TYPE_CHAR);
+    printf("       %c for short\n", TYPE_SHORT);
+    printf("       %c for int\n", TYPE_INT);
+    printf("       %c for long\n", TYPE_LONG);
+    printf("       %c for unsigned char\n", TYPE_UCHAR);
+    printf("       %c for unsigned short\n", TYPE_USHORT);
+    printf("       %c for unsigned int\n", TYPE_UINT);
+    printf("       %c for unsigned long\n", TYPE_ULONG);
+    printf("       %c for float, can also be specified by suffixing the value with f\n", TYPE_FLOAT);
+    printf("       %c for double, can also be specified by suffixing the value with d\n", TYPE_DOUBLE);
+    printf("       %c for cstring (ie null terminated char*)\n", TYPE_STRING);
+    printf("       %c for arbitrary pointer (ie void*) specified by address\n", TYPE_VOIDPOINTER);
+    printf("\n");
+    printf("  POINTERS AND ARRAYS AND STRUCTS:\n"
+           "     Typeflags can include additional flag prefixes to specify pointers, arrays or structs:\n"
+           "     <typeflag> = [p[p..]]<primitive_type>\n"
+           "     <typeflag> = [p[p..]][a<size>|t<argnum>][p[p..]]<primitive_type>\n"
+           "     <typeflag> = [p[p..]]S: <arg> <arg>.. :S \n"
+           "   POINTERS:\n"
+           "       p[p..]   The argument is a pointer to [an array of / a struct of] specified type\n"
+           "                The number of p's indicates the pointer depth\n"
+           "   ARRAYS:\n"
+           "       Arrays can be used for both arguments and return values.\n"
+           "       In arguments, the size can be optionally inferred from the values.\n"
+           "       In return values, the size must be specified\n"
+           "            Values can be specified as unspaced comma delimitted or as a single unbroken hex value\n"
+           "       a<type> <v>,<v>,..   The argument is an array of the specified type and inferred size (only valid for arguments)\n"
+           "       a<type> 0xdeadbe..   The argument is an array of the specified type and inferred size (only valid for arguments)\n"
+           "            Sizes are given explicitly following the type character flag and can be static or dynamic\n"
+           "       a<type><size>        The array is of the following static <size>\n"
+           "       a<type>t<argnum>     (Notice the `t` flag!) The size of the array is dependent on the value of <argnum>\n"
+           "                            <argnum> is 0 for return value or n for the nth (1-indexed) argument \n"
+           "       In arguments, where the size is specified, the value can be given as NULL, if the function is expected to allocate the array\n"
+           "       Note that pa<type> means a pointer to an array of type, while ap<type> means an array of <type> pointers \n"
+           "   ARRAY EXAMPLES:\n");
+    printf("     * For a function: int return_buffer(char** outbuff) which returns size\n");
+    printf("     %s libexample.so v return_buffer -past2 NULL -pi 0\n", argv0);
+    printf("     * Or alternatively if it were: void return_buffer(char** outbuff, size_t* outsize)\n");
+    printf("     %s libexample.so i return_buffer -past0 NULL\n", argv0);
+    printf("     * For a function: int add_all_ints(int** nums, size_t size) which returns sum\n");
+    printf("     %s libexample.so i add_all_ints -ai 1,2,3,4,5 -i 5\n", argv0);
+    printf("\n");
+    printf("   STRUCTS:\n"
+           "      Structs can be used for both arguments and return values\n"
+           "      The general syntax is [-]S[K]: <arg> [<arg>..] :S \n"
+           "      For arguments the dash is included and values are given (with optional typeflags)\n"
+           "      -S[K]: [-typeflag] <arg> [[-typeflag] <arg>..] S: \n"
+           "      For return values the dash is omitted and only dashless typeflags are given\n"
+           "      S[K]: <typeflag> [<typeflag>..] :S\n"
+           "      The optional K following the S denotes a pacKed struct, ie __attribute__((packed)), where the fields are unpadded\n"
+           "      As always, the S: can be prefixed with p's to indicate struct pointers of arbitrary depth\n"
+           "      Nested structs are permitted but be careful with the open and close tags\n"
+           "    STRUCT EXAMPLES:\n"
+           "      Given a struct: struct mystruct { int x; char* s; }\n"
+           "      * For a function: void print_struct(struct mystruct s)\n");
+    printf("      %s libexample.so v print_struct -S: 3 \"hello world\" :S\n", argv0);
+    printf("      * For a function: struct mystruct return_struct(int x, char* s)\n");
+    printf("      %s libexample.so S: i s :S 5 \"hello world\"\n", argv0);
+    printf("      * For a function: modifyStruct(struct mystruct* s)\n");
+    printf("      %s libexample.so v modifyStruct -pS: 3 \"hello world\" :S\n", argv0);
+    printf("\n");
+    printf("  VARARGS:\n"
+           "     If a function takes varargs the position of the varargs should be specified with the `...` flag\n"
+           "     The `...` flag may sometimes be the first arg if the function takes all varargs, or the last for a function that takes varargs where none are being passed\n"
+           "     The varargs themselves are the same as any other function args and can be with or without typeflags\n"
+           "     (Floats and types shorter than int will be upgraded for you automatically)\n"
+           "    VARARGS EXAMPLES:\n");
+    printf("      %s libc.so i printf 'Hello %%s, your number is: %%.3f' ... bob 4.5\n", argv0);
+    printf("      %s libc.so i printf 'This is just a static string' ... \n", argv0);
+    printf("      %s some_lib.so v func_taking_all_varargs ... -i 3 -s hello\n", argv0);
 }
 
-
 int invoke_and_print_return_value(FunctionCallInfo* call_info, void (*func)(void)) {
-    int invoke_result = invoke_dynamic_function(call_info,func);
+    int invoke_result = invoke_dynamic_function(call_info, func);
     if (invoke_result != 0) {
         fprintf(stderr, "Error: Function invocation failed\n");
     } else {
@@ -230,21 +227,20 @@ int invoke_and_print_return_value(FunctionCallInfo* call_info, void (*func)(void
 
 void* loadFunctionHandle(void* lib_handle, const char* function_name) {
     void (*func)(void) = NULL;
-    #ifdef _WIN32
+#ifdef _WIN32
     FARPROC temp = GetProcAddress(lib_handle, function_name);
     if (temp != NULL) {
         memcpy(&func, &temp, sizeof(temp)); // to fix warning re dereferencing type-punned pointer
     }
-
-    #else
+#else
     *(void**)(&func) = dlsym(lib_handle, function_name);
-    #endif
+#endif
     if (!func) {
-        #ifdef _WIN32
+#ifdef _WIN32
         fprintf(stderr, "Failed to find function: %lu\n", GetLastError());
-        #else
+#else
         fprintf(stderr, "Failed to find function: %s\n", dlerror());
-        #endif
+#endif
         exit_or_restart(1);
         return NULL; // just to silence a warning, not actually reachable
     }
@@ -254,10 +250,10 @@ void* loadFunctionHandle(void* lib_handle, const char* function_name) {
 #ifdef use_readline
 
 void printVariableWithArgInfo(char* varName, ArgInfo* arg) {
-        format_and_print_arg_type(arg);
-        printf(" %s = ", varName);
-        format_and_print_arg_value(arg);
-        printf("\n");
+    format_and_print_arg_type(arg);
+    printf(" %s = ", varName);
+    format_and_print_arg_value(arg);
+    printf("\n");
 }
 
 void parsePrintVariable(char* varName) {
@@ -268,10 +264,10 @@ void parsePrintVariable(char* varName) {
         printVariableWithArgInfo(varName, arg);
     }
 }
-void* getAddressFromAddressStringOrNameOfCoercableVariable(char* addressStr){
+void* getAddressFromAddressStringOrNameOfCoercableVariable(char* addressStr) {
     void* address = NULL;
 
-    if(addressStr==NULL || strlen(addressStr) == 0) {
+    if (addressStr == NULL || strlen(addressStr) == 0) {
         fprintf(stderr, "Memory address cannot be empty.\n");
         exit_or_restart(1);
     }
@@ -281,9 +277,9 @@ void* getAddressFromAddressStringOrNameOfCoercableVariable(char* addressStr){
         exit_or_restart(1);
     }
 
-    //check for a + or * operand
+    // check for a + or * operand
     char* operand_str = strchr(addressStr, '+');
-    if (operand_str==NULL) {
+    if (operand_str == NULL) {
         operand_str = strchr(addressStr, '*'); // delayed inner recursive method gets calculated first
     }
     if (operand_str != NULL) {
@@ -292,6 +288,7 @@ void* getAddressFromAddressStringOrNameOfCoercableVariable(char* addressStr){
         operand_str++;
         void* operand_1 = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
         void* operand_2 = getAddressFromAddressStringOrNameOfCoercableVariable(operand_str);
+        // fprintf(stderr,"Address calculation: %p %c %p\n", operand_1, operand, operand_2);
         if (operand_1 == NULL || operand_2 == NULL) {
             fprintf(stderr, "Error: Invalid addition, one or more strings was not a valid address.\n");
             exit_or_restart(1);
@@ -306,11 +303,11 @@ void* getAddressFromAddressStringOrNameOfCoercableVariable(char* addressStr){
         }
     }
 
-    if (isHexFormat(addressStr) || isAllDigits(addressStr)){ 
+    if (isHexFormat(addressStr) || isAllDigits(addressStr)) {
         if (sizeof(void*) <= sizeof(long)) {
             address = (void*)(uintptr_t)strtoul(addressStr, NULL, 0);
         } else {
-            address  = (void*)(uintptr_t)strtoull(addressStr, NULL, 0);
+            address = (void*)(uintptr_t)strtoull(addressStr, NULL, 0);
         }
     } else {
         // if it's not a number, it must be a variable name
@@ -320,40 +317,41 @@ void* getAddressFromAddressStringOrNameOfCoercableVariable(char* addressStr){
             exit_or_restart(1);
         } else {
             switch (var->type) {
-                case TYPE_INT:
-                    address = (void*)(uintptr_t)*(int*)dereferencePointerLevels(var->value, var->pointer_depth);
-                    break;
-                case TYPE_LONG:
-                    address = (void*)(uintptr_t)*(long*)dereferencePointerLevels(var->value, var->pointer_depth);
-                    break;
-                case TYPE_UINT:
-                    address = (void*)(uintptr_t)*(unsigned int*)dereferencePointerLevels(var->value, var->pointer_depth);
-                    break;
-                case TYPE_ULONG:
-                    address = (void*)(uintptr_t)*(unsigned long*)dereferencePointerLevels(var->value, var->pointer_depth);
-                    break;
-                case TYPE_VOIDPOINTER:
-                    address = dereferencePointerLevels(var->value->ptr_val, var->pointer_depth);
-                    break;
-                default:
-                    fprintf(stderr, "Error: %s is not a (void*) type, (nor any other type that could be coerced to a pointer).\n", addressStr);
-                    exit_or_restart(1); return NULL;
-                }
+            case TYPE_INT:
+                address = (void*)(uintptr_t) * (int*)dereferencePointerLevels(var->value, var->pointer_depth);
+                break;
+            case TYPE_LONG:
+                address = (void*)(uintptr_t) * (long*)dereferencePointerLevels(var->value, var->pointer_depth);
+                break;
+            case TYPE_UINT:
+                address = (void*)(uintptr_t) * (unsigned int*)dereferencePointerLevels(var->value, var->pointer_depth);
+                break;
+            case TYPE_ULONG:
+                address = (void*)(uintptr_t) * (unsigned long*)dereferencePointerLevels(var->value, var->pointer_depth);
+                break;
+            case TYPE_VOIDPOINTER:
+                address = dereferencePointerLevels(var->value->ptr_val, var->pointer_depth);
+                break;
+            default:
+                fprintf(stderr, "Error: %s is not a (void*) type, (nor any other type that could be coerced to a pointer).\n", addressStr);
+                exit_or_restart(1);
+                return NULL;
             }
-            if (var->pointer_depth > 0) {
-                fprintf(stderr, "Warning: %s is specified with 'p' indirection. We are dereferencing it %d level(s) and using %p as the address\n", addressStr, var->pointer_depth, address);
-            }
+        }
+        if (var->pointer_depth > 0) {
+            fprintf(stderr, "Warning: %s is specified with 'p' indirection. We are dereferencing it %d level(s) and using %p as the address\n", addressStr, var->pointer_depth, address);
+        }
     }
     return address;
 }
 
 void parseStoreToMemoryWithAddressAndValue(char* addressStr, int varValueCount, char** varValues) {
-    
-    if (addressStr==NULL || strlen(addressStr) == 0) {
+
+    if (addressStr == NULL || strlen(addressStr) == 0) {
         fprintf(stderr, "Memory address cannot be empty.\n");
         exit_or_restart(1);
     }
-    if (varValues== NULL || varValueCount == 0 || strlen(varValues[0]) == 0) {
+    if (varValues == NULL || varValueCount == 0 || strlen(varValues[0]) == 0) {
         fprintf(stderr, "Variable value cannot be empty.\n");
         exit_or_restart(1);
     }
@@ -362,54 +360,54 @@ void parseStoreToMemoryWithAddressAndValue(char* addressStr, int varValueCount, 
 
     int args_used = 0;
     ArgInfo* arg = parse_one_arg(varValueCount, varValues, &args_used, false);
-    if (args_used+1 != varValueCount) {
+    if (args_used + 1 != varValueCount) {
         fprintf(stderr, "Invalid variable value.\n");
         free(arg);
-        exit_or_restart(1); return;
+        exit_or_restart(1);
+        return;
     }
-    
-    if(arg->type == TYPE_STRUCT) {
-        //temporarily store the struct in a raw value and copy it to the destination address
-        // arg->value->ptr_val = make_raw_value_for_struct(arg, false);
+
+    if (arg->type == TYPE_STRUCT) {
+        // temporarily store the struct in a raw value and copy it to the destination address
+        //  arg->value->ptr_val = make_raw_value_for_struct(arg, false);
         void* raw_struct = make_raw_value_for_struct(arg, false);
-        size_t size = arg->pointer_depth==0? get_size_of_struct(arg): sizeof(void*);
+        size_t size = arg->pointer_depth == 0 ? get_size_of_struct(arg) : sizeof(void*);
         memcpy(destAddress, raw_struct, size);
-    }
-    else if (arg->is_array) { // if it's an array then the pointer to the raw value is stored in the ptr_val field
+    } else if (arg->is_array) { // if it's an array then the pointer to the raw value is stored in the ptr_val field
         if (arg->array_value_pointer_depth > 0) {
             memcpy(destAddress, arg->value->ptr_val, sizeof(void*));
         } else {
             size_t array_len = get_size_for_arginfo_sized_array(arg);
             memcpy(destAddress, arg->value->ptr_val, array_len * typeToSize(arg->type, arg->array_value_pointer_depth));
-    }} else {
+        }
+    } else {
         memcpy(destAddress, arg->value, typeToSize(arg->type, arg->array_value_pointer_depth));
     }
     printVariableWithArgInfo(addressStr, arg);
-    
 }
 
-
-ArgInfo* parseLoadMemoryToArgWithType(char* addressStr, int typeArgc, char** typeArgv){
-    if (addressStr==NULL || strlen(addressStr) == 0) {
+ArgInfo* parseLoadMemoryToArgWithType(char* addressStr, int typeArgc, char** typeArgv) {
+    if (addressStr == NULL || strlen(addressStr) == 0) {
         fprintf(stderr, "Memory address cannot be empty.\n");
         exit_or_restart(1);
     }
-    if (typeArgv== NULL || typeArgc == 0 || strlen(typeArgv[0]) == 0) {
+    if (typeArgv == NULL || typeArgc == 0 || strlen(typeArgv[0]) == 0) {
         fprintf(stderr, "Variable type cannot be empty.\n");
         exit_or_restart(1);
     }
 
     int args_used = 0;
     ArgInfo* arg = parse_one_arg(typeArgc, typeArgv, &args_used, true);
-    if (args_used+1 != typeArgc) {
+    if (args_used + 1 != typeArgc) {
         fprintf(stderr, "Invalid type. Specify it as if it were a return type (ie types only, no dashes).\n");
         free(arg);
-        exit_or_restart(1); return NULL;
+        exit_or_restart(1);
+        return NULL;
     }
 
     void* sourceAddress = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
 
-    //possibly we also want to check if its an array and if so copy it's address instead of the value since we use pointer types for arrays (as if it was inside a struct)
+    // possibly we also want to check if its an array and if so copy it's address instead of the value since we use pointer types for arrays (as if it was inside a struct)
     if (arg->is_array) {
         arg->value->ptr_val = sourceAddress;
     } else if (arg->type == TYPE_STRUCT) {
@@ -434,62 +432,62 @@ void parseDumpMemoryWithAddressAndType(char* addressStr, int varValueCount, char
 
 void parseSetVariableWithNameAndValue(char* varName, int varValueCount, char** varValues) {
 
-        if (varName==NULL || strlen(varName) == 0) {
-            fprintf(stderr, "Variable name cannot be empty.\n");
-            exit_or_restart(1);
-        } else if (varValues== NULL || varValueCount == 0 || strlen(varValues[0]) == 0) {
-            fprintf(stderr, "Variable value cannot be empty.\n");
-            exit_or_restart(1);
-        }
+    if (varName == NULL || strlen(varName) == 0) {
+        fprintf(stderr, "Variable name cannot be empty.\n");
+        exit_or_restart(1);
+    } else if (varValues == NULL || varValueCount == 0 || strlen(varValues[0]) == 0) {
+        fprintf(stderr, "Variable value cannot be empty.\n");
+        exit_or_restart(1);
+    }
 
-        if (strlen(varName) == 1 && charToType(*varName) != TYPE_UNKNOWN) {
-            fprintf(stderr, "Variable name cannot be a character used in parsing types, such as %s which is used for %s\n", varName, typeToString(charToType(*varName)));
-            exit_or_restart(1);
-        } else if (*varName == '-') {
-            fprintf(stderr, "Variable names cannot start with a dash.\n");
-            exit_or_restart(1);
-        } else if (isAllDigits(varName) || isHexFormat(varName) || isFloatingPoint(varName)) {
-            fprintf(stderr, "Variable names cannot be a number.\n");
-            exit_or_restart(1);
-        }
+    if (strlen(varName) == 1 && charToType(*varName) != TYPE_UNKNOWN) {
+        fprintf(stderr, "Variable name cannot be a character used in parsing types, such as %s which is used for %s\n", varName, typeToString(charToType(*varName)));
+        exit_or_restart(1);
+    } else if (*varName == '-') {
+        fprintf(stderr, "Variable names cannot start with a dash.\n");
+        exit_or_restart(1);
+    } else if (isAllDigits(varName) || isHexFormat(varName) || isFloatingPoint(varName)) {
+        fprintf(stderr, "Variable names cannot be a number.\n");
+        exit_or_restart(1);
+    }
 
-        int args_used = 0;
-        ArgInfo* arg = parse_one_arg(varValueCount, varValues, &args_used, false);
-        if (args_used+1 != varValueCount) {
-            fprintf(stderr, "Invalid variable value.\n");
-            free(arg);
-            exit_or_restart(1); return;
-        }
-        printVariableWithArgInfo(varName, arg);
-        setVar(varName, arg);
-        //Should we check if the variable already existed and free the previous value? Or maybe keep a reference count?
+    int args_used = 0;
+    ArgInfo* arg = parse_one_arg(varValueCount, varValues, &args_used, false);
+    if (args_used + 1 != varValueCount) {
+        fprintf(stderr, "Invalid variable value.\n");
+        free(arg);
+        exit_or_restart(1);
+        return;
+    }
+    printVariableWithArgInfo(varName, arg);
+    setVar(varName, arg);
+    // Should we check if the variable already existed and free the previous value? Or maybe keep a reference count?
 }
 
-void executeREPLCommand(char* command){
+void executeREPLCommand(char* command) {
     int argc;
-    char ** argv;
-    if (tokenize(command, &argc, &argv)!=0) {
+    char** argv;
+    if (tokenize(command, &argc, &argv) != 0) {
         fprintf(stderr, "Error: Tokenization failed for command\n");
         return;
     }
 
     // syntactic sugar for set <var> <value> and print <var>
     if (argc == 1) {
-        if (isHexFormat(argv[0])){
+        if (isHexFormat(argv[0])) {
             fprintf(stderr, "You can't print a memory address with specifying a type, try again with: dump <type> %s\n", argv[0]);
         } else {
             parsePrintVariable(argv[0]);
         }
         return;
     } else if (argc >= 3 && strcmp(argv[1], "=") == 0) {
-        if (isHexFormat(argv[0])){
-            parseStoreToMemoryWithAddressAndValue(argv[0], argc-2, argv+2);
+        if (isHexFormat(argv[0])) {
+            parseStoreToMemoryWithAddressAndValue(argv[0], argc - 2, argv + 2);
         } else {
-            parseSetVariableWithNameAndValue(argv[0], argc-2, argv+2);
+            parseSetVariableWithNameAndValue(argv[0], argc - 2, argv + 2);
         }
         return;
     }
-
 
     if (argc < 3) {
         fprintf(stderr, "Invalid command '%s'. Type 'help' for assistance.\n", command);
@@ -524,76 +522,74 @@ char** cliffi_completion(const char* text, int state) {
     // if we are at the second token, we are looking for a return type and we should complete typeflags
     // if we are at the third token, we are looking for a function name and we should complete function names (I guess we could use dlsym to get the list of functions in the library)
     // from there we would really need to apply the parser to see if we are in a typeflag or an argument etc, and go from there
-    }
+}
 
 void parseSetVariable(char* varCommand) {
-        int argc;
-        char ** argv;
-        tokenize(varCommand, &argc, &argv);
-        // <var> <value>
-        if (argc < 2) {
-            fprintf(stderr, "Error: Invalid number of arguments for set\n");
-            return;
-        }
-        char* varName = argv[0]; // first argument is the variable name
-        int value_args = argc-1; // all but the first argument
-        char** value_argv = argv+1; // starts after the first argument
-        parseSetVariableWithNameAndValue(varName, value_args, value_argv);
+    int argc;
+    char** argv;
+    tokenize(varCommand, &argc, &argv);
+    // <var> <value>
+    if (argc < 2) {
+        fprintf(stderr, "Error: Invalid number of arguments for set\n");
+        return;
+    }
+    char* varName = argv[0];      // first argument is the variable name
+    int value_args = argc - 1;    // all but the first argument
+    char** value_argv = argv + 1; // starts after the first argument
+    parseSetVariableWithNameAndValue(varName, value_args, value_argv);
 }
 
 void parseStoreToMemory(char* memCommand) {
     int argc;
-    char ** argv;
+    char** argv;
     tokenize(memCommand, &argc, &argv);
     // <address> <value>
     if (argc < 2) {
         fprintf(stderr, "Error: Invalid number of arguments for storemem\n");
         return;
     }
-    char* address = argv[0]; // first argument is the address
-    int value_args = argc-1; // all but the first argument
-    char** value_argv = argv+1; // starts after the first argument
+    char* address = argv[0];      // first argument is the address
+    int value_args = argc - 1;    // all but the first argument
+    char** value_argv = argv + 1; // starts after the first argument
     parseStoreToMemoryWithAddressAndValue(address, value_args, value_argv);
-
 }
 
 void parseDumpMemory(char* memCommand) {
     int argc;
-    char ** argv;
+    char** argv;
     tokenize(memCommand, &argc, &argv);
     // <type> <address>
     if (argc < 2) {
         fprintf(stderr, "Error: Invalid number of arguments for dumpmem\n");
         return;
     }
-    char* address = argv[argc-1]; // last argument is the address
-    int type_args = argc-1; // all but the last argument
-    char** type_argv = argv; // starts at the first argument
+    char* address = argv[argc - 1]; // last argument is the address
+    int type_args = argc - 1;       // all but the last argument
+    char** type_argv = argv;        // starts at the first argument
     parseDumpMemoryWithAddressAndType(address, type_args, type_argv);
-
 }
 
-void parseLoadMemoryToVar(char* loadCommand){
+void parseLoadMemoryToVar(char* loadCommand) {
     int argc;
-    char ** argv;
+    char** argv;
     tokenize(loadCommand, &argc, &argv);
-    // <var> <type> <address> 
+    // <var> <type> <address>
     if (argc < 3) {
         fprintf(stderr, "Error: Invalid number of arguments for loadmem\n");
         return;
     }
     char* varName = argv[0];
-    char* address = argv[argc-1]; // last argument is the address
-    int type_args = argc-2; // all but the first and last argument
-    char** type_argv = argv+1; // starts after the first argument 
+    char* address = argv[argc - 1]; // last argument is the address
+    int type_args = argc - 2;       // all but the first and last argument
+    char** type_argv = argv + 1;    // starts after the first argument
     ArgInfo* arg = parseLoadMemoryToArgWithType(address, type_args, type_argv);
     printVariableWithArgInfo(varName, arg);
     setVar(varName, arg);
 }
 
-void parseCalculateOffset(char* calculateCommand){
+void parseCalculateOffset(char* calculateCommand) {
     int argc;
-    char ** argv;
+    char** argv;
     tokenize(calculateCommand, &argc, &argv);
     // <var> <library> <symbol> <address>
     if (argc < 4) {
@@ -605,7 +601,7 @@ void parseCalculateOffset(char* calculateCommand){
     char* symbolName = argv[2];
     char* addressStr = argv[3];
     void* address = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
-    //possibly should pass this through the parser to get the actual path of the library
+    // possibly should pass this through the parser to get the actual path of the library
     void* lib_handle = getOrLoadLibrary(libraryName);
     void* symbol_handle = loadFunctionHandle(lib_handle, symbolName);
     uintptr_t symbol_address = (uintptr_t)symbol_handle;
@@ -618,9 +614,9 @@ void parseCalculateOffset(char* calculateCommand){
     parseSetVariableWithNameAndValue(varName, 2, varValues);
 }
 
-void parseHexdump(char* hexdumpCommand){
+void parseHexdump(char* hexdumpCommand) {
     int argc;
-    char ** argv;
+    char** argv;
     tokenize(hexdumpCommand, &argc, &argv);
     // <address> <size>
     if (argc < 2) {
@@ -642,9 +638,8 @@ void startRepl() {
         command = trim_whitespace(command);
         if (strlen(command) > 0) {
             // fprintf(stderr, "Command: %s\n", command);
-            HIST_ENTRY * last_command = history_get(history_length);
-            if (last_command == NULL || strcmp(command, last_command->line) != 0)
-            {
+            HIST_ENTRY* last_command = history_get(history_length);
+            if (last_command == NULL || strcmp(command, last_command->line) != 0) {
                 add_history(command);
                 write_history(".cliffi_history");
             }
@@ -652,30 +647,30 @@ void startRepl() {
                 closeAllLibraries();
                 break;
             } else if (strcmp(command, "help") == 0) {
-                printf( "Running a command:\n"
-                        "  %s\n", BASIC_USAGE_STRING);
-                printf( "Documentation:\n"
-                        "  help: Print this help message\n"
-                        "  docs: Print the cliffi docs\n"
-                        "Variables:\n"
-                        "  set <var> <value>: Set a variable. Alternate form: <var> = <value>\n"
-                        "  print <var>: Print the value of a variable. Alternate form: <var>\n"
-                        "Memory Management:\n"
-                        "  store <address> <value>: Set the value of a memory address\n"
-                        "  dump <type> <address>: Print the value at a memory address\n"
-                        "  load <var> <type> <address>: Load the value at a memory address into a variable\n"
-                        "  calculate_offset <variable> <library> <symbol> <address>:"
-                        "      Calculate a memory offset by comparing the address of a known symbol\n"
-                        "  hexdump <address> <size>: Print a hexdump of memory\n"
-                        "Shared Library Management:\n"
-                        "  list: List all opened libraries\n"
-                        "  close <library>: Close the specified library\n"
-                        "  closeall: Close all opened libraries\n"
-                        "Shell commands:\n"
-                        "  !<command>: Run a shell command\n"
-                        "  shell: Drop into an interactive shell\n"
-                        "REPL Management:\n"
-                        "  exit: Quit the REPL\n");
+                printf("Running a command:\n");
+                printf("  %s\n", BASIC_USAGE_STRING);
+                printf("Documentation:\n"
+                       "  help: Print this help message\n"
+                       "  docs: Print the cliffi docs\n"
+                       "Variables:\n"
+                       "  set <var> <value>: Set a variable. Alternate form: <var> = <value>\n"
+                       "  print <var>: Print the value of a variable. Alternate form: <var>\n"
+                       "Memory Management:\n"
+                       "  store <address> <value>: Set the value of a memory address\n"
+                       "  dump <type> <address>: Print the value at a memory address\n"
+                       "  load <var> <type> <address>: Load the value at a memory address into a variable\n"
+                       "  calculate_offset <variable> <library> <symbol> <address>:"
+                       "      Calculate a memory offset by comparing the address of a known symbol\n"
+                       "  hexdump <address> <size>: Print a hexdump of memory\n"
+                       "Shared Library Management:\n"
+                       "  list: List all opened libraries\n"
+                       "  close <library>: Close the specified library\n"
+                       "  closeall: Close all opened libraries\n"
+                       "Shell commands:\n"
+                       "  !<command>: Run a shell command\n"
+                       "  shell: Drop into an interactive shell\n"
+                       "REPL Management:\n"
+                       "  exit: Quit the REPL\n");
             } else if (strcmp(command, "docs") == 0) {
                 print_usage(">");
             } else if (strcmp(command, "list") == 0) {
@@ -697,7 +692,7 @@ void startRepl() {
                 parseStoreToMemory(command + 6);
             } else if (strncmp(command, "dump ", 5) == 0) {
                 parseDumpMemory(command + 5);
-            } else if (strncmp(command, "load ",5) == 0) {
+            } else if (strncmp(command, "load ", 5) == 0) {
                 parseLoadMemoryToVar(command + 5);
             } else if (strncmp(command, "calculate_offset ", 17) == 0) {
                 parseCalculateOffset(command + 17);
@@ -721,12 +716,7 @@ void startRepl() {
     }
 }
 
-#endif 
-
-
-
-
-
+#endif
 
 int main(int argc, char* argv[]) {
 
@@ -737,13 +727,13 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "Error occurred. Exiting...\n");
         return 1;
     }
-    
+
     if (argc > 1 && strcmp(argv[1], "--help") == 0) {
         print_usage(argv[0]);
         return 0;
     }
-    #ifdef use_readline
-    if (argc > 1 && strcmp(argv[1], "--repltest") == 0){
+#ifdef use_readline
+    if (argc > 1 && strcmp(argv[1], "--repltest") == 0) {
         int pipefd[2];
         if (pipe(pipefd) == -1) {
             perror("pipe");
@@ -756,12 +746,12 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-        if (pid == 0) { // Child process
-            close(pipefd[1]); // Close write end of pipe
+        if (pid == 0) {                    // Child process
+            close(pipefd[1]);              // Close write end of pipe
             dup2(pipefd[0], STDIN_FILENO); // Redirect STDIN to read from pipe
-            close(pipefd[0]); // Close read end, not needed anymore
+            close(pipefd[0]);              // Close read end, not needed anymore
             goto replmode;
-        } else { // Parent process
+        } else {              // Parent process
             close(pipefd[0]); // Close the write end of the pipe
             for (int i = 2; i < argc; i++) {
                 write(pipefd[1], argv[i], strlen(argv[i]));
@@ -771,8 +761,8 @@ int main(int argc, char* argv[]) {
             waitpid(pid, NULL, 0);
             return 0;
         }
-    } 
-    else if (argc > 1 && strcmp(argv[1], "--repl") == 0) replmode: {
+    } else if (argc > 1 && strcmp(argv[1], "--repl") == 0)
+    replmode: {
         initializeLibraryManager();
         // rl_completion_entry_function = (Function*)cliffi_completion;
         rl_bind_key('\t', rl_complete);
@@ -789,36 +779,30 @@ int main(int argc, char* argv[]) {
         }
         return 0;
     }
-    #endif
-    else if (argc < 4) {
-        #ifdef use_readline
-        #define DASHDASHREPL " [--repl]"
-        #else
-        #define DASHDASHREPL ""
-        #endif
-        fprintf(stderr, "%s %s\nUsage: %s [--help]%s %s\n", NAME,VERSION,argv[0],DASHDASHREPL,BASIC_USAGE_STRING);
-        return 1;
-    }
+#endif
+        else if (argc < 4) {
+#ifdef use_readline
+#define DASHDASHREPL " [--repl]"
+#else
+#define DASHDASHREPL ""
+#endif
+            fprintf(stderr, "%s %s\nUsage: %s [--help]%s %s\n", NAME, VERSION, argv[0], DASHDASHREPL, BASIC_USAGE_STRING);
+            return 1;
+        }
 
-
-
-    //print all args
-    #ifdef DEBUG
+// print all args
+#ifdef DEBUG
     for (int i = 0; i < argc; i++) {
         printf("argv[%d] = %s\n", i, argv[i]);
     }
-    #endif
+#endif
 
     // Step 1: Resolve the library path
     // For now we've delegated that call to parse_arguments
 
-
-
-
     // Step 2: Parse command-line arguments
-    FunctionCallInfo* call_info = parse_arguments(argc-1, argv+1); // skip the program name
+    FunctionCallInfo* call_info = parse_arguments(argc - 1, argv + 1); // skip the program name
     // convert_all_arrays_to_arginfo_ptr_sized_after_parsing(call_info); <-- handled inside parse_arguments now
-    
 
     // Step 2.5 (optional): Print the parsed function call call_info
     log_function_call_info(call_info);
@@ -835,14 +819,14 @@ int main(int argc, char* argv[]) {
 
     // free() introduces problems with functions returning literals that cannot be freed, which cannot be distinguished from heap-allocated memory
     // and we are anyway exiting the program, so we don't actually need to free memory
-    // freeFunctionCallInfo(call_info); 
+    // freeFunctionCallInfo(call_info);
 
     // Wait to close the library until after we're done with everything in case it returns pointers to literals stored in the library
-        #ifdef _WIN32
-            FreeLibrary(lib_handle);
-        #else
-            dlclose(lib_handle);
-        #endif
+#ifdef _WIN32
+    FreeLibrary(lib_handle);
+#else
+    dlclose(lib_handle);
+#endif
 
     return invoke_result;
 }
