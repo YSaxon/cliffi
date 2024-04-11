@@ -727,6 +727,23 @@ set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_R
 set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.s.s: hello")
 set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.x: 5")
 
+
+add_test(NAME repl_test_address_addition # larger = {int double char char*}  containing = {char larger int}
+COMMAND cliffi --repltest
+set global_address -P 0 \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} global_address get_global_string \n
+store global_address+1 a \n
+offset8 = 8 \n
+P3 = -P 3 \n
+store global_address+offset8 y \n # 8 bytes
+store global_address+2*P3 _ \n # 6 bytes
+store global_address+2+5*2 -c : \n # 12 bytes
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} s get_global_string \n
+)
+set_tests_properties(repl_test_address_addition PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?Hallo,_wyrld:")
+
+
+
 endif()
 
 # add_test(NAME TestAddFunctionWithSH
