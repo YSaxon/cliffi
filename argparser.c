@@ -226,8 +226,6 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
  
 FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     FunctionCallInfo* info = calloc(1, sizeof(FunctionCallInfo)); // using calloc to zero out the struct
-    info->info.return_var = calloc(1,sizeof(ArgInfo));
-    info->info.return_var->value = malloc(sizeof(*info->info.return_var->value));
 
     // arg[1] is the library path
     info->library_path = resolve_library_path(argv[0]);
