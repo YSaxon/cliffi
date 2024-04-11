@@ -195,6 +195,7 @@ void infer_arg_type_from_value(ArgInfo* arg, const char* argval) {
         }
         arg->type=first_type;
         arg->is_array = ARRAY_STATIC_SIZE_UNSET; // we'll set the size later anyway, just as if it were specified as an array, but with size unspecified
+        free(rest);
     } else {
         arg->type = infer_arg_type_single(argval);
         arg->is_array = NOT_ARRAY;
