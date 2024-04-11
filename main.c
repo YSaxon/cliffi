@@ -614,7 +614,7 @@ void parseCalculateOffset(char* calculateCommand){
     // it's a little convoluted but we'll just convert to a string and call a func to convert it back
     char offsetStr[32];
     char* varValues[2] = {"-P", offsetStr};
-    sprintf(offsetStr, "-P %zu", offset);
+    sprintf(offsetStr, "%zu", offset);
     parseSetVariableWithNameAndValue(varName, 2, varValues);
 }
 
