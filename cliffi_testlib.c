@@ -506,7 +506,7 @@ const char* concat_str_array(const char** strs, int count) {
     char* result = (char*)malloc(total_length + 1);
     result[0] = '\0'; // Initialize the string
     for (int i = 0; i < count; i++) {
-        strcat(result, strs[i]);
+        strncat(result, strs[i], total_length);
     }
     return result;
 }
