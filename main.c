@@ -46,7 +46,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.6.3";
+const char* VERSION = "v1.6.4";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -317,7 +317,11 @@ void parseStoreToMemoryWithAddressAndValue(char* addressStr, int varValueCount, 
     } else {
         memcpy(destAddress, arg->value, typeToSize(arg->type, arg->array_value_pointer_depth));
     }
-    printVariableWithArgInfo(addressStr, arg);
+    printf("%p = ", destAddress);
+    format_and_print_arg_type(arg);
+    printf(" ");
+    format_and_print_arg_value(arg);
+    printf("\n");
 }
 
 ArgInfo* parseLoadMemoryToArgWithType(char* addressStr, int typeArgc, char** typeArgv) {
