@@ -45,7 +45,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.5.1";
+const char* VERSION = "v1.6.0";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -82,8 +82,17 @@ void exit_or_restart(int status) {
     siglongjmp(jmpBuffer, status);
 }
 
+const char* SEGFAULT_SECTION_UNSET = "(unset)";
+const char* SEGFAULT_SECTION = "(unset)";
+void setCodeSectionForSegfaultHandler(const char* section) {
+    SEGFAULT_SECTION = section;
+}
+void unsetCodeSectionForSegfaultHandler() {
+    SEGFAULT_SECTION = SEGFAULT_SECTION_UNSET;
+}
+
 void logSegfault() {
-    fprintf(stderr, "Segmentation fault occurred\n");
+    fprintf(stderr, "Segmentation fault occurred in: %s\n", SEGFAULT_SECTION);
 }
 
 void handleSegfault(int signal) {
@@ -202,6 +211,8 @@ int invoke_and_print_return_value(FunctionCallInfo* call_info, void (*func)(void
         fprintf(stderr, "Error: Function invocation failed\n");
     } else {
 
+        setCodeSectionForSegfaultHandler("invoke_and_print_return_value : while printing values");
+
         // Step 4: Print the return value and any modified arguments
 
         printf("Function returned: ");
@@ -222,6 +233,8 @@ int invoke_and_print_return_value(FunctionCallInfo* call_info, void (*func)(void
             }
         }
     }
+    unsetCodeSectionForSegfaultHandler();
+
     return invoke_result;
 }
 

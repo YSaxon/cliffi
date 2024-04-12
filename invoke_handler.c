@@ -332,6 +332,7 @@ void handle_promoting_vararg_if_necessary(ffi_type** arg_type_ptr, ArgInfo* arg,
 // Main function to invoke a dynamic function call
 int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
 
+    setCodeSectionForSegfaultHandler("invoke_dynamic_function:start");
     ffi_cif cif;
     ffi_type** args = malloc(call_info->info.arg_count * sizeof(ffi_type*));
     void** values = malloc(call_info->info.arg_count * sizeof(void*));
@@ -373,6 +374,7 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
         rvalue = call_info->info.return_var->value;
     }
 
+    setCodeSectionForSegfaultHandler("invoke_dynamic_function:ffi_prep");
 
     ffi_status status;
     if (call_info->info.vararg_start!=-1) {
@@ -389,7 +391,11 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
         exit_or_restart(1); return -1;
     }
 
+    setCodeSectionForSegfaultHandler("invoke_dynamic_function:ffi_call");
+
     ffi_call(&cif, func, rvalue, values);
+
+    setCodeSectionForSegfaultHandler("invoke_dynamic_function:after ffi_call");
 
     free_ffi_type(return_type);
     for (int i = 0; i < call_info->info.arg_count; ++i) {
@@ -433,5 +439,7 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
         #endif
     if (args != NULL) free(args);
     if (values != NULL) free(values);
+    unsetCodeSectionForSegfaultHandler();
+
     return 0;
 }
