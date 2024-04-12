@@ -45,7 +45,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.6.0";
+const char* VERSION = "v1.6.1";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -277,7 +277,7 @@ void parsePrintVariable(char* varName) {
         printVariableWithArgInfo(varName, arg);
     }
 }
-void* getAddressFromAddressStringOrNameOfCoercableVariable(char* addressStr) {
+void* getAddressFromAddressStringOrNameOfCoercableVariable(const char* addressStr) {
     void* address = NULL;
 
     if (addressStr == NULL || strlen(addressStr) == 0) {
@@ -289,6 +289,8 @@ void* getAddressFromAddressStringOrNameOfCoercableVariable(char* addressStr) {
         fprintf(stderr, "Memory address cannot be negative and variables can't start with a dash.\n");
         exit_or_restart(1);
     }
+
+    addressStr = strdup(addressStr); // copy the string so we can modify it
 
     // check for a + or * operand
     char* operand_str = strchr(addressStr, '+');
@@ -355,6 +357,7 @@ void* getAddressFromAddressStringOrNameOfCoercableVariable(char* addressStr) {
             fprintf(stderr, "Warning: %s is specified with 'p' indirection. We are dereferencing it %d level(s) and using %p as the address\n", addressStr, var->pointer_depth, address);
         }
     }
+    free((void*)addressStr);
     return address;
 }
 
