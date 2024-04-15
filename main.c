@@ -46,7 +46,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.6.7";
+const char* VERSION = "v1.6.8";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -547,10 +547,10 @@ void parseCalculateOffset(char* calculateCommand) {
     address = (void*)((uintptr_t) address & ~1);    // clear the thumb bit
     symbol_address &= ~1;                           // clear the thumb bit
     #endif
-    ptrdiff_t offset = symbol_address - (uintptr_t)address; // maybe technically we should use ptrdiff_t instead but it's unlikely that the offset would be negative
-    if (offset < 0) {
+    if (symbol_address < (uintptr_t)address) {
         fprintf(stderr, "Error: Calculated offset is negative. This is likely an error and the variable probably won't work.\n");
     }
+    ptrdiff_t offset = symbol_address - (uintptr_t)address; // maybe technically we should use ptrdiff_t instead but it's unlikely that the offset would be negative
     printf("Calculation: dlsym(%s,%s)=%p; %p - %p = %p\n", libraryName, symbolName, symbol_handle, symbol_handle, address, (void*)offset);
     // it's a little convoluted but we'll just convert to a string and call a func to convert it back
     char offsetStr[32];
