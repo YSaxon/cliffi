@@ -184,6 +184,7 @@ void infer_arg_type_from_value(ArgInfo* arg, const char* argval) {
         // check that for every substring, infer_arg_type returns the same? or just use the first type?
     if (strchr(argval, ',') != NULL) {
         char* rest = strdup(argval);
+        char* rest_copy_to_free = rest;
         char* token = strtok_r(rest, ",", &rest);
         ArgType first_type = infer_arg_type_single(token);
         while (token != NULL) {
@@ -196,14 +197,11 @@ void infer_arg_type_from_value(ArgInfo* arg, const char* argval) {
         }
         arg->type=first_type;
         arg->is_array = ARRAY_STATIC_SIZE_UNSET; // we'll set the size later anyway, just as if it were specified as an array, but with size unspecified
-        free(rest);
+        free(rest_copy_to_free);
     } else {
         arg->type = infer_arg_type_single(argval);
         arg->is_array = NOT_ARRAY;
     }
-
-   
-
 }
 
 void* hex_string_to_bytes(const char* hexStr) {
