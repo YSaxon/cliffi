@@ -752,6 +752,19 @@ ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMA
 )
 set_tests_properties(repl_test_address_addition PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?Hallo,_wyrld:")
 
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
+add_test(NAME repl_test_calculate_returns_even
+COMMAND cliffi --repltest
+calculate_offset testlib_offset ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} add 0x10000 \n
+calculate_offset testlib_offset2 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} add 0x10001 \n
+
+testlib_offset \n
+testlib_offset2 \n
+)
+set_tests_properties(repl_test_calculate_returns_even PROPERTIES PASS_REGULAR_EXPRESSION "testlib_offset = [0-9a-fA-FxX]+[02468ace]")
+set_tests_properties(repl_test_calculate_returns_even PROPERTIES PASS_REGULAR_EXPRESSION "testlib_offset2 = [0-9a-fA-FxX]+[02468ace]")
+endif()
+
 
 
 endif()

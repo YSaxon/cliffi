@@ -46,7 +46,7 @@
 #endif
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.6.8";
+const char* VERSION = "v1.6.9";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -543,7 +543,7 @@ void parseCalculateOffset(char* calculateCommand) {
     void* lib_handle = getOrLoadLibrary(libraryName);
     void* symbol_handle = loadFunctionHandle(lib_handle, symbolName);
     uintptr_t symbol_address = (uintptr_t)symbol_handle;
-    #if defined(__TARGET_FEATURE_THUMB)
+    #if defined(__arm__)
     address = (void*)((uintptr_t) address & ~1);    // clear the thumb bit
     symbol_address &= ~1;                           // clear the thumb bit
     #endif
