@@ -631,8 +631,7 @@ void startRepl() {
             } else if (strcmp(command, "closeall") == 0) {
                 closeAllLibraries();
             } else if (strncmp(command, "set ", 4) == 0) {
-                char* set_var_command = command + 4;
-                parseSetVariable(set_var_command);
+                parseSetVariable(command + 4);
             } else if (strncmp(command, "print ", 6) == 0) {
                 parsePrintVariable(command + 6);
             } else if (strncmp(command, "store ", 6) == 0) {

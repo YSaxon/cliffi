@@ -1,10 +1,10 @@
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
-//adapted from https://stackoverflow.com/a/69808797/10773089
+// adapted from https://stackoverflow.com/a/69808797/10773089
 char** shlex_split(const char* s, int* num_tokens) {
     char** result = NULL;
     int capacity = 0;
@@ -85,7 +85,7 @@ char** shlex_split(const char* s, int* num_tokens) {
     return result;
 }
 
-int tokenize(const char* str, int* argc, char*** argv){
+int tokenize(const char* str, int* argc, char*** argv) {
     *argv = shlex_split(str, argc);
     if (*argv == NULL) {
         fprintf(stderr, "Error: Memory allocation failed.\n");
@@ -93,4 +93,3 @@ int tokenize(const char* str, int* argc, char*** argv){
     }
     return 0;
 }
-

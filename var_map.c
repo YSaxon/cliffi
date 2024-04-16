@@ -5,7 +5,6 @@
 
 #define MAX_NAME_LENGTH 32
 
-
 typedef struct {
     char name[MAX_NAME_LENGTH];
     ArgInfo* value;
@@ -18,8 +17,8 @@ typedef struct {
 } varMap;
 
 varMap* createVarMap(int initialCapacity) {
-    varMap* map = (varMap*)calloc(1,sizeof(varMap));
-    map->entries = (mapEntry*)calloc(initialCapacity,sizeof(mapEntry));
+    varMap* map = (varMap*)calloc(1, sizeof(varMap));
+    map->entries = (mapEntry*)calloc(initialCapacity, sizeof(mapEntry));
     map->size = 0;
     map->capacity = initialCapacity;
     return map;
@@ -32,7 +31,7 @@ void destroyVarMap(varMap* map) {
 
 ArgInfo* getVarWithMap(varMap* map, const char* name) {
     for (int i = 0; i < map->size; i++) {
-        if (strncmp(map->entries[i].name, name, MAX_NAME_LENGTH-1) == 0) {
+        if (strncmp(map->entries[i].name, name, MAX_NAME_LENGTH - 1) == 0) {
             return map->entries[i].value;
         }
     }
@@ -52,7 +51,7 @@ void setVarWithMap(varMap* map, const char* name, ArgInfo* value) {
         map->entries = (mapEntry*)realloc(map->entries, sizeof(mapEntry) * map->capacity);
     }
 
-    strncpy(map->entries[map->size].name, name, MAX_NAME_LENGTH-1);
+    strncpy(map->entries[map->size].name, name, MAX_NAME_LENGTH - 1);
     map->entries[map->size].value = value;
     map->size++;
 }

@@ -1,9 +1,9 @@
 // library_manager.c
 
+#include "library_manager.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "library_manager.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -36,22 +36,21 @@ void cleanupLibraryManager() {
     free(libraryMap.entries);
 }
 
-
 void* loadLibraryDirectly(const char* libraryPath) {
-    #ifdef _WIN32
+#ifdef _WIN32
     void* handle = LoadLibrary(libraryPath);
     if (!handle) {
-            fprintf(stderr, "Failed to load library: %lu\n", GetLastError());
-            return NULL;
+        fprintf(stderr, "Failed to load library: %lu\n", GetLastError());
+        return NULL;
     }
 #else
     void* handle = dlopen(libraryPath, RTLD_LAZY);
     if (!handle) {
-            fprintf(stderr, "Failed to load library: %s\n", dlerror());
-            return NULL;
+        fprintf(stderr, "Failed to load library: %s\n", dlerror());
+        return NULL;
     }
 #endif
-return handle;
+    return handle;
 }
 
 LibraryEntry* getLibraryEntry(const char* libraryPath) {
@@ -88,7 +87,6 @@ void* getOrLoadLibrary(const char* libraryPath) {
 
     return handle;
 }
-
 
 void closeLibrary(const char* libraryPath) {
     for (size_t i = 0; i < libraryMap.count; i++) {

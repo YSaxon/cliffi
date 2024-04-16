@@ -1,9 +1,9 @@
+#include "main.h"
 #include "types_and_utils.h"
+#include "var_map.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "main.h"
-#include "var_map.h"
 
 void* getAddressFromAddressStringOrNameOfCoercableVariable(const char* addressStr) {
     void* address = NULL;
@@ -57,7 +57,8 @@ void* getAddressFromAddressStringOrNameOfCoercableVariable(const char* addressSt
         ArgInfo* var = getVar(addressStr);
         if (var == NULL) {
             fprintf(stderr, "%s is neither a valid pointer address nor an existing variable.\n", addressStr);
-            exit_or_restart(1); return NULL;
+            exit_or_restart(1);
+            return NULL;
         } else {
             switch (var->type) {
             case TYPE_INT:
