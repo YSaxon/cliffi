@@ -227,6 +227,7 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
 FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     FunctionCallInfo* info = calloc(1, sizeof(FunctionCallInfo)); // using calloc to zero out the struct
 
+    setCodeSectionForSegfaultHandler("parse_arguments : resolve library path");
     // arg[1] is the library path
     info->library_path = resolve_library_path(argv[0]);
     if (!info->library_path) {
@@ -234,6 +235,7 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         exit_or_restart(1);
     }
 
+    setCodeSectionForSegfaultHandler("parse_arguments : parse return type");
     int args_used_by_return = 0;
     info->info.return_var = parse_one_arg(argc-1, argv+1, &args_used_by_return, true);
     argc-=args_used_by_return;
@@ -256,12 +258,15 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         fprintf(stderr, "Error: Unable to allocate memory for function name\n");
         return NULL;
     }
+
+    setCodeSectionForSegfaultHandler("parse_arguments : parse function arguments");
     //TODO: maybe at some point we should be able to take a hex offset instead of a function name
     parse_all_from_argvs(&info->info, argc-3, argv+3, &args_used_by_return, false, false);
     if (args_used_by_return != argc-3){
         fprintf(stderr, "Error: Not all arguments were used in parsing\n");
         exit_or_restart(1);
     }
-    
+    unsetCodeSectionForSegfaultHandler();
+
     return info;
 }
