@@ -575,6 +575,10 @@ add_test(NAME test_p_packed_struct #
     set_tests_properties(test_p_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->s[1]: b")
     set_tests_properties(test_p_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->d: 4.50*")
 
+add_test(NAME test_setting_array_with_long_hex
+COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} s concat -s "test" -ac 0x3031323334 )
+set_tests_properties(test_setting_array_with_long_hex PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?test01234\"?")
+
 if(USE_REPL_MODE)
 
 add_test(NAME repl_smoketest #
