@@ -76,13 +76,14 @@ void* getAddressFromAddressStringOrNameOfCoercableVariable(const char* addressSt
                 address = dereferencePointerLevels(var->value->ptr_val, var->pointer_depth);
                 break;
             default:
-            if (var->is_array) {
-                address = dereferencePointerLevels(var->value->ptr_val, var->pointer_depth);
-                break;
-            } else {
-                fprintf(stderr, "Error: %s is not a (void*) type, (nor any other type that could be coerced to a pointer).\n", addressStr);
-                exit_or_restart(1);
-                return NULL;
+                if (var->is_array) {
+                    address = dereferencePointerLevels(var->value->ptr_val, var->pointer_depth);
+                    break;
+                } else {
+                    fprintf(stderr, "Error: %s is not a (void*) type, (nor any other type that could be coerced to a pointer).\n", addressStr);
+                    exit_or_restart(1);
+                    return NULL;
+                }
             }
         }
         if (var->pointer_depth > 0) {
