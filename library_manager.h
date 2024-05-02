@@ -3,7 +3,6 @@
 #ifndef LIBRARY_MANAGER_H
 #define LIBRARY_MANAGER_H
 
-void initializeLibraryManager();
 void cleanupLibraryManager();
 void* getOrLoadLibrary(const char* libraryPath);
 void* loadLibraryDirectly(const char* libraryPath);

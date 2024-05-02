@@ -21,12 +21,7 @@ typedef struct {
     size_t count;
 } LibraryMap;
 
-LibraryMap libraryMap;
-
-void initializeLibraryManager() {
-    libraryMap.entries = NULL;
-    libraryMap.count = 0;
-}
+LibraryMap libraryMap = { NULL, 0 };
 
 void cleanupLibraryManager() {
     for (size_t i = 0; i < libraryMap.count; i++) {
