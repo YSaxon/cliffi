@@ -668,6 +668,47 @@ void startRepl() {
     }
 }
 
+bool checkAndRunCliffiInitWithPath(char* path) {
+    // look for a file .cliffi_init in the specified path and run it if it exists
+    char* cliffi_init_path = ".cliffi_init";
+    char* full_path = malloc(strlen(path) + strlen(cliffi_init_path) + 2);
+    strcpy(full_path, path);
+    strcat(full_path, "/");
+    strcat(full_path, cliffi_init_path);
+    FILE* file = fopen(full_path, "r");
+    if (file == NULL) {
+        free(full_path);
+        return false;
+    } else {
+        printf("Running cliffi init file at %s\n", full_path);
+        char* line = NULL;
+        size_t len = 0;
+        ssize_t read;
+        while ((read = getline(&line, &len, file)) != -1) {
+            if (line[read - 1] == '\n') {
+                line[read - 1] = '\0';
+            }
+            int breakRepl = parseREPLCommand(line);
+            if (breakRepl) break;
+        }
+        free(line);
+        fclose(file);
+    }
+    free(full_path);
+    return true;
+}
+
+void checkAndRunCliffiInits() {
+    // look for a file .cliffi_init in the current directory and run it if it exists
+    // otherwise look for a file .cliffi_init in the home directory and run it if it exists
+    if (!checkAndRunCliffiInitWithPath(".")) {
+        char* home = getenv("HOME");
+        if (home != NULL) {
+            checkAndRunCliffiInitWithPath(home);
+        }
+    }
+}
+
 #endif
 
 int main(int argc, char* argv[]) {
@@ -716,6 +757,8 @@ int main(int argc, char* argv[]) {
     } else if (argc > 1 && strcmp(argv[1], "--repl") == 0)
     replmode: {
         initializeLibraryManager();
+
+        checkAndRunCliffiInits();
         // rl_completion_entry_function = (Function*)cliffi_completion;
         rl_bind_key('\t', rl_complete);
         using_history();
