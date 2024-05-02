@@ -792,7 +792,11 @@ void log_function_call_info(FunctionCallInfo* info) {
     for (int i = 0; i < info->info.arg_count; i++) {
         format_and_print_arg_type(info->info.args[i]);
         printf(" ");
-        format_and_print_arg_value(info->info.args[i]);
+        if (info->info.args[i]->is_array) {
+            printf("{...}");
+        } else {
+            format_and_print_arg_value(info->info.args[i]);
+        }
         if (i < info->info.arg_count - 1) printf(", ");
     }
     printf(")\n");
