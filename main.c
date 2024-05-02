@@ -577,11 +577,7 @@ void parseHexdump(char* hexdumpCommand) {
     hexdump(address, size);
 }
 
-void startRepl() {
-
-    char* command;
-
-    while ((command = readline("> ")) != NULL) {
+int parseREPLCommand(char* command){
         command = trim_whitespace(command);
         if (strlen(command) > 0) {
             // fprintf(stderr, "Command: %s\n", command);
@@ -592,7 +588,7 @@ void startRepl() {
             }
             if (strcmp(command, "quit") == 0 || strcmp(command, "exit") == 0) {
                 closeAllLibraries();
-                break;
+                return 1;
             } else if (strcmp(command, "help") == 0) {
                 printf("Running a command:\n");
                 printf("  %s\n", BASIC_USAGE_STRING);
@@ -658,7 +654,17 @@ void startRepl() {
                 executeREPLCommand(command); // also handles alternate forms of set (<varname>) and print (<varname> = <value>)
             }
         }
+        return 0;
+}
+
+void startRepl() {
+
+    char* command;
+
+    while ((command = readline("> ")) != NULL) {
+        int breakRepl = parseREPLCommand(command);
         free(command);
+        if (breakRepl) break;
     }
 }
 
