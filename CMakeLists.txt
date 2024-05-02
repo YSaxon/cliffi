@@ -770,6 +770,39 @@ set_tests_properties(repl_test_calculate_returns_even PROPERTIES PASS_REGULAR_EX
 endif()
 
 
+# Create setup fixture for the test
+add_test(setup_cliffi_init
+  COMMAND sh -c "echo \"
+   set var 4\n
+   svar = -s placeholder\n
+   ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} svar get_message\n
+    \" > ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init"
+)
+set_tests_properties(setup_cliffi_init PROPERTIES FIXTURES_SETUP cliffi_init_fixture)
+
+# Create cleanup fixture for the test
+add_test(cleanup_cliffi_init
+  COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
+)
+set_tests_properties(cleanup_cliffi_init PROPERTIES FIXTURES_CLEANUP cliffi_init_fixture)
+
+# Define the test that requires the fixture
+add_test(NAME repl_test_cliffi_init
+  COMMAND cliffi --repltest
+    print var \n
+    print var2 \n
+    print svar \n
+)
+
+set_tests_properties(
+repl_test_cliffi_init PROPERTIES
+PASS_REGULAR_EXPRESSION "int var = 4"
+PASS_REGULAR_EXPRESSION "svar = \"?Hello, cliffi.\"?"
+FIXTURES_REQUIRED cliffi_init_fixture
+REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
+)
+
+
 
 endif()
 
