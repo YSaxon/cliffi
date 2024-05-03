@@ -788,7 +788,7 @@ endif()
 
 
 # Create setup fixture for the test
-add_test(setup_cliffi_init
+add_test(NAME setup_cliffi_init
   COMMAND sh -c "echo \"
    set var 4\n
    svar = -s placeholder\n
@@ -798,7 +798,7 @@ add_test(setup_cliffi_init
 set_tests_properties(setup_cliffi_init PROPERTIES FIXTURES_SETUP cliffi_init_fixture)
 
 # Create cleanup fixture for the test
-add_test(cleanup_cliffi_init
+add_test(NAME cleanup_cliffi_init
   COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
 )
 set_tests_properties(cleanup_cliffi_init PROPERTIES FIXTURES_CLEANUP cliffi_init_fixture)
@@ -821,28 +821,32 @@ REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
 
 
 
-add_test(test_failing_tests
+add_test(NAME test_failing_tests
   COMMAND sh -c
   "echo \"
    testtest\n
     \" > ${CMAKE_CURRENT_BINARY_DIR}/testest"
 )
 
-add_test(test_failing_tests2
+add_test(NAME test_failing_tests2
   COMMAND sh -c
   "echo \"  testtest\n  \" > ${CMAKE_CURRENT_BINARY_DIR}/testest2"
 )
 
-add_test(test_failing_tests3
+add_test(NAME test_failing_tests3
   COMMAND sh -c "echo testtest > ${CMAKE_CURRENT_BINARY_DIR}/testest3"
 )
 
-add_test(test_failing_tests4
+add_test(NAME test_failing_tests4
   COMMAND sh -c "echo testtest4"
 )
 
-add_test(test_failing_tests5
+add_test(NAME test_failing_tests5
   COMMAND sh -c "echo \"testtest5\""
+)
+
+add_test(NAME test_failing_tests6
+  COMMAND echo testtest6
 )
 
 endif()
