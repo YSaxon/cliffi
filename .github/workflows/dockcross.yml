@@ -110,6 +110,13 @@ jobs:
           path: dockcross
           key: ${{ runner.os }}-dockcross-${{ matrix.dockcross_image }}
 
+      - name: cache conan
+        id: cache_conan
+        uses: actions/cache@v4
+        with:
+          path: ~/.conan2
+          key: ${{ runner.os }}-conan-${{ matrix.dockcross_image }}
+
       - name: install helper script
         if: steps.cache_docker_image.outputs.cache-hit != 'true' || steps.cache_dockcross.outputs.cache-hit != 'true'
         run: |
