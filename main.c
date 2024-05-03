@@ -261,7 +261,6 @@ void* loadFunctionHandle(void* lib_handle, const char* function_name) {
     return func;
 }
 
-#ifdef use_readline
 
 void printVariableWithArgInfo(char* varName, ArgInfo* arg) {
     format_and_print_arg_type(arg);
@@ -577,6 +576,8 @@ void parseHexdump(char* hexdumpCommand) {
     hexdump(address, size);
 }
 
+
+
 int parseREPLCommand(char* command){
         command = trim_whitespace(command);
         if (strlen(command) > 0) {
@@ -651,6 +652,9 @@ int parseREPLCommand(char* command){
         return 0;
 }
 
+#ifdef use_readline
+
+
 void startRepl() {
 
     char* command;
@@ -670,6 +674,8 @@ void startRepl() {
         if (breakRepl) break;
     }
 }
+
+#endif
 
 bool checkAndRunCliffiInitWithPath(char* path) {
     // look for a file .cliffi_init in the specified path and run it if it exists
@@ -711,8 +717,6 @@ void checkAndRunCliffiInits() {
         }
     }
 }
-
-#endif
 
 int main(int argc, char* argv[]) {
 
