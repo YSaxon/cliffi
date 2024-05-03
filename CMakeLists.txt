@@ -820,35 +820,6 @@ REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
 
 
 
-
-add_test(NAME test_failing_tests
-  COMMAND sh -c
-  "echo \"
-   testtest\n
-    \" > ${CMAKE_CURRENT_BINARY_DIR}/testest"
-)
-
-add_test(NAME test_failing_tests2
-  COMMAND sh -c
-  "echo \"  testtest\n  \" > ${CMAKE_CURRENT_BINARY_DIR}/testest2"
-)
-
-add_test(NAME test_failing_tests3
-  COMMAND sh -c "echo testtest > ${CMAKE_CURRENT_BINARY_DIR}/testest3"
-)
-
-add_test(NAME test_failing_tests4
-  COMMAND sh -c "echo testtest4"
-)
-
-add_test(NAME test_failing_tests5
-  COMMAND sh -c "echo \"testtest5\""
-)
-
-add_test(NAME test_failing_tests6
-  COMMAND echo testtest6
-)
-
 endif()
 
 # add_test(NAME TestAddFunctionWithSH
