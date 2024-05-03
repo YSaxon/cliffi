@@ -24,3 +24,5 @@ avd/
 coverage-html/
 
 coverage.info
+
+.conan2/

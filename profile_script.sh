@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#making this link so that we can cache the conan dir
+mkdir -p /work/.conan2
+ln -s /work/.conan2 "${HOME}"/.conan2
+
 conan profile detect
 cp "$HOME/.conan2/profiles/default" "$HOME/.conan2/profiles/build"
 
