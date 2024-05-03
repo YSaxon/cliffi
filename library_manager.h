@@ -5,7 +5,6 @@
 
 void cleanupLibraryManager();
 void* getOrLoadLibrary(const char* libraryPath);
-void* loadLibraryDirectly(const char* libraryPath);
 void closeLibrary(const char* libraryPath);
 void closeAllLibraries();
 void listOpenedLibraries();

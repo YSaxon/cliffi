@@ -790,6 +790,10 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
+    // run .cliffi_init file if exists
+    checkAndRunCliffiInits();
+
+
     // Step 1: Resolve the library path
     // For now we've delegated that call to parse_arguments
 
@@ -802,7 +806,7 @@ int main(int argc, char* argv[]) {
 
     // Step 3: Invoke the specified function
 
-    void* lib_handle = loadLibraryDirectly(call_info->library_path);
+    void* lib_handle = getOrLoadLibrary(call_info->library_path);
 
     void* func = loadFunctionHandle(lib_handle, call_info->function_name);
 
