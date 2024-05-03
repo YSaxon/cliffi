@@ -64,27 +64,22 @@ if(ENABLE_SANITIZERS)
     endif()
 endif()
 
-find_package(PkgConfig REQUIRED)
-pkg_search_module(LIBFFI libffi)
-pkg_search_module(READLINE readline)
-
-find_library(DL_LIBRARY NAMES dl)
 
 # Include directories
 include_directories(${LIBFFI_INCLUDE_DIRS})
 
 # Source files
 set(SOURCES
-    main.c
-    argparser.c
-    types_and_utils.c
-    invoke_handler.c
-    library_path_resolver.c
-    return_formatter.c
-    library_manager.c
-    var_map.c
-    tokenize.c
-    parse_address.c
+main.c
+argparser.c
+types_and_utils.c
+invoke_handler.c
+library_path_resolver.c
+return_formatter.c
+library_manager.c
+var_map.c
+tokenize.c
+parse_address.c
 )
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -92,25 +87,34 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 # Target executable
 add_executable(cliffi ${SOURCES})
+
+if(NOT DEFINED USE_FIND_PACKAGE)
+
+find_package(PkgConfig REQUIRED)
+
+pkg_search_module(LIBFFI libffi REQUIRED)
+pkg_search_module(READLINE readline REQUIRED)
+
+
 target_link_libraries(cliffi PRIVATE
-    ${LIBFFI_LIBRARIES}
-    ${READLINE_LIBRARIES}
+${LIBFFI_LIBRARIES}
+${READLINE_LIBRARIES}
 )
 
+endif()
 # Append the project root directory to CMAKE_PREFIX_PATH
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build")
 
 
-if(NOT LIBFFI_FOUND OR DEFINED USE_FIND_PACKAGE)
+if(DEFINED USE_FIND_PACKAGE)
 set(libffi_DIR ${CMAKE_SOURCE_DIR}/build)
 set(ENV{libffi_DIR} ${CMAKE_SOURCE_DIR}/build)
 find_package(libffi REQUIRED)
 target_link_libraries(cliffi PRIVATE libffi::libffi)
 message(STATUS "libffi include dirs: ${libffi_INCLUDE_DIRS}")
-endif()
 
 
-if (NOT WIN32 AND (NOT READLINE_FOUND OR DEFINED USE_FIND_PACKAGE))
+if (NOT WIN32)
 set(readline_DIR ${CMAKE_SOURCE_DIR}/build)
 set(ENV{readline_DIR} ${CMAKE_SOURCE_DIR}/build)
 find_package(readline REQUIRED)
@@ -118,7 +122,9 @@ target_link_libraries(cliffi PRIVATE readline::readline)
 message(STATUS "readline include dirs: ${readline_INCLUDE_DIRS}")
 message("attempting link readline::readline")
 endif()
+endif()
 
+find_library(DL_LIBRARY NAMES dl)
 if(DL_LIBRARY)
   target_link_libraries(cliffi PRIVATE ${DL_LIBRARY})
 endif()
