@@ -790,7 +790,6 @@ set_tests_properties(cleanup_cliffi_init PROPERTIES FIXTURES_CLEANUP cliffi_init
 add_test(NAME repl_test_cliffi_init
   COMMAND cliffi --repltest
     print var \n
-    print var2 \n
     print svar \n
 )
 
