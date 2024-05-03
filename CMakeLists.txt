@@ -794,22 +794,8 @@ endif()
 
 
 # Create setup fixture for the test
-add_test(NAME setup_cliffi_init
-  COMMAND sh -c "echo \"
-   set var 4\n
-   svar = -s placeholder\n
-   ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} svar get_message\n
-    \" > ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init"
-)
-set_tests_properties(setup_cliffi_init PROPERTIES FIXTURES_SETUP cliffi_init_fixture)
 
-# Create cleanup fixture for the test
-add_test(NAME cleanup_cliffi_init
-  COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
-)
-set_tests_properties(cleanup_cliffi_init PROPERTIES FIXTURES_CLEANUP cliffi_init_fixture)
 
-# Define the test that requires the fixture
 add_test(NAME repl_test_cliffi_init
   COMMAND cliffi --repltest
     print var \n
@@ -824,10 +810,48 @@ FIXTURES_REQUIRED cliffi_init_fixture
 REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
 )
 
-
-
 endif()
 
+add_test(NAME setup_cliffi_init
+  COMMAND sh -c "echo \"
+   set var 4\n
+   svar = -s placeholder\n
+   ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} svar get_message\n
+   ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global\n
+    \" > ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init"
+)
+set_tests_properties(setup_cliffi_init PROPERTIES FIXTURES_SETUP cliffi_init_fixture)
+
+# Create cleanup fixture for the test
+add_test(NAME cleanup_cliffi_init
+  COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
+)
+set_tests_properties(cleanup_cliffi_init PROPERTIES FIXTURES_CLEANUP cliffi_init_fixture)
+
+
+add_test(NAME test_cliffi_init_without_repl
+  COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_global
+)
+
+set_tests_properties(
+test_cliffi_init_without_repl PROPERTIES
+PASS_REGULAR_EXPRESSION "Function returned: 2" # because it was incremented once in the init
+FIXTURES_REQUIRED cliffi_init_fixture
+REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
+)
+
+add_test(NAME test_cliffi_init_without_repl_using_var
+  COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i add var var
+)
+
+set_tests_properties(
+test_cliffi_init_without_repl_using_var PROPERTIES
+PASS_REGULAR_EXPRESSION "Function returned: 8" # because it was incremented once in the init
+FIXTURES_REQUIRED cliffi_init_fixture
+REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
+)
+
+# Define the test that requires the fixture
 # add_test(NAME TestAddFunctionWithSH
 # COMMAND sh cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i add 1 2)
 # set_tests_properties(TestAddFunctionWithSH PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")
