@@ -677,6 +677,55 @@ void startRepl() {
 
 #endif
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <errno.h>
+ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
+    static const size_t INITIAL_SIZE = 128;
+    static const size_t GROWTH_FACTOR = 2;
+    if (lineptr == NULL || stream == NULL || n == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    char *buffer = *lineptr;
+    size_t size = *n;
+    size_t position = 0;
+
+    if (buffer == NULL || size == 0) {
+        size = INITIAL_SIZE;
+        buffer = malloc(size);
+        if (buffer == NULL) {
+            errno = ENOMEM;
+            return -1;
+        }
+    }
+
+    int c;
+    while ((c = fgetc(stream)) != EOF) {
+        if (position >= size - 1) {
+            size_t new_size = size * GROWTH_FACTOR;
+            char *new_buffer = realloc(buffer, new_size);
+            if (new_buffer == NULL) {
+                errno = ENOMEM;
+                free(buffer);
+                return -1;
+            }
+            buffer = new_buffer;
+            size = new_size;
+        }
+        buffer[position++] = (char)c;
+        if (c == '\n') break;
+    }
+
+    buffer[position] = '\0';
+    *lineptr = buffer;
+    *n = position;
+
+    return (position == 0 && c == EOF) ? -1 : (ssize_t)position;
+}
+#endif
+
+
 bool checkAndRunCliffiInitWithPath(char* path) {
     // look for a file .cliffi_init in the specified path and run it if it exists
     char* cliffi_init_path = ".cliffi_init";
