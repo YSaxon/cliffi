@@ -580,12 +580,6 @@ void parseHexdump(char* hexdumpCommand) {
 int parseREPLCommand(char* command){
         command = trim_whitespace(command);
         if (strlen(command) > 0) {
-            // fprintf(stderr, "Command: %s\n", command);
-            HIST_ENTRY* last_command = history_get(history_length);
-            if (last_command == NULL || strcmp(command, last_command->line) != 0) {
-                add_history(command);
-                write_history(".cliffi_history");
-            }
             if (strcmp(command, "quit") == 0 || strcmp(command, "exit") == 0) {
                 closeAllLibraries();
                 return 1;
@@ -662,7 +656,16 @@ void startRepl() {
     char* command;
 
     while ((command = readline("> ")) != NULL) {
-        int breakRepl = parseREPLCommand(command);
+        int breakRepl = 0;
+        if (strlen(command) > 0) {
+            // fprintf(stderr, "Command: %s\n", command);
+            HIST_ENTRY* last_command = history_get(history_length);
+            if (last_command == NULL || strcmp(command, last_command->line) != 0) {
+                add_history(command);
+                write_history(".cliffi_history");
+            }
+        breakRepl = parseREPLCommand(command);
+        }
         free(command);
         if (breakRepl) break;
     }
