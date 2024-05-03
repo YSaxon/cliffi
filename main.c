@@ -23,8 +23,8 @@
 #define siglongjmp(env, val) longjmp(env, val)
 #endif
 
-#ifdef use_readline
 #include "tokenize.h"
+#ifdef use_readline
 #include <readline/history.h>
 #include <readline/readline.h>
 #include <sys/wait.h> // same as above
