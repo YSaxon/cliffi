@@ -95,7 +95,22 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: cache docker image
+        id: cache_docker_image
+        uses: actions/cache@v4
+        with:
+          path: ~/.docker
+          key: ${{ runner.os }}-docker-${{ matrix.dockcross_image }}
+
+      - name: cache dockcross script
+        id: cache_dockcross
+        uses: actions/cache@v4
+        with:
+          path: dockcross
+          key: ${{ runner.os }}-dockcross-${{ matrix.dockcross_image }}
+
       - name: install helper script
+        if: steps.cache_docker_image.outputs.cache-hit != 'true' || steps.cache_dockcross.outputs.cache-hit != 'true'
         run: |
             docker run --rm dockcross/${{ matrix.dockcross_image }} > ./dockcross
             chmod +x ./dockcross
