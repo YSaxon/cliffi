@@ -188,7 +188,7 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *args_used, bool is_return){
             }
         }
 
-        if (!is_return && outArg->type!=TYPE_STRUCT && set_to_null) {
+        if (outArg->type!=TYPE_STRUCT && (set_to_null || is_return)) { // should probably instead make another field for is_null in both parse_one_arg and parse_all_from_argvs, but this is adequate for now
             set_arg_value_nullish(outArg);
         } else if (!is_return && outArg->type!=TYPE_STRUCT) {
             convert_arg_value(outArg, argStr);
