@@ -97,7 +97,6 @@ void convert_arg_value(ArgInfo* arg, const char* argStr);
 void log_function_call_info(FunctionCallInfo* info);
 size_t typeToSize(ArgType type, int array_value_pointer_depth);
 char* typeToFormatSpecifier(ArgType type);
-void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr);
 
 size_t get_size_for_arginfo_sized_array(const ArgInfo* arg);
 void convert_all_arrays_to_arginfo_ptr_sized_after_parsing(ArgInfoContainer* functionInfo);
@@ -108,5 +107,7 @@ void* makePointerLevel(void* value, int pointer_depth);
 void* dereferencePointerLevels(void* value, int pointer_depth);
 
 void castArgValueToType(ArgInfo* destinationTypedArg, ArgInfo* sourceValueArg);
+void set_arg_value_nullish(ArgInfo* arg);
+
 
 #endif /* ARG_TOOLS_H */

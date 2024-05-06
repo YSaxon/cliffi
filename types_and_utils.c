@@ -292,68 +292,21 @@ void* convert_to_type(ArgType type, const char* argStr) {
     return result;
 }
 
-// Type converter
-void convert_arg_value(ArgInfo* arg, const char* argStr) {
-    if (arg->is_array) {
-        handle_array_arginfo_conversion(arg, argStr);
-    } else {
-        void* convertedValue = convert_to_type(arg->type, argStr);
-        if (convertedValue == NULL) {
-            fprintf(stderr, "Error: Failed to convert argument value %s to type %c\n", argStr, typeToChar(arg->type));
-            exit_or_restart(1);
-        }
+void set_arg_value_nullish(ArgInfo* arg){
+    if (arg->is_array == ARRAY_STATIC_SIZE) { // in that case we mean a null array. (ARRAY_SIZE_AT_ARGNUM is handled in second_pass_arginfo_ptr)
+        void* array_raw = calloc(arg->static_or_implied_size, typeToSize(arg->type, arg->array_value_pointer_depth));
+        arg->value->ptr_val = makePointerLevel(array_raw, arg->pointer_depth);
 
-        switch (arg->type) {
-        case TYPE_INT:
-            arg->value->i_val = *(int*)convertedValue;
-            break;
-        case TYPE_FLOAT:
-            arg->value->f_val = *(float*)convertedValue;
-            break;
-        case TYPE_DOUBLE:
-            arg->value->d_val = *(double*)convertedValue;
-            break;
-        case TYPE_CHAR:
-            arg->value->c_val = *(char*)convertedValue;
-            break;
-        case TYPE_SHORT:
-            arg->value->s_val = *(short*)convertedValue;
-            break;
-        case TYPE_UCHAR:
-            arg->value->uc_val = *(unsigned char*)convertedValue;
-            break;
-        case TYPE_USHORT:
-            arg->value->us_val = *(unsigned short*)convertedValue;
-            break;
-        case TYPE_UINT:
-            arg->value->ui_val = *(unsigned int*)convertedValue;
-            break;
-        case TYPE_ULONG:
-            arg->value->ul_val = *(unsigned long*)convertedValue;
-            break;
-        case TYPE_LONG:
-            arg->value->l_val = *(long*)convertedValue;
-            break;
-        case TYPE_VOIDPOINTER:
-            arg->value->ptr_val = *(void**)convertedValue;
-            break;
-        case TYPE_STRING:
-            arg->value->str_val = *(char**)convertedValue;
-            break;
-        default:
-            fprintf(stderr, "Unsupported argument type. Cannot assign value.\n");
-            break;
-        }
-        free(convertedValue);
+    } else if (arg->pointer_depth > 0) { // in that case we mean a null pointer
+        arg->value->ptr_val = makePointerLevel(NULL, arg->pointer_depth);
+
+    } else if (arg->type == TYPE_STRUCT){
+        fprintf(stderr, "Setting struct types to NULL should not be getting handled by this function. Please report this.");
+        exit_or_restart(1);
+    } else { // non pointer set to null is just setting the value to 0
+        memset(arg->value, 0, typeToSize(arg->type, 0));
     }
 
-    for (int i = 0; i < arg->pointer_depth; i++) {
-        void* temp = malloc(sizeof(void*)); // meaning size of a pointer
-        memcpy(temp, arg->value, sizeof(void*));
-        arg->value->ptr_val = temp; // TODO we should free it at the end
-        // arg->value.ptr_val = &arg->value; this doesn't work because it just ends up pointing to itself
-        // don't make the mistake of setting type to POINTER. type is the type of the value being pointed to, not the pointer itself
-    }
 }
 
 void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr) {
@@ -386,6 +339,7 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr) {
     // if (arg->is_array==ARRAY_STATIC_SIZE) {
 
     if ((strcmp(argStr, "0") == 0 || strcmp(argStr, "NULL") == 0 || strcmp(argStr, "null") == 0)) {
+        fprintf(stderr, "Setting an array to NULL this way is deprecated. Please use the newer more flexible syntax, replacing the dash in the type with an n, like nai4 for a null array of 4 ints");
         if (arg->is_array == ARRAY_STATIC_SIZE) {
             arg->value->ptr_val = calloc(arg->static_or_implied_size, typeToSize(arg->type, arg->array_value_pointer_depth));
             return;
@@ -484,6 +438,70 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr) {
             fprintf(stderr, "Error: Unsupported array size mode %d\n", arg->is_array);
             exit_or_restart(1);
         }
+}
+
+// Type converter
+void convert_arg_value(ArgInfo* arg, const char* argStr) {
+    if (arg->is_array) {
+        handle_array_arginfo_conversion(arg, argStr);
+    } else {
+        void* convertedValue = convert_to_type(arg->type, argStr);
+        if (convertedValue == NULL) {
+            fprintf(stderr, "Error: Failed to convert argument value %s to type %c\n", argStr, typeToChar(arg->type));
+            exit_or_restart(1);
+        }
+
+        switch (arg->type) {
+        case TYPE_INT:
+            arg->value->i_val = *(int*)convertedValue;
+            break;
+        case TYPE_FLOAT:
+            arg->value->f_val = *(float*)convertedValue;
+            break;
+        case TYPE_DOUBLE:
+            arg->value->d_val = *(double*)convertedValue;
+            break;
+        case TYPE_CHAR:
+            arg->value->c_val = *(char*)convertedValue;
+            break;
+        case TYPE_SHORT:
+            arg->value->s_val = *(short*)convertedValue;
+            break;
+        case TYPE_UCHAR:
+            arg->value->uc_val = *(unsigned char*)convertedValue;
+            break;
+        case TYPE_USHORT:
+            arg->value->us_val = *(unsigned short*)convertedValue;
+            break;
+        case TYPE_UINT:
+            arg->value->ui_val = *(unsigned int*)convertedValue;
+            break;
+        case TYPE_ULONG:
+            arg->value->ul_val = *(unsigned long*)convertedValue;
+            break;
+        case TYPE_LONG:
+            arg->value->l_val = *(long*)convertedValue;
+            break;
+        case TYPE_VOIDPOINTER:
+            arg->value->ptr_val = *(void**)convertedValue;
+            break;
+        case TYPE_STRING:
+            arg->value->str_val = *(char**)convertedValue;
+            break;
+        default:
+            fprintf(stderr, "Unsupported argument type. Cannot assign value.\n");
+            break;
+        }
+        free(convertedValue);
+    }
+
+    for (int i = 0; i < arg->pointer_depth; i++) {
+        void* temp = malloc(sizeof(void*)); // meaning size of a pointer
+        memcpy(temp, arg->value, sizeof(void*));
+        arg->value->ptr_val = temp; // TODO we should free it at the end
+        // arg->value.ptr_val = &arg->value; this doesn't work because it just ends up pointing to itself
+        // don't make the mistake of setting type to POINTER. type is the type of the value being pointed to, not the pointer itself
+    }
 }
 
 void second_pass_arginfo_ptr_sized_null_array_initialization_inner(ArgInfo* arg) {

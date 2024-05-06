@@ -57,7 +57,7 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
             }
         }
 
-    
+
         if (explicitType == TYPE_ARRAY) {
         // We'll need to figure out how to move forward argv past the array values
         // For now we'll just say that the array values can't have a space in them
@@ -87,7 +87,7 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
         } else if (explicitType == TYPE_POINTER) {
             fprintf(stderr, "Error: Array flag in unsupported position in flags %s. Order must be -[p[p..]][a][primitive type flag]\n", argStr);
             exit_or_restart(1);
-        } 
+        }
 
 
 
@@ -110,7 +110,7 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
             // will be set from the values given later on if it's an argument (or will fail if it's a return)
         }
 
-        
+
 
     }
 
@@ -134,25 +134,40 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
 
 ArgInfo* parse_one_arg(int argc, char* argv[], int *args_used, bool is_return){
         char* argStr = argv[0];
-        
+
         ArgInfo* storedVar = getVar(argStr);
         if (storedVar != NULL) {
             return storedVar;
         }
-      
+
         ArgInfo* outArg = calloc(1,sizeof(ArgInfo));
         outArg->value = malloc(sizeof(*outArg->value));
+        bool set_to_null = false;
 
         int i = 0;
         if (is_return){ // is a return type, so we don't need to parse values or check for the - flag
             parse_arg_type_from_flag(outArg, argStr);
         } else if (argStr[0] == '-' && !isAllDigits(argStr+1) && !isHexFormat(argStr+1)) {
             parse_arg_type_from_flag(outArg, argStr+1);
-
             if (outArg->type != TYPE_STRUCT) argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
-        
+        } else if (argStr[0] == 'N'){ //for NULL
+            set_to_null = true;
+            parse_arg_type_from_flag(outArg, argStr+1);
+            // if (outArg->type != TYPE_STRUCT) argStr = "NULL";
         } else { // no flag, so we need to infer the type from the value
             infer_arg_type_from_value(outArg, argStr);
+        }
+
+        if (outArg->type==TYPE_STRUCT){ //parsing now in case it's a null type being used for casting a variable
+            StructInfo* struct_info = outArg->struct_info; // it's allocated inside parse_arg_type_from_flag
+            outArg->struct_info->info.return_var = calloc(1,sizeof(ArgInfo));
+            int struct_args_used = 0;
+            i++; // skip the S: open tag
+            parse_all_from_argvs(&struct_info->info, argc-i, argv+i, &struct_args_used, is_return || set_to_null, true);
+
+            i+=struct_args_used;
+            outArg->struct_info = struct_info;
+            // not setting a value here, that will be handled by the make_raw_value_for_struct function in the invoke handler module
         }
 
         if(!is_return && outArg->explicitType){
@@ -169,24 +184,16 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *args_used, bool is_return){
                 format_and_print_arg_type(outArg);
                 printf("\n");
                 castArgValueToType(outArg, storedVar);
-                *args_used += i;
-                return outArg;
+                goto set_args_used_and_return;
             }
         }
 
-        if (!is_return && outArg->type!=TYPE_STRUCT) {
+        if (!is_return && outArg->type!=TYPE_STRUCT && set_to_null) {
+            set_arg_value_nullish(outArg);
+        } else if (!is_return && outArg->type!=TYPE_STRUCT) {
             convert_arg_value(outArg, argStr);
-        } else if (outArg->type==TYPE_STRUCT){
-            StructInfo* struct_info = outArg->struct_info; // it's allocated inside parse_arg_type_from_flag
-            outArg->struct_info->info.return_var = calloc(1,sizeof(ArgInfo));
-            int struct_args_used = 0;
-            i++; // skip the S: open tag
-            parse_all_from_argvs(&struct_info->info, argc-i, argv+i, &struct_args_used, is_return, true);
-
-            i+=struct_args_used;
-            outArg->struct_info = struct_info;
-            // not setting a value here, that will be handled by the make_raw_value_for_struct function in the invoke handler module
         }
+        set_args_used_and_return: // this is a goto label
         *args_used += i;
         return outArg;
 }
@@ -201,7 +208,7 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
     int i;
     for (i=0; i < argc; i++) {
         char* argStr = argv[i];
-        
+
         if (strcmp(argStr, ":S") == 0){ // this terminates a struct flag
             if (!is_struct){
                 fprintf(stderr, "Error: Unexpected close struct flag :S\n");
@@ -240,10 +247,10 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
 
     convert_all_arrays_to_arginfo_ptr_sized_after_parsing(info);
 
-    second_pass_arginfo_ptr_sized_null_array_initialization(info);    
+    second_pass_arginfo_ptr_sized_null_array_initialization(info);
 }
 
- 
+
 FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
     FunctionCallInfo* info = calloc(1, sizeof(FunctionCallInfo)); // using calloc to zero out the struct
 
@@ -265,7 +272,7 @@ FunctionCallInfo* parse_arguments(int argc, char* argv[]) {
         fprintf(stderr, "Error: Unknown Return Type\n");
         exit_or_restart(1);
         return NULL;
-    } 
+    }
     //check if return is an array without a specified size
     if (info->info.return_var->is_array==ARRAY_STATIC_SIZE_UNSET) {
         fprintf(stderr, "Error: Array return types must have a specified size. Put a number at the end of the flag with no spaces, eg %s4 for a static size, or t and a number to specify an argnumber that will represent size_t for it eg %st1 for the first arg, since 0=return\n", argv[1],argv[1]);
