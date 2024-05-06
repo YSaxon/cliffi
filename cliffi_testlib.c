@@ -765,6 +765,13 @@ char (*get_global_string_ptr())[200] {
     return global_string_ptr;
 }
 
+bool is_null(void* ptr) {
+    return ptr == NULL;
+}
+bool is_pointer_to_null(void** ptr) {
+    return *ptr == NULL;
+}
+
 // Entry point to prevent the compiler from complaining when compiling as a shared library
 // This function will not be called; it's just to satisfy the linker.
 int main() {

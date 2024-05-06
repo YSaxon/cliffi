@@ -297,9 +297,6 @@ void set_arg_value_nullish(ArgInfo* arg){
         void* array_raw = calloc(arg->static_or_implied_size, typeToSize(arg->type, arg->array_value_pointer_depth));
         arg->value->ptr_val = makePointerLevel(array_raw, arg->pointer_depth);
 
-    } else if (arg->pointer_depth > 0) { // in that case we mean a null pointer
-        arg->value->ptr_val = makePointerLevel(NULL, arg->pointer_depth);
-
     } else if (arg->type == TYPE_STRUCT){
         fprintf(stderr, "Setting struct types to NULL should not be getting handled by this function. Please report this.");
         exit_or_restart(1);

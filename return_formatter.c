@@ -61,6 +61,10 @@ void hexdump(const void *data, size_t size) {
         value = value + offset * sizeof(void*);
         for (int j = 0; j < pointer_depth; j++) {
             value = *(void**)value;
+            if (value == NULL) {
+                printf("(NULL pointer)");
+                return;
+            }
         }
         offset = 0;
     }
@@ -165,6 +169,10 @@ void hexdump(const void *data, size_t size) {
         if (arg->pointer_depth > 0) {
             for (int j = 0; j < arg->pointer_depth; j++) {
                 value = *(void**)value;
+                if (arg->type!=TYPE_STRUCT && value == NULL) {
+                    printf("(NULL pointer)");
+                    return;
+                }
             }
         }
         if (arg->type==TYPE_STRUCT){
