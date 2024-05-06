@@ -2,6 +2,7 @@
 #include "invoke_handler.h"
 #include "library_path_resolver.h"
 #include "main.h"
+#include "return_formatter.h"
 #include "types_and_utils.h"
 #include "var_map.h"
 #include <stdbool.h>
@@ -152,6 +153,25 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *args_used, bool is_return){
         
         } else { // no flag, so we need to infer the type from the value
             infer_arg_type_from_value(outArg, argStr);
+        }
+
+        if(!is_return && outArg->explicitType){
+            // if the value is a variable, we should cast it to the type specified in the flag and return
+            // note that due to parsing logic, we don't really have a way to allow casting to a struct
+            // ideally we could check if the typeflag is a struct TYPE (ie a struct without values, like would be used in returns) and then allow casting to it
+            // maybe we could do that by setting sigsetjmp and then attempting to parse the flag as a return type struct, and if it fails, then we know it's not a struct
+            // but in that case we also have to refactor exit_or_restart to contain the fprintf errmessage so we can suppress it in this case
+            ArgInfo* storedVar = getVar(argStr);
+            if (storedVar != NULL) {
+                printf("Attempting cast from variable %s of type ", argStr);
+                format_and_print_arg_type(storedVar);
+                printf(" to type ");
+                format_and_print_arg_type(outArg);
+                printf("\n");
+                castArgValueToType(outArg, storedVar);
+                *args_used += i;
+                return outArg;
+            }
         }
 
         if (!is_return && outArg->type!=TYPE_STRUCT) {

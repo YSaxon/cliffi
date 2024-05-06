@@ -107,4 +107,6 @@ char* trim_whitespace(char* str);
 void* makePointerLevel(void* value, int pointer_depth);
 void* dereferencePointerLevels(void* value, int pointer_depth);
 
+void castArgValueToType(ArgInfo* destinationTypedArg, ArgInfo* sourceValueArg);
+
 #endif /* ARG_TOOLS_H */

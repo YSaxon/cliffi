@@ -779,6 +779,48 @@ ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMA
 )
 set_tests_properties(repl_test_address_addition PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?Hallo,_wyrld:")
 
+
+
+add_test(NAME repl_test_cast_int_to_char
+COMMAND cliffi --repltest
+set var1 35 \n
+var2 = -c var1 \n
+)
+set_tests_properties(repl_test_cast_int_to_char PROPERTIES PASS_REGULAR_EXPRESSION "char var2 = #")
+
+add_test(NAME repl_test_cast_char_to_int
+COMMAND cliffi --repltest
+set var1 -c q \n
+var2 = -i var1 \n
+)
+set_tests_properties(repl_test_cast_char_to_int PROPERTIES PASS_REGULAR_EXPRESSION "int var2 = 113")
+
+add_test(NAME repl_test_cast_int_to_double
+COMMAND cliffi --repltest
+set var1 35 \n
+var2 = -d var1 \n
+)
+set_tests_properties(repl_test_cast_int_to_double PROPERTIES PASS_REGULAR_EXPRESSION "double var2 = 35.00*")
+
+add_test(NAME repl_test_cast_double_to_int
+COMMAND cliffi --repltest
+set var1 35.5 \n
+var2 = -i var1 \n
+)
+set_tests_properties(repl_test_cast_double_to_int PROPERTIES PASS_REGULAR_EXPRESSION "int var2 = 35")
+
+add_test(NAME repl_test_cast_int_to_uint
+COMMAND cliffi --repltest
+set var1 35 \n
+var2 = -I var1 \n
+)
+set_tests_properties(repl_test_cast_int_to_uint PROPERTIES PASS_REGULAR_EXPRESSION "uint var2 = 35")
+
+
+# add a bunch more tests for casting
+# test voidpointers and arrays and structs etc
+
+
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
 add_test(NAME repl_test_calculate_returns_even
 COMMAND cliffi --repltest

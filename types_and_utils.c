@@ -802,6 +802,265 @@ void log_function_call_info(FunctionCallInfo* info) {
     printf(")\n");
 }
 
+
+void* dynamicCast(void* ptr, ArgType from, ArgType to) {
+    void* result = NULL;
+    if (from == to) {
+        // don't return the same pointer, because it might be freed later
+        result = malloc(typeToSize(to, 0));
+        memcpy(result, ptr, typeToSize(to, 0));
+    }
+
+    void* intermediate = NULL;
+
+    // Allocate memory for the intermediate type
+    switch (from) {
+        case TYPE_CHAR:
+        case TYPE_SHORT:
+        case TYPE_INT:
+        case TYPE_LONG:
+        case TYPE_UCHAR:
+        case TYPE_USHORT:
+        case TYPE_UINT:
+        case TYPE_ULONG:
+        case TYPE_POINTER:
+        case TYPE_VOIDPOINTER:
+        case TYPE_STRING:
+            intermediate = malloc(sizeof(long));
+            break;
+        case TYPE_FLOAT:
+        case TYPE_DOUBLE:
+            intermediate = malloc(sizeof(double));
+            break;
+        default:
+            return NULL;  // Unsupported type
+    }
+
+    // Copy the value to the intermediate type
+    switch (from) {
+        case TYPE_CHAR:
+            *(long*)intermediate = *(char*)ptr;
+            break;
+        case TYPE_SHORT:
+            *(long*)intermediate = *(short*)ptr;
+            break;
+        case TYPE_INT:
+            *(long*)intermediate = *(int*)ptr;
+            break;
+        case TYPE_LONG:
+            *(long*)intermediate = *(long*)ptr;
+            break;
+        case TYPE_UCHAR:
+            *(unsigned long*)intermediate = *(unsigned char*)ptr;
+            break;
+        case TYPE_USHORT:
+            *(unsigned long*)intermediate = *(unsigned short*)ptr;
+            break;
+        case TYPE_UINT:
+            *(unsigned long*)intermediate = *(unsigned int*)ptr;
+            break;
+        case TYPE_ULONG:
+            *(unsigned long*)intermediate = *(unsigned long*)ptr;
+            break;
+        case TYPE_POINTER:
+        case TYPE_VOIDPOINTER:
+        case TYPE_STRING:
+            *(unsigned long*)intermediate = *(uintptr_t*)ptr;
+            break;
+        case TYPE_FLOAT:
+            *(double*)intermediate = *(float*)ptr;
+            break;
+        case TYPE_DOUBLE:
+            *(double*)intermediate = *(double*)ptr;
+            break;
+        default:
+            break;
+    }
+
+    // Perform the conversion between floating-point and integer types
+    switch (from) {
+        case TYPE_FLOAT:
+        case TYPE_DOUBLE:
+            switch (to) {
+                case TYPE_CHAR:
+                case TYPE_SHORT:
+                case TYPE_INT:
+                case TYPE_LONG:
+                case TYPE_POINTER:
+                case TYPE_VOIDPOINTER:
+                case TYPE_STRING:
+                    *(long*)intermediate = (long)*(double*)intermediate;
+                    break;
+                case TYPE_UCHAR:
+                case TYPE_USHORT:
+                case TYPE_UINT:
+                case TYPE_ULONG:
+                    *(unsigned long*)intermediate = (unsigned long)*(double*)intermediate;
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case TYPE_UCHAR:
+        case TYPE_USHORT:
+        case TYPE_UINT:
+        case TYPE_ULONG:
+        case TYPE_POINTER:
+        case TYPE_VOIDPOINTER:
+        case TYPE_STRING:
+            switch (to) {
+                case TYPE_FLOAT:
+                case TYPE_DOUBLE:
+                    *(double*)intermediate = (double)*(unsigned long*)intermediate;
+                    break;
+                case TYPE_CHAR:
+                case TYPE_SHORT:
+                case TYPE_INT:
+                case TYPE_LONG:
+                    *(long*)intermediate = (long)*(unsigned long*)intermediate;
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case TYPE_CHAR:
+        case TYPE_SHORT:
+        case TYPE_INT:
+        case TYPE_LONG:
+            switch (to) {
+                case TYPE_FLOAT:
+                case TYPE_DOUBLE:
+                    *(double*)intermediate = (double)*(long*)intermediate;
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+
+    // Allocate memory for the target type and copy the value
+    switch (to) {
+        case TYPE_CHAR:
+            result = malloc(sizeof(char));
+            *(char*)result = (char)*(long*)intermediate;
+            break;
+        case TYPE_SHORT:
+            result = malloc(sizeof(short));
+            *(short*)result = (short)*(long*)intermediate;
+            break;
+        case TYPE_INT:
+            result = malloc(sizeof(int));
+            *(int*)result = (int)*(long*)intermediate;
+            break;
+        case TYPE_LONG:
+            result = malloc(sizeof(long));
+            *(long*)result = *(long*)intermediate;
+            break;
+        case TYPE_UCHAR:
+            result = malloc(sizeof(unsigned char));
+            *(unsigned char*)result = (unsigned char)*(unsigned long*)intermediate;
+            break;
+        case TYPE_USHORT:
+            result = malloc(sizeof(unsigned short));
+            *(unsigned short*)result = (unsigned short)*(unsigned long*)intermediate;
+            break;
+        case TYPE_UINT:
+            result = malloc(sizeof(unsigned int));
+            *(unsigned int*)result = (unsigned int)*(unsigned long*)intermediate;
+            break;
+        case TYPE_ULONG:
+            result = malloc(sizeof(unsigned long));
+            *(unsigned long*)result = *(unsigned long*)intermediate;
+            break;
+        case TYPE_FLOAT:
+            result = malloc(sizeof(float));
+            *(float*)result = (float)*(double*)intermediate;
+            break;
+        case TYPE_DOUBLE:
+            result = malloc(sizeof(double));
+            *(double*)result = *(double*)intermediate;
+            break;
+        case TYPE_POINTER:
+        case TYPE_VOIDPOINTER:
+        case TYPE_STRING:
+            result = malloc(sizeof(void*));
+            *(uintptr_t*)result = (uintptr_t)*(unsigned long*)intermediate;
+            break;
+        default:
+            free(intermediate);
+            return NULL;  // Unsupported type
+    }
+
+    free(intermediate);
+    return result;
+}
+
+
+void castArgValueToType(ArgInfo* destinationTypedArg, ArgInfo* sourceValueArg){
+    //still need to figure out what to do about arrays and structs
+    // I guess treat arrays as pointers
+    // but how do we cast structs to other stuff?
+    // I could imagine trying to cast a struct to a char pointer
+
+    ArgType destinationType = destinationTypedArg->type;
+    ArgType sourceType = sourceValueArg->type;
+
+    if (sourceValueArg->pointer_depth > 0 || sourceValueArg->is_array) {
+        sourceType = TYPE_POINTER;
+    } else if (sourceValueArg->type == TYPE_STRUCT) { //we can't necessarily cast from a raw struct
+            if (destinationTypedArg->type == TYPE_VOIDPOINTER) {
+                sourceType = TYPE_POINTER;
+            } else if (destinationTypedArg->is_array) {
+                if (sourceValueArg->struct_info->info.arg_count > 0 && destinationTypedArg->type == sourceValueArg->struct_info->info.args[0]->type) {
+                    sourceType = TYPE_POINTER;
+                } else if (destinationTypedArg->type == TYPE_CHAR || destinationTypedArg->type == TYPE_UCHAR) {
+                    sourceType = TYPE_POINTER;
+                } else {
+                    fprintf(stderr, "Error: Cannot cast a struct to an array of a different type other than char or uchar\n");
+                    exit_or_restart(1);
+                }
+            } else {
+                fprintf(stderr, "Error: Cannot cast a struct to a different type\n");
+                exit_or_restart(1);
+            }
+    }
+    if (destinationTypedArg->pointer_depth > 0 || destinationTypedArg->is_array) {
+        destinationType = TYPE_POINTER;
+    } else if (destinationTypedArg->type == TYPE_STRUCT) {  // we can't necessarily cast to a raw struct
+            if (sourceValueArg->type == TYPE_VOIDPOINTER) {
+                destinationType = TYPE_POINTER;
+            } else if (sourceValueArg->is_array) {
+                if (destinationTypedArg->struct_info->info.arg_count > 0 && sourceValueArg->type == destinationTypedArg->struct_info->info.args[0]->type) {
+                    destinationType = TYPE_POINTER;
+                } else if (sourceValueArg->type == TYPE_CHAR || sourceValueArg->type == TYPE_UCHAR) {
+                    destinationType = TYPE_POINTER;
+                } else {
+                    fprintf(stderr, "Error: Cannot cast an array of a type other than char or uchar to a struct\n");
+                    exit_or_restart(1);
+                }
+            } else {
+                fprintf(stderr, "Error: Cannot cast a different type to a struct\n");
+                exit_or_restart(1);
+            }
+    }
+
+    void* convertedValue = dynamicCast(sourceValueArg->value, sourceType, destinationType);
+    if (convertedValue == NULL) {
+        fprintf(stderr, "Error: Failed to cast value from type %c to type %c\n", typeToChar(sourceType), typeToChar(destinationType));
+        exit_or_restart(1);
+    }
+    destinationTypedArg->value = convertedValue;
+}
+
+    // should we maybe descend to the lowest level of the pointer before casting so we don't share memory
+    // actually probably not because casting pointer types generally does end up sharing memory
+
+    // still, we probably haven't appropriately handled pointer depth here
+
+
+
 // void convert_all_arrays_to_static_sized_after_function_return(FunctionCallInfo* call_info){
 //     for (int i = 0; i < call_info->arg_count; i++) {
 //     if (call_info->args[i]->is_array==ARRAY_SIZE_AT_ARGINFO_PTR){
