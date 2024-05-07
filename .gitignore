@@ -26,3 +26,7 @@ coverage-html/
 coverage.info
 
 .conan2/
+
+dockcross_win*
+dockcross_lin*
+dockcross_android*
