@@ -5,9 +5,6 @@ permissions:
 
 on:
     push:
-        branches:
-            - master
-            - develop
     workflow_dispatch:
 
 jobs:
@@ -31,8 +28,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.version.outputs.version }}
-          release_name: Release ${{ steps.version.outputs.version }}
-          draft: true
+          release_name: ${{ github.ref_name == 'master' && 'Release' || 'DevBuild' }} ${{ steps.version.outputs.version }}
+          draft: ${{ github.ref_name != 'master' }}
           prerelease: true
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
@@ -167,7 +164,6 @@ jobs:
 
 
       - name: upload
-        if: github.ref == 'refs/heads/master'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
