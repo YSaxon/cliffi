@@ -1,7 +1,7 @@
 #ifndef SHIMS_H
 #define SHIMS_H
 #if defined(_WIN32) || defined(_WIN64)
-ssize_t getline(char **lineptr, size_t *n, FILE *stream)
+ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 
 
 char* readline(const char* prompt);
