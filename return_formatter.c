@@ -119,7 +119,9 @@ void hexdump(const void *data, size_t size) {
             printf("\"%s\"", ((char**)value)[offset]);
             break;
         case TYPE_VOIDPOINTER:
-            printf("0x%" PRIxPTR,(uintptr_t)((void**)value)[offset]);
+            // #define HEX_DIGITS (int)(2 * sizeof(void*))
+            // printf("0x%0*" PRIxPTR, HEX_DIGITS,(uintptr_t)((void**)value)[offset]);
+            printf("0x%" PRIxPTR, (uintptr_t)((void**)value)[offset]);
             break;
         case TYPE_POINTER:
             fprintf(stderr, "Should not be printing pointer values directly");
@@ -163,7 +165,7 @@ void hexdump(const void *data, size_t size) {
 
     //this contains an optional override for the value, which is used for printing struct fields
     void format_and_print_arg_value(const ArgInfo* arg) {  //, char* buffer, size_t buffer_size) {
-        
+
         const void* value;
         value = arg->value;
 
@@ -192,7 +194,7 @@ void hexdump(const void *data, size_t size) {
         }
         else if (!arg->is_array) {
             print_arg_value(value, arg->type, 0, 0);
-        } 
+        }
         else { // is an array
             value = *(void**)value; // because arrays are stored as pointers
             size_t array_size = get_size_for_arginfo_sized_array(arg);
