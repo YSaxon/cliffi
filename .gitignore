@@ -30,3 +30,6 @@ coverage.info
 dockcross_win*
 dockcross_lin*
 dockcross_android*
+
+.cliffi_history
+.cliffi_init
