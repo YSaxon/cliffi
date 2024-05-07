@@ -6,7 +6,7 @@ if [ -f "CMakeLists.txt" ]; then
     cmake  .. -DCMAKE_BUILD_TYPE=Debug
     fi
     make && ctest .. --output-on-failure && \
-    lcov --capture --directory . --output-file ../coverage.info
+    lcov --capture --directory . --output-file ../coverage.info && \
     genhtml ../coverage.info --output-directory ../coverage-html
     cd ..
 else
