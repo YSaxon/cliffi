@@ -7,9 +7,7 @@ enable_testing()
 set(CMAKE_C_STANDARD 99)
 
 
-if(NOT WIN32)
 set(USE_REPL_MODE ON)
-endif()
 
 if(APPLE)
     # Find Homebrew's LLVM installation directory
