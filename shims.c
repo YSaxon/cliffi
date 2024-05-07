@@ -1,3 +1,4 @@
+#include "shims.h"
 #if defined(_WIN32) || defined(_WIN64)
 #include <errno.h>
 #include <stdio.h>
@@ -84,10 +85,21 @@ int write_history(const char *filename) {
     // Placeholder - no operation
     return 0; // Success
 }
-int rl_bind_key(int key, int (*func)(int, int)) {
+int rl_bind_key(int key, int func) {
     // Placeholder - no operation
     return 0; // Success
 }
+
+HIST_ENTRY* history_get(int index) {
+    // Placeholder - no operation
+    return NULL;
+}
+
+int add_history(const char *line) {
+    // Placeholder - no operation
+    return 0; // Success
+}
+
 
 #endif
 
