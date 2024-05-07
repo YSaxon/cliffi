@@ -625,41 +625,6 @@ size_t typeToSize(ArgType type, int array_value_pointer_depth) {
     }
 }
 
-char* typeToFormatSpecifier(ArgType type) {
-    switch (type) {
-    case TYPE_CHAR:
-        return "%c";
-    case TYPE_SHORT:
-        return "%hd";
-    case TYPE_INT:
-        return "%d";
-    case TYPE_LONG:
-        return "%ld";
-    case TYPE_UCHAR:
-        return "%u";
-    case TYPE_USHORT:
-        return "%hu";
-    case TYPE_UINT:
-        return "%u";
-    case TYPE_ULONG:
-        return "%lu";
-    case TYPE_FLOAT:
-        return "%f";
-    case TYPE_DOUBLE:
-        return "%lf";
-    case TYPE_STRING:
-        return "%s";
-    case TYPE_POINTER:
-        return "%p  (likely mistake)";
-    case TYPE_VOIDPOINTER:
-        return "%p";
-    case TYPE_VOID:
-        return "(void)  (likely mistake)";
-    default:
-        return "%x  (unsupported type)";
-    }
-}
-
 ArgType charToType(char c) {
     switch (c) {
     case 'c':
