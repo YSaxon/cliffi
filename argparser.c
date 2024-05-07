@@ -168,14 +168,19 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *args_used, bool is_return){
             i+=struct_args_used;
             outArg->struct_info = struct_info;
             // not setting a value here, that will be handled by the make_raw_value_for_struct function in the invoke handler module
+
+            if (set_to_null && !is_return){
+                argStr = argv[++i]; // just setting for the purpose of checking if the next string afterwards is a variable
+            }
+            else {
+                argStr = "";
+            }
+            // one problem with this is that we could end up with ambiguity between signatures of ( struct, var ) and ( var cast to struct )
+            // but we can fix that by only allowing casting to NULL structs (specified like NS:). So if its an actual struct we don't try to cast to it
         }
 
-        if(!is_return && outArg->explicitType){
+        if(!is_return && outArg->explicitType && (outArg->type!=TYPE_STRUCT || set_to_null)){
             // if the value is a variable, we should cast it to the type specified in the flag and return
-            // note that due to parsing logic, we don't really have a way to allow casting to a struct
-            // ideally we could check if the typeflag is a struct TYPE (ie a struct without values, like would be used in returns) and then allow casting to it
-            // maybe we could do that by setting sigsetjmp and then attempting to parse the flag as a return type struct, and if it fails, then we know it's not a struct
-            // but in that case we also have to refactor exit_or_restart to contain the fprintf errmessage so we can suppress it in this case
             ArgInfo* storedVar = getVar(argStr);
             if (storedVar != NULL) {
                 printf("Attempting cast from variable %s of type ", argStr);
@@ -189,7 +194,7 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *args_used, bool is_return){
         }
 
         if (outArg->type!=TYPE_STRUCT && (set_to_null || is_return)) { // should probably instead make another field for is_null in both parse_one_arg and parse_all_from_argvs, but this is adequate for now
-            set_arg_value_nullish(outArg);
+            set_arg_value_nullish(outArg); // I'm not sure if this causes a memory leak, but fixing memory leaks will be a project for another time
         } else if (!is_return && outArg->type!=TYPE_STRUCT) {
             convert_arg_value(outArg, argStr);
         }

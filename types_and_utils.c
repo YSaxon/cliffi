@@ -1,4 +1,5 @@
 #include "types_and_utils.h"
+#include "invoke_handler.h"
 #include "main.h"
 #include "parse_address.h"
 #include "return_formatter.h"
@@ -1060,13 +1061,20 @@ void castArgValueToType(ArgInfo* destinationTypedArg, ArgInfo* sourceValueArg){
                 exit_or_restart(1);
             }
     }
-
+    if (sourceValueArg->type == TYPE_STRUCT) { // assuming destinationType is now TYPE_POINTER
+        sourceValueArg->value->ptr_val=make_raw_value_for_struct(sourceValueArg,false);
+    }
     void* convertedValue = dynamicCast(sourceValueArg->value, sourceType, destinationType);
     if (convertedValue == NULL) {
         fprintf(stderr, "Error: Failed to cast value from type %c to type %c\n", typeToChar(sourceType), typeToChar(destinationType));
         exit_or_restart(1);
     }
-    destinationTypedArg->value = convertedValue;
+
+    if (destinationTypedArg->type == TYPE_STRUCT){ // assuming sourceType is now TYPE_POINTER
+        fix_struct_pointers(destinationTypedArg, sourceValueArg->value->ptr_val); // but why aren't we using converted value at all?
+    } else {
+        destinationTypedArg->value = convertedValue;
+    }
 }
 
     // should we maybe descend to the lowest level of the pointer before casting so we don't share memory

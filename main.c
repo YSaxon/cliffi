@@ -391,7 +391,7 @@ void parseSetVariableWithNameAndValue(char* varName, int varValueCount, char** v
     int args_used = 0;
     ArgInfo* arg = parse_one_arg(varValueCount, varValues, &args_used, false);
     if (args_used + 1 != varValueCount) {
-        fprintf(stderr, "Invalid variable value.\n");
+        fprintf(stderr, "Invalid variable value (parser failed to consume entire value line)\n");
         free(arg);
         exit_or_restart(1);
         return;
