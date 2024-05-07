@@ -13,7 +13,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define use_readline
 
 #if defined(_WIN32) || defined(_WIN64)
 #define sigjmp_buf jmp_buf
@@ -46,7 +45,7 @@
 #include "shims.h"
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.10.1";
+const char* VERSION = "v1.10.2";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -110,9 +109,7 @@ void print_usage(char* argv0) {
     printf("%s %s\n", NAME, VERSION);
     printf("Usage: %s %s\n", argv0, BASIC_USAGE_STRING);
     printf("  [--help]         Print this help message\n"
-#ifdef use_readline
            "  [--repl]         Start the REPL\n"
-#endif
            "  <library>        The path to the shared library containing the function to invoke\n"
            "                   or the name of the library if it is in the system path\n"
            "  <typeflag>       The type of the return value of the function to invoke\n"
@@ -652,7 +649,6 @@ int parseREPLCommand(char* command){
         return 0;
 }
 
-#ifdef use_readline
 
 
 void startRepl() {
@@ -675,7 +671,6 @@ void startRepl() {
     }
 }
 
-#endif
 
 
 
@@ -735,8 +730,8 @@ int main(int argc, char* argv[]) {
         print_usage(argv[0]);
         return 0;
     }
-#ifdef use_readline
     if (argc > 1 && strcmp(argv[1], "--repltest") == 0) {
+        #if !defined(_WIN32) && !defined(_WIN64)
         int pipefd[2];
         if (pipe(pipefd) == -1) {
             perror("pipe");
@@ -764,6 +759,21 @@ int main(int argc, char* argv[]) {
             waitpid(pid, NULL, 0);
             return 0;
         }
+#else // a simpler version for windows
+        checkAndRunCliffiInits();
+        //just feed each line to the repl execute func directly, by concatenating inputs after arg[2] except splitting for newline chars
+        char* command = malloc(1024);
+        command[0] = '\0'; // initialize the command
+        for (int i = 2; i < argc; i++) {
+            if (argv[i] == "\n") {
+                executeREPLCommand(command);
+                command[0] = '\0'; // reset the command
+            } else {
+                strcat(command, argv[i]);
+                strcat(command, " ");
+            }
+        }
+        #endif
     } else if (argc > 1 && strcmp(argv[1], "--repl") == 0)
     replmode: {
         checkAndRunCliffiInits();
@@ -782,13 +792,9 @@ int main(int argc, char* argv[]) {
         }
         return 0;
     }
-#endif
+
         else if (argc < 4) {
-#ifdef use_readline
 #define DASHDASHREPL " [--repl]"
-#else
-#define DASHDASHREPL ""
-#endif
             fprintf(stderr, "%s %s\nUsage: %s [--help]%s %s\n", NAME, VERSION, argv[0], DASHDASHREPL, BASIC_USAGE_STRING);
             return 1;
         }
