@@ -821,6 +821,15 @@ var2 = -I var1 \n
 )
 set_tests_properties(repl_test_cast_int_to_uint PROPERTIES PASS_REGULAR_EXPRESSION "uint var2 = 35")
 
+
+add_test(NAME repl_test_cast_struct_to_array_and_back
+COMMAND cliffi --repltest
+foo = -S: 1 2.2 a hello :S \n
+bar = -aC80 foo \n
+#set baz -S: 0 0.0 a empty :S bar \n )
+baz = NS: i d c s :S bar \n)
+set_tests_properties(repl_test_cast_struct_to_array_and_back PROPERTIES PASS_REGULAR_EXPRESSION "struct baz = { int 1, double 2.20*, char a, cstring \"?hello")
+
 add_test(NAME repl_test_modify_var_value_with_cast_and_store
 COMMAND cliffi --repltest
 set var1 -pi 35 \n
