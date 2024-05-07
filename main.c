@@ -313,7 +313,8 @@ void parseStoreToMemoryWithAddressAndValue(char* addressStr, int varValueCount, 
     } else {
         memcpy(destAddress, arg->value, typeToSize(arg->type, arg->array_value_pointer_depth));
     }
-    printf("%p = ", destAddress);
+    // #define HEX_DIGITS (int)(2 * sizeof(void*))
+    printf("*( (void*) 0x%" PRIxPTR ") = ", (uintptr_t)destAddress);
     format_and_print_arg_type(arg);
     printf(" ");
     format_and_print_arg_value(arg);

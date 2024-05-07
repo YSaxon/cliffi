@@ -118,7 +118,7 @@ void hexdump(const void *data, size_t size) {
             printf("\"%s\"", ((char**)value)[offset]);
             break;
         case TYPE_VOIDPOINTER:
-            printf("%p", ((void**)value)[offset]);
+            printf("0x%" PRIxPTR,(uintptr_t)((void**)value)[offset]);
             break;
         case TYPE_POINTER:
             fprintf(stderr, "Should not be printing pointer values directly");
