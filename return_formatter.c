@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include "main.h"
 
 void print_char_buffer(const char *buffer, size_t length) {
