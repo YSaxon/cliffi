@@ -224,12 +224,12 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return) { //, f
             if (struct_info->info.args[i]->pointer_depth > 0) {
                 size_t size = sizeof(void*);
                 if (!is_return) memcpy(raw_memory + offsets[i], struct_info->info.args[i]->value->ptr_val, size);
-                free(struct_info->info.args[i]->value);
+                // free(struct_info->info.args[i]->value);
                 struct_info->info.args[i]->value = raw_memory + offsets[i];
             } else {
                 size_t size = typeToSize(struct_info->info.args[i]->type, struct_info->info.args[i]->array_value_pointer_depth) * get_size_for_arginfo_sized_array(struct_info->info.args[i]);
                 if (!is_return) memcpy(raw_memory + offsets[i], struct_info->info.args[i]->value->ptr_val, size);
-                free(struct_info->info.args[i]->value);
+                // free(struct_info->info.args[i]->value);
                 struct_info->info.args[i]->value = raw_memory + offsets[i];
             }
 
@@ -238,7 +238,7 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return) { //, f
         } else {
             size_t size = typeToSize(struct_info->info.args[i]->type, 0);
             memcpy(raw_memory + offsets[i], struct_info->info.args[i]->value, size);
-            free(struct_info->info.args[i]->value);
+            // free(struct_info->info.args[i]->value); // we can't free this because we don't actually know if it was allocated with malloc or memcpy'd from a previous call to make_raw_value. If we want to fix this we need to add a flag to the ArgValue struct to indicate whether it was malloc'd or not
             struct_info->info.args[i]->value = raw_memory + offsets[i];
         }
     }
