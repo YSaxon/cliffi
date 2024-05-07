@@ -22,7 +22,7 @@
 #endif
 
 #include "tokenize.h"
-#ifdef use_readline
+#if  !defined(_WIN32) && !defined(_WIN64)
 #include <readline/history.h>
 #include <readline/readline.h>
 #include <sys/wait.h> // same as above
@@ -46,7 +46,7 @@
 #include "shims.h"
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.9.2";
+const char* VERSION = "v1.10.1";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
