@@ -45,7 +45,7 @@
 #include "shims.h"
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.10.2";
+const char* VERSION = "v1.10.3";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -765,7 +765,7 @@ int main(int argc, char* argv[]) {
         char* command = malloc(1024);
         command[0] = '\0'; // initialize the command
         for (int i = 2; i < argc; i++) {
-            if (argv[i] == "\n") {
+            if (strcmp(argv[i], "\n") == 0) {
                 executeREPLCommand(command);
                 command[0] = '\0'; // reset the command
             } else {
