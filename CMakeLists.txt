@@ -711,6 +711,15 @@ print var2 \n
 set_tests_properties(repl_test_tokenizer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?test string foo and bar and . slash")
 set_tests_properties(repl_test_tokenizer PROPERTIES PASS_REGULAR_EXPRESSION "var2 = \"?a b c")
 
+add_test(NAME repl_test_store_embedded_struct
+COMMAND cliffi --repltest
+set foo -S: abc -S: qwerty :S :S \n
+set globalbuffer -P 0 \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} globalbuffer get_address_of_global_buffer1 \n
+store globalbuffer foo \n
+)
+set_tests_properties(repl_test_store_embedded_struct PROPERTIES PASS_REGULAR_EXPRESSION "globalbuffer.*qwerty")
+
 add_test(NAME repl_test_load_store_dump_memory
 COMMAND cliffi --repltest
 set global_address -P 0 \n

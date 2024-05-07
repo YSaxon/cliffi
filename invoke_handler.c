@@ -217,7 +217,7 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return) { //, f
             void* inner_struct_address = make_raw_value_for_struct(struct_info->info.args[i], is_return); //, struct_type->elements[i]);
             if (!is_return) memcpy(raw_memory + offsets[i], inner_struct_address, inner_size);
 
-            free(inner_struct_address);
+            // free(inner_struct_address); // this seems to make problems for embedded structs' values (probably because we've already repointed the values to this new raw_memory)
 
         } else if (struct_info->info.args[i]->is_array) {
             // we need to step down one layer of pointers compared to the usual handling of arrays in functions
