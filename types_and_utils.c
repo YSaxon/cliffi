@@ -337,7 +337,7 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr) {
     // if (arg->is_array==ARRAY_STATIC_SIZE) {
 
     if ((strcmp(argStr, "0") == 0 || strcmp(argStr, "NULL") == 0 || strcmp(argStr, "null") == 0)) {
-        fprintf(stderr, "Setting an array to NULL this way is deprecated. Please use the newer more flexible syntax, replacing the dash in the type with an n, like nai4 for a null array of 4 ints");
+        fprintf(stderr, "Setting an array to NULL this way is deprecated. Please use the newer more flexible syntax, replacing the dash in the type with an N, like Nai4 for a null array of 4 ints");
         if (arg->is_array == ARRAY_STATIC_SIZE) {
             arg->value->ptr_val = calloc(arg->static_or_implied_size, typeToSize(arg->type, arg->array_value_pointer_depth));
             return;
