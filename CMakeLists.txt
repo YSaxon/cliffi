@@ -728,8 +728,10 @@ ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMA
 store globalbuffer foo \n
 store globalbuffer foo \n
 store globalbuffer foo \n
+bar = foo \n
 )
-set_tests_properties(repl_test_store_embedded_struct PROPERTIES PASS_REGULAR_EXPRESSION "globalbuffer.*qwerty")
+set_tests_properties(repl_test_store_embedded_struct_three_times PROPERTIES PASS_REGULAR_EXPRESSION "globalbuffer.*qwerty")
+set_tests_properties(repl_test_store_embedded_struct_three_times PROPERTIES PASS_REGULAR_EXPRESSION "bar.*qwerty")
 
 
 add_test(NAME repl_test_load_store_dump_memory
@@ -782,12 +784,118 @@ load loadedstruct S: c S: i d c s :S i :S globalbuffer \n
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_nested_large_struct loadedstruct \n
 )
 #TODO: add a test for the dump command
-set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.c: q")
-set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.s.x: 1")
-set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.s.y: 2.20*")
-set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.s.c: a")
-set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.s.s: hello")
-set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.x: 5")
+set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.c: q")
+set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.s.x: 1")
+set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.s.y: 2.20*")
+set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.s.c: a")
+set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.s.s: hello")
+set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.x: 5")
+set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION ".*0x[0-9a-f]*. = struct { char q, struct { int 1, double 2.20*, char a, cstring \"?hello\"? }, int 5 }")
+set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "loadedstruct.* { char q, struct { int 1, double 2.20*, char a, cstring \"?hello\"? }, int 5 }")
+
+
+# struct embedded_with_pointer {
+#     int* x;
+#     char* s;
+# };
+
+# struct parent_with_embedded_pointer {
+#     char x;
+#     struct embedded_with_pointer p;
+#     struct embedded_with_pointer* p2;
+#     int y;
+# };
+
+# void test_parent_with_embedded_pointer(struct parent_with_embedded_pointer s) {
+#     hexdump(&s, sizeof(struct parent_with_embedded_pointer));
+#     s.p.x[0]++;
+#     //capitalize the string
+#     for (int i = 0; i < strlen(s.p.s); i++) {
+#         s.p.s[i] = toupper(s.p.s[i]);
+#     }
+#     s.p2->x[0]++;
+#     //capitalize the string
+#     for (int i = 0; i < strlen(s.p2->s); i++) {
+#         s.p2->s[i] = toupper(s.p2->s[i]);
+#     }
+# }
+
+add_test(NAME repl_test_struct_variables_nested_structs_with_pointers # inner = {int* char*}  outer = {char inner inner* int}
+COMMAND cliffi --repltest
+set inner -S: -pi 1 -s hello :S \n
+set pinner2 -pS: -pi 2 -s world :S \n
+set outer -S: a inner pinner2 5 :S \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_parent_with_embedded_pointer outer \n
+outer
+)
+set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers PROPERTIES PASS_REGULAR_EXPRESSION "{ int\\* 2, cstring \"?HELLO\"? }.*{ int\\* 3, cstring \"?WORLD\"? }")
+
+# struct simpler_parent_with_embedded_pointer {
+#     char x;
+#     struct embedded_with_pointer p;
+# };
+
+add_test(NAME repl_simple_test_int_pointer
+COMMAND cliffi --repltest
+set var -pi 1 \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v simple_test_int_pointer var \n
+var \n
+)
+set_tests_properties(repl_simple_test_int_pointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:")
+set_tests_properties(repl_simple_test_int_pointer PROPERTIES PASS_REGULAR_EXPRESSION "int\\* var = 2")
+
+# void test_struct_with_int_pointer(struct with_int_pointer s) {
+#     hexdump(&s, sizeof(struct with_int_pointer));
+#     printf("s.x: %d\n", *s.x);
+#     (*s.x)++;
+# }
+
+add_test(NAME repl_test_struct_with_int_pointer
+COMMAND cliffi --repltest
+set var -S: -pi 1 :S \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_struct_with_int_pointer var \n
+var \n
+)
+set_tests_properties(repl_test_struct_with_int_pointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:")
+set_tests_properties(repl_test_struct_with_int_pointer PROPERTIES PASS_REGULAR_EXPRESSION "{ int\\* 2 }")
+
+add_test(NAME nonrepl_test_struct_with_int_pointer
+COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_struct_with_int_pointer -S: -pi 1 :S \n
+)
+set_tests_properties(nonrepl_test_struct_with_int_pointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:")
+
+
+add_test(NAME repl_test_struct_variables_nested_structs_with_pointers_simpler # inner = {int* char*}  outer = {char inner}
+COMMAND cliffi --repltest
+set inner -S: -pi 1 -s hello :S \n
+set outer -S: a inner :S \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v simple_test_parent_with_embedded_pointer outer \n
+outer
+)
+set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:")
+set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler PROPERTIES PASS_REGULAR_EXPRESSION "{ int\\* 2, cstring \"?HELLO\"? }")
+
+
+add_test(NAME repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer # inner = {int* char*}  outer = {char *inner})
+COMMAND cliffi --repltest
+set pinner -pS: -pi 1 -s hello :S \n
+set outer -S: a pinner :S \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v simple_test_parent_with_pointer_struct_embedded_pointer outer \n
+outer
+)
+set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:")
+set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer PROPERTIES PASS_REGULAR_EXPRESSION "{ int\\* 2, cstring \"?HELLO\"? }")
+
+add_test(NAME repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer_fewerlines # inner = {int* char*}  outer = {char *inner})
+COMMAND cliffi --repltest
+set outer -S: a -pS: -pi 1 -s hello :S :S \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v simple_test_parent_with_pointer_struct_embedded_pointer outer \n
+outer
+)
+set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer_fewerlines PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:")
+set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer_fewerlines PROPERTIES PASS_REGULAR_EXPRESSION "{ int\\* 2, cstring \"?HELLO\"? }")
+
+
 
 
 add_test(NAME repl_test_address_addition # larger = {int double char char*}  containing = {char larger int}
@@ -804,6 +912,37 @@ ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMA
 )
 set_tests_properties(repl_test_address_addition PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?Hallo,_wyrld:")
 
+add_test(NAME repl_test_getx_var_after_function
+COMMAND cliffi --repltest
+foo = -S: 5 2.2 :S \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i get_x foo \n
+foo
+)
+set_tests_properties(repl_test_getx_var_after_function PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 5")
+set_tests_properties(repl_test_getx_var_after_function PROPERTIES FAIL_REGULAR_EXPRESSION "segv_handler")
+
+add_test(NAME repl_test_getx_var_after_function_twice
+COMMAND cliffi --repltest
+foo = -S: 5 2.2 :S \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i get_x foo \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i get_x foo \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i get_x foo \n
+foo2 = foo
+)
+set_tests_properties(repl_test_getx_var_after_function_twice PROPERTIES FAIL_REGULAR_EXPRESSION "Function returned: [^5]|5.")
+set_tests_properties(repl_test_getx_var_after_function_twice PROPERTIES FAIL_REGULAR_EXPRESSION "segv_handler")
+set_tests_properties(repl_test_getx_var_after_function_twice PROPERTIES PASS_REGULAR_EXPRESSION "foo2.*{ int 5, double 2.2.* }")
+
+
+add_test(NAME repl_test_modifypoint_var_after_function #
+COMMAND cliffi --repltest
+foo = -pS: 5 2.2 :S \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v modify_point foo 1 .1 \n
+foo
+)
+set_tests_properties(repl_test_modifypoint_var_after_function PROPERTIES PASS_REGULAR_EXPRESSION "Arg 0 .* struct. \{ int 6, double 2.3.* \}")
+set_tests_properties(repl_test_modifypoint_var_after_function PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:")
+set_tests_properties(repl_test_modifypoint_var_after_function PROPERTIES PASS_REGULAR_EXPRESSION "foo.*\{ int 6, double 2.3.* \}")
 
 
 add_test(NAME repl_test_cast_int_to_char

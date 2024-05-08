@@ -471,6 +471,88 @@ struct struct_with_embedded_array return_struct_with_embedded_array() {
     return s;
 }
 
+
+struct embedded_with_pointer {
+    int* x;
+    char* s;
+};
+
+struct parent_with_embedded_pointer {
+    char x;
+    struct embedded_with_pointer p;
+    struct embedded_with_pointer* p2;
+    int y;
+};
+
+void test_parent_with_embedded_pointer(struct parent_with_embedded_pointer s) {
+    hexdump(&s, sizeof(struct parent_with_embedded_pointer));
+    printf("s.p.x: %d\n", *s.p.x);
+    printf("s.p.s: %s\n", s.p.s);
+    printf("s.p2->x: %d\n", *s.p2->x);
+    printf("s.p2->s: %s\n", s.p2->s);
+    s.p.x[0]++;
+    //capitalize the string
+    for (int i = 0; i < strlen(s.p.s); i++) {
+        s.p.s[i] = toupper(s.p.s[i]);
+    }
+    s.p2->x[0]++;
+    //capitalize the string
+    for (int i = 0; i < strlen(s.p2->s); i++) {
+        s.p2->s[i] = toupper(s.p2->s[i]);
+    }
+}
+
+struct simpler_parent_with_embedded_pointer {
+    char x;
+    struct embedded_with_pointer p;
+};
+
+void simple_test_parent_with_embedded_pointer(struct simpler_parent_with_embedded_pointer s) {
+    hexdump(&s, sizeof(struct parent_with_embedded_pointer));
+    printf("s.p.x: %d\n", *s.p.x);
+    printf("s.p.s: %s\n", s.p.s);
+    s.p.x[0]++;
+    //capitalize the string
+    for (int i = 0; i < strlen(s.p.s); i++) {
+        s.p.s[i] = toupper(s.p.s[i]);
+    }
+}
+
+struct simpler_parent_with_pointer_struct_embedded_pointer {
+    char x;
+    struct embedded_with_pointer *p;
+};
+
+void simple_test_parent_with_pointer_struct_embedded_pointer(struct simpler_parent_with_pointer_struct_embedded_pointer s) {
+    hexdump(&s, sizeof(struct simpler_parent_with_pointer_struct_embedded_pointer));
+    printf("s.x: %c\n", s.x);
+    printf("s.p: %p\n", s.p);
+    hexdump(s.p, sizeof(struct embedded_with_pointer));
+    printf("s.p->x: %d\n", *s.p->x);
+    printf("s.p->s: %s\n", s.p->s);
+    (*s.p->x)++;
+    //capitalize the string
+    for (int i = 0; i < strlen(s.p->s); i++) {
+        s.p->s[i] = toupper(s.p->s[i]);
+    }
+}
+
+void simple_test_int_pointer(int* x) {
+    hexdump(x, sizeof(int));
+    printf("x: %d\n", *x);
+    (*x)++;
+}
+
+struct with_int_pointer {
+    int* x;
+};
+
+void test_struct_with_int_pointer(struct with_int_pointer s) {
+    hexdump(&s, sizeof(struct with_int_pointer));
+    printf("s.x: %d\n", *s.x);
+    (*s.x)++;
+}
+
 // Function that takes an array of integers and returns the sum
 int sum_array(int* arr, int size) {
     int sum = 0;
