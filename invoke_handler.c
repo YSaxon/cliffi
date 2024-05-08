@@ -236,7 +236,7 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return) { //, f
             // above are bandaid fixes for the fact that we previously decided to handle arrays as pointer types since that is how they are passed to functions as arguments
 
         } else {
-            size_t size = typeToSize(struct_info->info.args[i]->type, 0);
+            size_t size = typeToSize(struct_info->info.args[i]->type, struct_info->info.args[i]->pointer_depth); // passing pointer_depth to ensure we get the right size for pointers
             memcpy(raw_memory + offsets[i], struct_info->info.args[i]->value, size);
             // free(struct_info->info.args[i]->value); // we can't free this because we don't actually know if it was allocated with malloc or memcpy'd from a previous call to make_raw_value. If we want to fix this we need to add a flag to the ArgValue struct to indicate whether it was malloc'd or not
             struct_info->info.args[i]->value = raw_memory + offsets[i];
