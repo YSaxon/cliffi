@@ -404,6 +404,15 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
         return -1;
     }
 
+    // in x64, the values array gets messed up, so we need to copy the values to a new array so we can fix the struct pointers after the call
+    #ifdef __x86_64__
+    void** values_copy = malloc(call_info->info.arg_count * sizeof(void*));
+    for (int i = 0; i < call_info->info.arg_count; ++i) {
+        values_copy[i] = values[i];
+    }
+    #endif
+
+
     setCodeSectionForSegfaultHandler("invoke_dynamic_function:ffi_call");
 
     ffi_call(&cif, func, rvalue, values);
@@ -414,6 +423,11 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
     for (int i = 0; i < call_info->info.arg_count; ++i) {
         free_ffi_type(args[i]);
     }
+
+    #ifdef __x86_64__
+    free(values);
+    values = values_copy;
+    #endif
 
     for (int i = 0; i < call_info->info.arg_count; ++i) {
         if (call_info->info.args[i]->type == TYPE_STRUCT) {
