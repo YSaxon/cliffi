@@ -195,8 +195,6 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return) { //, f
     }
 
     void* raw_memory = calloc(1, struct_type->size);
-    size_t struct_size = struct_type->size;
-    printf("struct_size: %zu\n", struct_size);
     free_ffi_type(struct_type);
     if (!raw_memory) {
         fprintf(stderr, "Failed to allocate memory for struct.\n");
@@ -244,8 +242,6 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return) { //, f
             struct_info->info.args[i]->value = raw_memory + offsets[i];
         }
     }
-    printf("constructing struct, raw_memory: %p\n", raw_memory);
-    hexdump(raw_memory, struct_size);
 
     // now recurse through the pointer_depth to set the pointers
     void* address_to_return = raw_memory;
