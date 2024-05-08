@@ -220,7 +220,7 @@ set_tests_properties(TestConcatWithHexBuffers PROPERTIES PASS_REGULAR_EXPRESSION
 
 add_test(NAME TestReturningBuffer # aC and ac buffers should both work to contain strings
          COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} ac8 get_message)
-set_tests_properties(TestReturningBuffer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: .*H.*e.*l.*l.*o.*,")
+set_tests_properties(TestReturningBuffer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: .*Hello,")
 
 add_test(NAME TestReturningBufferWithSize # aC and ac buffers should both work to contain strings
             COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} act2 buffer_as_return -act2 a,b,c,d 4)
@@ -561,7 +561,7 @@ add_test(NAME grand_test_of_arrays_of_int_pointers
     set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "arr2[0]: 10")
     set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "arr2[1]: 11")
     set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "arr2[2]: 12")
-    set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:.*1.*2.*3.*4.*5.*6.*7.*8.*9.*10.*11.*12")
+    set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:.*1, 2, 3.*4, 5, 6.*7, 8, 9.*10, 11, 12")
 
 add_test(NAME test_array_of_int_pointers_simple
     COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i test_array_of_int_pointers_simple -api3 1,2,3)
