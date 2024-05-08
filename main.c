@@ -46,7 +46,7 @@
 #include "shims.h"
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.10.6";
+const char* VERSION = "v1.10.7";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -768,13 +768,17 @@ int main(int argc, char* argv[]) {
         char* command = malloc(1024);
         command[0] = '\0'; // initialize the command
         for (int i = 2; i < argc; i++) {
-            if (strcmp(argv[i], "\n") == 0) {
+            bool isNewLine = strcmp(argv[i], "\n") == 0;
+            bool isFinalArg = argc - 1 == i;
+            if (!isNewLine || isFinalArg ) {
+                strcat(command, argv[i]);
+                strcat(command, " ");
+            }
+            if (isNewLine || isFinalArg ){
+                command[strlen(command) - 1] = '\0'; // remove the trailing space
                 printf("Executing \"%s\"\n", command);
                 parseREPLCommand(command);
                 command[0] = '\0'; // reset the command
-            } else {
-                strcat(command, argv[i]);
-                strcat(command, " ");
             }
         }
         return(0);
