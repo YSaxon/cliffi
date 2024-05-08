@@ -777,8 +777,8 @@ set containing -S: q foo 5 :S \n
 set globalbuffer -P 0 \n
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} globalbuffer get_address_of_global_buffer1 \n
 store globalbuffer containing \n
-dump S: c S: d c s :S i :S globalbuffer \n
-load loadedstruct S: c S: d c s :S i :S globalbuffer \n
+dump S: c S: i d c s :S i :S globalbuffer \n
+load loadedstruct S: c S: i d c s :S i :S globalbuffer \n
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_nested_large_struct loadedstruct \n
 )
 #TODO: add a test for the dump command
