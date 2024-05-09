@@ -165,6 +165,10 @@ Note that basic pointer arithmetic (`+` and `*` with no spaces between operands)
 
 You can drop into a shell temporarily (without breaking your cliffi session) with `shell` or by prefixing a command with `!` like `!cat file`
 
+## .cliffi_init
+
+If you have particular initialization steps you need to perform every time for a given shared library you are working with, you can stick the commands (each one on its own line) into a file named .cliffi_init in either the present working directory or your home directory, and cliffi will run those commands at startup each time (whether you run cliffi with the REPL or even if you are running commands directly, although in that case note that the initialization will end up being performed repeatedly).
+
 # License
 This is released under the MIT License.
 
