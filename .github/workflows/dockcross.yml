@@ -28,7 +28,7 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.version }}
           release_name: ${{ github.ref_name == 'master' && 'Release' || 'DevBuild' }} ${{ steps.version.outputs.version }}
-          draft: ${{ github.ref_name != 'master' }}
+          draft: true
           prerelease: true
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
@@ -177,9 +177,7 @@ jobs:
             asset_content_type: application/zip
 
   finalize_release:
-    needs:
-      - build
-      - create_release
+    needs: [build, create_release]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' && needs.build.result == 'success'
     steps:
