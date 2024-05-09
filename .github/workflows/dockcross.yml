@@ -32,6 +32,8 @@ jobs:
           prerelease: true
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
+      release_id: ${{ steps.create_release.outputs.id }}
+
 
   build:
     runs-on: ubuntu-latest
@@ -173,3 +175,19 @@ jobs:
             #add -untested for android or windows-arm builds
             asset_name: cliffi-${{ matrix.dockcross_image }}${{ (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm' || contains(matrix.dockcross_image,'s390x'))) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
             asset_content_type: application/zip
+
+  finalize_release:
+    needs:
+      - build
+      - create_release
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && needs.build.result == 'success'
+    steps:
+      - name: Finalize Release
+        run: |
+          curl \
+            -X PATCH \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -d '{"draft": false, "prerelease": false}' \
+            "https://api.github.com/repos/${{ github.repository }}/releases/${{ needs.create_release.outputs.release_id }}"
