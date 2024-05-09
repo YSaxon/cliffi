@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 char* trim_whitespace(char* str)
 // https://stackoverflow.com/a/122974
 {
@@ -58,6 +59,81 @@ char* trim_whitespace(char* str)
     }
 
     return str;
+}
+
+
+char interpret_special_char(const char* str) {
+    if (str[0] == '\\') {
+        if (str[1] == 'n') {
+            return '\n';
+        } else if (str[1] == 't') {
+            return '\t';
+        } else if (str[1] == '\\') {
+            return '\\';
+        } else if (str[1] == '0') {
+            return '\0';
+        } else if (str[1] == 'r') {
+            return '\r';
+        } else if (str[1] == 'x' && isxdigit(str[2]) && isxdigit(str[3])) {
+            char hex[3] = {str[2], str[3], '\0'};
+            return (char)strtoul(hex, NULL, 16);
+        }
+    }
+    return str[0];
+}
+
+char* interpret_special_chars(const char* str) {
+    size_t len = strlen(str);
+    char* result = malloc(len + 1);
+
+    size_t i, j;
+    for (i = 0, j = 0; i < len; i++) {
+        if (str[i] == '\\') {
+            if (i + 1 < len) {
+                switch (str[i + 1]) {
+                    case 'n':
+                        result[j++] = '\n';
+                        i++;
+                        break;
+                    case 't':
+                        result[j++] = '\t';
+                        i++;
+                        break;
+                    case '\\':
+                        result[j++] = '\\';
+                        i++;
+                        break;
+                    // case '0':
+                    //     result[j++] = '\0';
+                    //     i++;
+                    //     break;
+                    case 'r':
+                        result[j++] = '\r';
+                        i++;
+                        break;
+                    case 'x':
+                        if (i + 3 < len && isxdigit(str[i + 2]) && isxdigit(str[i + 3])) {
+                            char hex[3] = {str[i + 2], str[i + 3], '\0'};
+                            result[j++] = (char)strtoul(hex, NULL, 16);
+                            i += 3;
+                        } else {
+                            result[j++] = str[i];
+                        }
+                        break;
+                    default:
+                        result[j++] = str[i];
+                        break;
+                }
+            } else {
+                result[j++] = str[i];
+            }
+        } else {
+            result[j++] = str[i];
+        }
+    }
+
+    result[j] = '\0';
+    return realloc(result, j + 1);
 }
 
 void* makePointerLevel(void* value, int pointer_depth) {
@@ -258,7 +334,7 @@ void* convert_to_type(ArgType type, const char* argStr) {
         if (isHexFormat(argStr)) {
             *(char*)result = (char)strtoul(argStr, NULL, 0);
         } else {
-            *(char*)result = argStr[0];
+            *(char*)result = interpret_special_char(argStr);
         }
         break;
     case TYPE_SHORT:
@@ -283,7 +359,7 @@ void* convert_to_type(ArgType type, const char* argStr) {
         *(void**)result = getAddressFromAddressStringOrNameOfCoercableVariable(argStr);
         break;
     case TYPE_STRING:
-        *(char**)result = strdup(argStr);
+        *(char**)result = interpret_special_chars(argStr);
         break;
     default:
         free(result);
