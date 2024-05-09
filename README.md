@@ -27,31 +27,6 @@ Here we denoted that 2 should be a double by preceeding it with a -d flag. Thoug
 
 This is only rarely necessary with basic primitive types, but becomes more helpful for pointers, arrays, and structs.
 
-## REPL mode
-
-You can enter REPL mode by running
-```
-cliffi --repl
-```
-
-REPL mode has two advantages:
-* Persistence of state
-
-REPL mode does not automatically dlclose the library after each command, so global state will be retained.
-* Support for variables
-
-In REPL mode you can set variables and then use them in place of arguments (even return arguments).
-```
-cliffi --repl
-> set var 3
-> set var2 7
-> set return_var 0
-> testlib.so return_var add var var2
-> testlib.so return_var add return_var return_var
-> print return_var
-```
-At the end of this, return_var will equal 20.
-
 
 ### Primitive Types
 - v for void, only allowed as a return type, and does not accept prefixes
@@ -125,6 +100,70 @@ Some examples:
 * Arrays of structs are not currently supported (as it's just a syntactical nightmare), but you can fake one with a struct of structs if you really want to.
 * Just use a 0/1 int for a bool
 * Don't get the order mixed up for struct start and end tags, it's S: :S. I mess this up sometimes myself, but it's still the best shell-inert delimitter syntax I could come up with.
+
+## REPL mode
+
+You can enter REPL mode by running
+```
+cliffi --repl
+```
+
+REPL mode has a few advantages over running a single command:
+* Persistence of state
+* Support for variables
+* Memory manipulation
+
+### Persistence
+
+REPL mode does not automatically dlclose the library after each command, so global state will be retained.
+
+### Variables
+
+In REPL mode you can set variables and then use them in place of arguments. You can also use them in place of the return type in which case the variable will determine the return type and be filled with the return value when the function returns.
+```
+cliffi --repl
+> set foo 3                    // int foo = 3;
+> set bar 7                    // int bar = 7;
+> set baz 0                    // int baz = 0;
+> testlib.so baz add foo bar   // baz = add(foo, bar);
+> print baz
+```
+At the end of this, baz will equal 10.
+
+You can also use the more familiar `<var> = <value>` syntax to set a variable, or simply type `<var>` to print one.
+
+#### Casting
+
+You can always cast a variable to another type by preceeding it with an explicit type specified different than the one it was originally defined with.
+
+```
+cbuffer = -ac h,e,l,l,o," ",w,o,r,l,d,0x00
+as_string = -s cbuffer
+```
+```
+intpointer = -pi 5
+addr_pointer = -P intpointer
+```
+
+### Memory manipulation
+
+In REPL mode, there are `load`, `dump`, and `store` to respectively load a value from a memory address, print a value from a memory address, or store a value to a memory address.
+
+There are also commands to do a `hexdump` from a memory address, and `calculate_offset` to calculate a memory offset (and store the offset to a variable) for a particular library loaded into memory, relative to some reference layout, given a known symbol (ie function) name and reference address. This is helpful for calculating the actual locations of various stripped global and static variables from their addresses in the binary.
+
+For example if in your decompiler, there is a static struct `{ int; short; char*; }` of interest at `0x10beef`, you can find the address of an exported function doFoo() at `0x10dead`, calculate the offset and store it in a variable, and then reference it.
+```
+calculate_offset myoffset mysharedlib.so doFoo 0x10dead  // calculate the offset
+hexdump myoffset+0x10beef 16             // to just see 16 bytes at that address
+dump S: i h s :S myoffset+0x10beef       // to dump the struct presently at that address
+store myoffset+0x10beef -S: 20 -h 0x6008 hello :S // to store that value into that address
+```
+
+Note that basic pointer arithmetic (`+` and `*` with no spaces between operands) is allowed in all commands that accept an address, and allowed for -P types as well, but is not parsed for other types.
+
+### Shell related
+
+You can drop into a shell temporarily (without breaking your cliffi session) with `shell` or by prefixing a command with `!` like `!cat file`
 
 # License
 This is released under the MIT License.
