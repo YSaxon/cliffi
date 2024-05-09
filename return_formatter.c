@@ -8,18 +8,37 @@
 #include <inttypes.h>
 #include "main.h"
 
+void print_char_with_escape(char c) {
+    switch (c) {
+        case '\0':
+            printf("\\0");
+            break;
+        case '\n':
+            printf("\\n");
+            break;
+        case '\r':
+            printf("\\r");
+            break;
+        case '\t':
+            printf("\\t");
+            break;
+        case '\\':
+            printf("\\\\");
+            break;
+        default:
+            if (isprint(c)) {
+                printf("%c", c);
+            } else {
+                printf("\\x%02x", c);
+            }
+            break;
+    }
+}
+
 void print_char_buffer(const char *buffer, size_t length) {
     for (size_t i = 0; i < length; i++) {
         unsigned char c = buffer[i];
-        if (c == '\0') {
-            printf("\\x00");
-        } else {
-            if (!isprint(c)) {
-                printf("\\x%02x", c);
-            } else {
-                printf("%c", c);
-            }
-    }
+        print_char_with_escape(c);
     }
 }
 
@@ -86,7 +105,7 @@ void hexdump(const void *data, size_t size) {
 }
     switch (type) {
         case TYPE_CHAR:
-            printf(isprint(((char*)value)[offset])? "'%c'" : "'\\x%02x'", ((char*)value)[offset]);
+            print_char_with_escape(((char*)value)[offset]);
             break;
         case TYPE_SHORT:
             printf("%hd", ((short*)value)[offset]);
@@ -116,7 +135,9 @@ void hexdump(const void *data, size_t size) {
             printf("%lf", ((double*)value)[offset]);
             break;
         case TYPE_STRING:
-            printf("\"%s\"", ((char**)value)[offset]);
+            printf("\"");
+            print_char_buffer(((char**)value)[offset], strlen(((char**)value)[offset]));
+            printf("\"");
             break;
         case TYPE_VOIDPOINTER:
             // #define HEX_DIGITS (int)(2 * sizeof(void*))

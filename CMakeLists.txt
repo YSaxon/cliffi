@@ -643,7 +643,7 @@ COMMAND cliffi --repltest
 set charbuffer -ac a,b,0x0,c,d,0x0 \n
 print charbuffer \n
 )
-set_tests_properties(repl_test_var_ac_with_0x0 PROPERTIES PASS_REGULAR_EXPRESSION "charbuffer = ab\\\\x00cd\\\\x00") # \\\\ escapes a single backslash
+set_tests_properties(repl_test_var_ac_with_0x0 PROPERTIES PASS_REGULAR_EXPRESSION "charbuffer = ab\\\\0cd\\\\0") # \\\\ escapes a single backslash
 
 add_test(NAME repl_test_accidentally_including_equals_in_set
 COMMAND cliffi --repltest
