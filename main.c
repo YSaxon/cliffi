@@ -46,7 +46,7 @@
 #include "shims.h"
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.10.10";
+const char* VERSION = "v1.10.11";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -572,6 +572,10 @@ void parseHexdump(char* hexdumpCommand) {
     char* addressStr = argv[0];
     char* sizeStr = argv[1];
     void* address = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
+    if (address==NULL) {
+        fprintf(stderr, "Error: Invalid address for hexdump\n");
+        return;
+    }
     size_t size = strtoul(sizeStr, NULL, 0);
     hexdump(address, size);
 }
