@@ -638,6 +638,12 @@ set_tests_properties(repl_test_globals_after_libclose PROPERTIES PASS_REGULAR_EX
 set_tests_properties(repl_test_globals_after_libclose PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 2")
 set_tests_properties(repl_test_globals_after_libclose PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 1")
 
+add_test(NAME repl_test_var_ac_ending_with_0x0
+COMMAND cliffi --repltest
+set charbuffer = -ac h,e,l,l,o," ",w,o,r,l,d,0x0 \n
+print charbuffer \n
+)
+set_tests_properties(repl_test_var_ac_ending_with_0x0 PROPERTIES PASS_REGULAR_EXPRESSION "charbuffer = \"hello world\\x00")
 
 add_test(NAME repl_test_variable_simple #
 COMMAND cliffi --repltest

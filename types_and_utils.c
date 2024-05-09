@@ -256,7 +256,7 @@ void* convert_to_type(ArgType type, const char* argStr) {
         break;
     case TYPE_CHAR:
         if (isHexFormat(argStr)) {
-            *(char*)result = ((char*)hex_string_to_bytes(argStr))[0];
+            *(char*)result = (char)strtoul(argStr, NULL, 0);
         } else {
             *(char*)result = argStr[0];
         }
