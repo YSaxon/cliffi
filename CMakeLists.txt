@@ -638,12 +638,24 @@ set_tests_properties(repl_test_globals_after_libclose PROPERTIES PASS_REGULAR_EX
 set_tests_properties(repl_test_globals_after_libclose PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 2")
 set_tests_properties(repl_test_globals_after_libclose PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 1")
 
-add_test(NAME repl_test_var_ac_ending_with_0x0
+add_test(NAME repl_test_var_ac_with_0x0
 COMMAND cliffi --repltest
-set charbuffer = -ac h,e,l,l,o," ",w,o,r,l,d,0x0 \n
+set charbuffer -ac a,b,0x0,c,d,0x0 \n
 print charbuffer \n
 )
-set_tests_properties(repl_test_var_ac_ending_with_0x0 PROPERTIES PASS_REGULAR_EXPRESSION "charbuffer = \"hello world\\x00")
+set_tests_properties(repl_test_var_ac_with_0x0 PROPERTIES PASS_REGULAR_EXPRESSION "charbuffer = ab\\\\x00cd\\\\x00") # \\\\ escapes a single backslash
+
+add_test(NAME repl_test_accidentally_including_equals_in_set
+COMMAND cliffi --repltest
+set var1 = 3 \n
+)
+set_tests_properties(repl_test_accidentally_including_equals_in_set PROPERTIES PASS_REGULAR_EXPRESSION "int var1 = 3")
+
+add_test(NAME repl_test_char_array_with_space
+COMMAND cliffi --repltest
+set charbuffer -ac a,b,\" \",d,e \n
+)
+set_tests_properties(repl_test_char_array_with_space PROPERTIES PASS_REGULAR_EXPRESSION "charbuffer = ab de")
 
 add_test(NAME repl_test_variable_simple #
 COMMAND cliffi --repltest

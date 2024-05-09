@@ -46,7 +46,7 @@
 #include "shims.h"
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.10.14";
+const char* VERSION = "v1.10.15";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 sigjmp_buf jmpBuffer;
@@ -461,6 +461,14 @@ char** cliffi_completion(const char* text, int state) {
     // from there we would really need to apply the parser to see if we are in a typeflag or an argument etc, and go from there
 }
 
+void discard_equals_but_warn_if_present(char*** argv, int* argc) {
+    if (*argc > 0 && strcmp((*argv)[0], "=") == 0){
+        fprintf(stderr, "Warning: '=' sign is not necessary when explicitly specifying the command and will be ignored.\n");
+        (*argv)++;
+        (*argc)--;
+    }
+}
+
 void parseSetVariable(char* varCommand) {
     int argc;
     char** argv;
@@ -473,6 +481,7 @@ void parseSetVariable(char* varCommand) {
     char* varName = argv[0];      // first argument is the variable name
     int value_args = argc - 1;    // all but the first argument
     char** value_argv = argv + 1; // starts after the first argument
+    discard_equals_but_warn_if_present(&value_argv, &value_args);
     parseSetVariableWithNameAndValue(varName, value_args, value_argv);
 }
 
@@ -488,6 +497,7 @@ void parseStoreToMemory(char* memCommand) {
     char* address = argv[0];      // first argument is the address
     int value_args = argc - 1;    // all but the first argument
     char** value_argv = argv + 1; // starts after the first argument
+    discard_equals_but_warn_if_present(&value_argv, &value_args);
     parseStoreToMemoryWithAddressAndValue(address, value_args, value_argv);
 }
 
@@ -519,6 +529,7 @@ void parseLoadMemoryToVar(char* loadCommand) {
     char* address = argv[argc - 1]; // last argument is the address
     int type_args = argc - 2;       // all but the first and last argument
     char** type_argv = argv + 1;    // starts after the first argument
+    discard_equals_but_warn_if_present(&type_argv, &type_args);
     ArgInfo* arg = parseLoadMemoryToArgWithType(address, type_args, type_argv);
     printVariableWithArgInfo(varName, arg);
     setVar(varName, arg);
