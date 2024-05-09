@@ -283,29 +283,29 @@ set_tests_properties(return_struct_pointer PROPERTIES PASS_REGULAR_EXPRESSION "F
 
 add_test(NAME return_larger_struct #
 COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} S: i d c s :S get_larger_struct 4 2.2 -c q thisisastring )
-set_tests_properties(return_larger_struct PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: .*\{ int 4, double 2.20*, char q, cstring \"thisisastring\"")
+set_tests_properties(return_larger_struct PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: .*\{ int 4, double 2.20*, char \'?q\'?, cstring \"thisisastring\"")
 
 add_test(NAME return_larger_struct_pointer #
 COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} pS: i d c s :S get_p_larger_struct 4 2.2 -c q thisisastring )
-set_tests_properties(return_larger_struct_pointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: .*\{ int 4, double 2.20*, char q, cstring \"thisisastring\"")
+set_tests_properties(return_larger_struct_pointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: .*\{ int 4, double 2.20*, char \'?q\'?, cstring \"thisisastring\"")
 
 add_test(NAME return_nested_larger_struct #
 COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} S: c S: i d c s :S i :S get_nested_larger_struct -c a 5 3.3 -c b thisisastring 77 )
-set_tests_properties(return_nested_larger_struct PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: .*\{ char a, .* \{ int 5, double 3.3.*, char b, cstring \"thisisastring\" \}, int 77.*")
+set_tests_properties(return_nested_larger_struct PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: .*\{ char \'?a\'?, .* \{ int 5, double 3.3.*, char \'?b\'?, cstring \"thisisastring\" \}, int 77.*")
 
 add_test(NAME return_p_nested_larger_struct #
 COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} pS: c S: i d c s :S i :S get_p_nested_larger_struct -c a 5 3.3 -c b thisisastring 77 )
-set_tests_properties(return_p_nested_larger_struct PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: .*\{ char a, .* \{ int 5, double 3.3.*, char b, cstring \"thisisastring\" \}, int 77.*")
+set_tests_properties(return_p_nested_larger_struct PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: .*\{ char \'?a\'?, .* \{ int 5, double 3.3.*, char \'?b\'?, cstring \"thisisastring\" \}, int 77.*")
 
 add_test(NAME return_complex_struct #
 # ComplexStruct get_complex_struct(unsigned char c, int x, double y, unsigned char c2, int x2, double y2, int x3, double y3){
 COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} S: c i d C S: i d :S i d pS: i d :S :S get_complex_struct -c 1 1 1.1 -C 0x32 2 2.2 3 3.3 4 4.4 )
-set_tests_properties(return_complex_struct PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \{ char 1, int 1, double 1.10*, uchar [^,]+, .*\{ int 2, double 2.20* \}, int 3, double 3.30*, .*\{ int 4, double 4.40* \}")
+set_tests_properties(return_complex_struct PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \{ char \'?1\'?, int 1, double 1.10*, uchar [^,]+, .*\{ int 2, double 2.20* \}, int 3, double 3.30*, .*\{ int 4, double 4.40* \}")
 
 add_test(NAME return_p_complex_struct #
 # ComplexStruct get_complex_struct(unsigned char c, int x, double y, unsigned char c2, int x2, double y2, int x3, double y3){
     COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} pS: c i d C S: i d :S i d pS: i d :S :S get_p_complex_struct -c 1 1 1.1 -C 0x32 2 2.2 3 3.3 4 4.4 )
-set_tests_properties(return_p_complex_struct PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \{ char 1, int 1, double 1.10*, uchar [^,]+, .*\{ int 2, double 2.20* \}, int 3, double 3.30*, .*\{ int 4, double 4.40* \}")
+set_tests_properties(return_p_complex_struct PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \{ char \'?1\'?, int 1, double 1.10*, uchar [^,]+, .*\{ int 2, double 2.20* \}, int 3, double 3.30*, .*\{ int 4, double 4.40* \}")
 
 add_test(NAME test_struct_with_embedded_array #
     # COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v test_struct_with_embedded_array -S: 1 -ac10 h,e,l,l,o 1,2,3 4 )
@@ -481,7 +481,7 @@ set_tests_properties(my_printf_with_p_char_and_p_uchar_and_p_short_and_p_ushort_
 #test that short types are okay as returns
 add_test(NAME get_char #
     COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} c get_char)
-set_tests_properties(get_char PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: a")
+set_tests_properties(get_char PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \'?a\'?")
 
 add_test(NAME get_short #
     COMMAND cliffi ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} h get_short)
@@ -790,8 +790,8 @@ set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPER
 set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.s.c: a")
 set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.s.s: hello")
 set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.x: 5")
-set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION ".*0x[0-9a-f]*. = struct { char q, struct { int 1, double 2.20*, char a, cstring \"?hello\"? }, int 5 }")
-set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "loadedstruct.* { char q, struct { int 1, double 2.20*, char a, cstring \"?hello\"? }, int 5 }")
+set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION ".*0x[0-9a-f]*. = struct { char \'?q\'?, struct { int 1, double 2.20*, char \'?a\'?, cstring \"?hello\"? }, int 5 }")
+set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "loadedstruct.* { char \'?q\'?, struct { int 1, double 2.20*, char \'?a\'?, cstring \"?hello\"? }, int 5 }")
 
 
 # struct embedded_with_pointer {
@@ -950,7 +950,7 @@ COMMAND cliffi --repltest
 set var1 35 \n
 var2 = -c var1 \n
 )
-set_tests_properties(repl_test_cast_int_to_char PROPERTIES PASS_REGULAR_EXPRESSION "char var2 = #")
+set_tests_properties(repl_test_cast_int_to_char PROPERTIES PASS_REGULAR_EXPRESSION "char var2 = \'?#\'?")
 
 add_test(NAME repl_test_cast_char_to_int
 COMMAND cliffi --repltest
@@ -987,7 +987,7 @@ foo = -S: 1 2.2 a hello :S \n
 bar = -aC80 foo \n
 #set baz -S: 0 0.0 a empty :S bar \n )
 baz = NS: i d c s :S bar \n)
-set_tests_properties(repl_test_cast_struct_to_array_and_back PROPERTIES PASS_REGULAR_EXPRESSION "struct baz = { int 1, double 2.20*, char a, cstring \"?hello")
+set_tests_properties(repl_test_cast_struct_to_array_and_back PROPERTIES PASS_REGULAR_EXPRESSION "struct baz = { int 1, double 2.20*, char \'?a\'?, cstring \"?hello")
 
 add_test(NAME repl_test_modify_var_value_with_cast_and_store
 COMMAND cliffi --repltest

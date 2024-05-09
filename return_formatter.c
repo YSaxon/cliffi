@@ -86,7 +86,7 @@ void hexdump(const void *data, size_t size) {
 }
     switch (type) {
         case TYPE_CHAR:
-            printf("%c", ((char*)value)[offset]);
+            printf(isprint(((char*)value)[offset])? "'%c'" : "'\\x%02x'", ((char*)value)[offset]);
             break;
         case TYPE_SHORT:
             printf("%hd", ((short*)value)[offset]);
