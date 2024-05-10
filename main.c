@@ -46,7 +46,7 @@
 #include "shims.h"
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.10.19";
+const char* VERSION = "v1.10.20";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 bool isTestEnvExit1OnFail = false;
@@ -278,6 +278,7 @@ void parsePrintVariable(char* varName) {
     ArgInfo* arg = getVar(varName);
     if (arg == NULL) {
         fprintf(stderr, "Error printing var: Variable %s not found.\n", varName);
+        exit_or_restart(1);
     } else {
         printVariableWithArgInfo(varName, arg);
     }
@@ -299,7 +300,7 @@ void parseStoreToMemoryWithAddressAndValue(char* addressStr, int varValueCount, 
     int args_used = 0;
     ArgInfo* arg = parse_one_arg(varValueCount, varValues, &args_used, false);
     if (args_used + 1 != varValueCount) {
-        fprintf(stderr, "Invalid variable value.\n");
+        fprintf(stderr, "Invalid variable value. Parser failed to consume entire line.\n");
         free(arg);
         exit_or_restart(1);
         return;
@@ -413,13 +414,14 @@ void executeREPLCommand(char* command) {
     char** argv;
     if (tokenize(command, &argc, &argv) != 0) {
         fprintf(stderr, "Error: Tokenization failed for command\n");
-        return;
+        exit_or_restart(1);
     }
 
     // syntactic sugar for set <var> <value> and print <var>
     if (argc == 1) {
         if (isHexFormat(argv[0])) {
             fprintf(stderr, "You can't print a memory address with specifying a type, try again with: dump <type> %s\n", argv[0]);
+            exit_or_restart(1);
         } else {
             parsePrintVariable(argv[0]);
         }
@@ -449,6 +451,7 @@ void executeREPLCommand(char* command) {
     int invoke_result = invoke_and_print_return_value(call_info, func);
     if (invoke_result != 0) {
         fprintf(stderr, "Error: Function invocation failed\n");
+        exit_or_restart(1);
     }
 }
 
@@ -483,6 +486,7 @@ void parseSetVariable(char* varCommand) {
     // <var> <value>
     if (argc < 2) {
         fprintf(stderr, "Error: Invalid number of arguments for set\n");
+        exit_or_restart(1);
         return;
     }
     char* varName = argv[0];      // first argument is the variable name
@@ -499,6 +503,7 @@ void parseStoreToMemory(char* memCommand) {
     // <address> <value>
     if (argc < 2) {
         fprintf(stderr, "Error: Invalid number of arguments for storemem\n");
+        exit_or_restart(1);
         return;
     }
     char* address = argv[0];      // first argument is the address
@@ -515,6 +520,7 @@ void parseDumpMemory(char* memCommand) {
     // <type> <address>
     if (argc < 2) {
         fprintf(stderr, "Error: Invalid number of arguments for dumpmem\n");
+        exit_or_restart(1);
         return;
     }
     char* address = argv[argc - 1]; // last argument is the address
@@ -530,6 +536,7 @@ void parseLoadMemoryToVar(char* loadCommand) {
     // <var> <type> <address>
     if (argc < 3) {
         fprintf(stderr, "Error: Invalid number of arguments for loadmem\n");
+        exit_or_restart(1);
         return;
     }
     char* varName = argv[0];
@@ -549,6 +556,7 @@ void parseCalculateOffset(char* calculateCommand) {
     // <var> <library> <symbol> <address>
     if (argc < 4) {
         fprintf(stderr, "Error: Invalid number of arguments for calculate_offset\n");
+        exit_or_restart(1);
         return;
     }
     char* varName = argv[0];
@@ -566,6 +574,7 @@ void parseCalculateOffset(char* calculateCommand) {
     #endif
     if (symbol_address < (uintptr_t)address) {
         fprintf(stderr, "Error: Calculated offset is negative. This is likely an error and the variable probably won't work.\n");
+        exit_or_restart(1);
     }
     ptrdiff_t offset = symbol_address - (uintptr_t)address; // maybe technically we should use ptrdiff_t instead but it's unlikely that the offset would be negative
     printf("Calculation: dlsym(%s,%s)=%p; %p - %p = %p\n", libraryName, symbolName, symbol_handle, symbol_handle, address, (void*)offset);
@@ -585,6 +594,7 @@ void parseHexdump(char* hexdumpCommand) {
     // <address> <size>
     if (argc < 2) {
         fprintf(stderr, "Error: Invalid number of arguments for hexdump\n");
+        exit_or_restart(1);
         return;
     }
     char* addressStr = argv[0];
@@ -592,6 +602,7 @@ void parseHexdump(char* hexdumpCommand) {
     void* address = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
     if (address==NULL) {
         fprintf(stderr, "Error: Invalid address for hexdump\n");
+        exit_or_restart(1);
         return;
     }
     size_t size = strtoul(sizeStr, NULL, 0);
