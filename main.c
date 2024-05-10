@@ -133,8 +133,12 @@ void raiseException(int status, char* formatstr, ...) {
 }
 
 void printException() {
-    if (current_exception_message != NULL) {
-        fprintf(stderr, "Error: %s\n", current_exception_message);
+    if (current_exception_message == NULL || strlen(current_exception_message) == 0){
+        fprintf(stderr, "Error thrown with no message\n");
+    } else {
+        fprintf(stderr, "%s\n", current_exception_message);
+        free(current_exception_message);
+        current_exception_message = NULL;
     }
 #ifdef use_backtrace
     printStackTrace();
@@ -152,8 +156,15 @@ void unsetCodeSectionForSegfaultHandler() {
 }
 
 void handleSegfault(int signal) {
-    printf("hit handleSegfault\n");
-    vasprintf(&current_exception_message, "Segmentation fault in section: %s", (char*)SEGFAULT_SECTION);
+    if (current_exception_message != NULL) {
+        printf("Freeing current_exception_message which was unexpectedly not null: %s\n", current_exception_message);
+        free(current_exception_message);
+        current_exception_message = NULL;
+    }
+    current_exception_message = malloc(strlen("Segmentation fault in section: ") + strlen(SEGFAULT_SECTION) + 1);
+    strcpy(current_exception_message, "Segmentation fault in section: ");
+    strcat(current_exception_message, SEGFAULT_SECTION);
+    // vasprintf(&current_exception_message, "Segmentation fault in section: %s", (char*)SEGFAULT_SECTION);
     siglongjmp(*current_exception_buffer, 1);
 }
 
@@ -885,7 +896,7 @@ int main(int argc, char* argv[]) {
 
         // Start the REPL
         startRepl();
-        
+
         return 0;
     }
 
