@@ -161,10 +161,7 @@ void handleSegfault(int signal) {
         free(current_exception_message);
         current_exception_message = NULL;
     }
-    current_exception_message = malloc(strlen("Segmentation fault in section: ") + strlen(SEGFAULT_SECTION) + 1);
-    strcpy(current_exception_message, "Segmentation fault in section: ");
-    strcat(current_exception_message, SEGFAULT_SECTION);
-    // vasprintf(&current_exception_message, "Segmentation fault in section: %s", (char*)SEGFAULT_SECTION);
+    vasprintf(&current_exception_message, "Segmentation fault in section: %s", (char*)SEGFAULT_SECTION);
     siglongjmp(*current_exception_buffer, 1);
 }
 
