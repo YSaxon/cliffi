@@ -29,4 +29,16 @@ HIST_ENTRY* history_get(int index);
 int add_history(const char *line);
 
 #endif
+
+// Check if we're on a POSIX system that might support vasprintf directly
+#if defined(__unix__) || defined(__unix) || defined(unix)
+#include <unistd.h>  // Include for POSIX Operating System API
+#include <features.h> // Typically for Linux, to include GNU extensions
+#endif
+// Feature test macro to see if vasprintf is available
+#if (defined(__APPLE__) && defined(__MACH__)) || defined(_GNU_SOURCE) && !defined(HAVE_VASPRINTF)
+#define HAVE_VASPRINTF
+#endif
+
+
 #endif // SHIMS_H

@@ -108,3 +108,32 @@ int add_history(const char *line) {
 
 
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+
+
+
+
+// If vasprintf is still not defined, we provide our own implementation
+#ifndef HAVE_VASPRINTF
+
+int vasprintf(char **str, const char *fmt, va_list args) {
+    va_list tmp_args;
+    va_copy(tmp_args, args);
+    int required_len = vsnprintf(NULL, 0, fmt, tmp_args);
+    va_end(tmp_args);
+
+    if (required_len < 0) {
+        return -1;
+    }
+
+    *str = (char *)malloc(required_len + 1);
+    if (!*str) {
+        return -1;
+    }
+
+    return vsnprintf(*str, required_len + 1, fmt, args);
+}
+
+#endif
