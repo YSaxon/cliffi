@@ -348,7 +348,7 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
         fprintf(stderr, "Memory allocation failed in invoke_dynamic_function.\n");
         if (args != NULL) free(args);
         if (values != NULL) free(values);
-        exit_or_restart(-1);
+        exit_or_restart(1);
         return -1;
     }
     for (int i = 0; i < call_info->info.arg_count; ++i) {
