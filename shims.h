@@ -39,10 +39,11 @@ int add_history(const char *line);
 #if (defined(__APPLE__) && defined(__MACH__)) || (defined(_GNU_SOURCE) && defined(HAVE_VASPRINTF))
 #define HAVE_VASPRINTF
 #else
+int vasprintf(char **str, const char *fmt, va_list args);
 // If vasprintf is not available, define it as a macro
-#define vasprintf(STRP, FMT, VA) vsnprintf(*(STRP), 0, (FMT), (VA)); \
-    *(STRP) = (char*)malloc(strlen(*(STRP)) + 1); \
-    vsprintf(*(STRP), (FMT), (VA))
+// #define vasprintf(STRP, FMT, VA) vsnprintf(*(STRP), 0, (FMT), (VA)); \
+//     *(STRP) = (char*)malloc(strlen(*(STRP)) + 1); \
+//     vsprintf(*(STRP), (FMT), (VA))
 #endif
 
 
