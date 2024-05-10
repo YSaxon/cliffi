@@ -52,9 +52,9 @@ const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[
 #endif
 
 bool isTestEnvExit1OnFail = false;
-sigjmp_buf jmpBuffer;
+sigjmp_buf rootJmpBuffer;
 
-_Thread_local sigjmp_buf* current_exception_buffer = NULL;
+_Thread_local sigjmp_buf* current_exception_buffer = &rootJmpBuffer;
 _Thread_local char* current_exception_message = NULL;
 
 #define TRY \
@@ -66,9 +66,9 @@ _Thread_local char* current_exception_message = NULL;
 #define CATCH(messageSearchString) } else { \
     current_exception_buffer = old_exception_buffer; \
     if (messageSearchString != NULL && strstr(messageSearchString, current_exception_message) == NULL) { /* this means that the catch handler shouldn't catch it*/ \
-        if (old_exception_buffer != NULL) { siglongjmp(current_exception_buffer, 1); \
-        else { \
-            fprintf("Not able to rethrow exception.\n"); \
+        if (old_exception_buffer != NULL) { siglongjmp(*current_exception_buffer, 1); \
+        } else { \
+            fprintf(stderr, "Not able to rethrow exception.\n"); \
             goto handleException; \
         } \
     } else { \
@@ -127,7 +127,7 @@ void raiseException(int status, char* formatstr, ...) {
 #ifdef use_backtrace
     if (status != 0) saveStackTrace();
 #endif
-    siglongjmp(jmpBuffer, status);
+    siglongjmp(*current_exception_buffer, status);
 }
 
 void printException() {
@@ -150,8 +150,9 @@ void unsetCodeSectionForSegfaultHandler() {
 }
 
 void handleSegfault(int signal) {
+    printf("hit handleSegfault\n");
     vasprintf(&current_exception_message, "Segmentation fault in section: %s", (char*)SEGFAULT_SECTION);
-    siglongjmp(jmpBuffer, 1);
+    siglongjmp(*current_exception_buffer, 1);
 }
 
 
