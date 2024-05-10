@@ -75,6 +75,8 @@ _Thread_local char* current_exception_message = NULL;
         handleException: \
         current_exception_buffer = old_exception_buffer;
 
+#define CATCHALL CATCH(NULL)
+
 #define END_TRY }} \
     current_exception_buffer = old_exception_buffer;
 
@@ -739,6 +741,7 @@ void startRepl() {
 
     while ((command = readline("> ")) != NULL) {
         int breakRepl = 0;
+        TRY
         if (strlen(command) > 0) {
             // fprintf(stderr, "Command: %s\n", command);
             HIST_ENTRY* last_command = history_get(history_length);
@@ -749,6 +752,11 @@ void startRepl() {
         breakRepl = parseREPLCommand(command);
         }
         free(command);
+        CATCHALL
+            printException();
+            if (isTestEnvExit1OnFail) exit(1);
+            fprintf(stderr, "Restarting REPL...\n");
+        END_TRY
         if (breakRepl) break;
     }
 }
@@ -802,11 +810,12 @@ int main(int argc, char* argv[]) {
 
     setbuf(stdout, NULL); // disable buffering for stdout
     setbuf(stderr, NULL); // disable buffering for stderr
-    signal(SIGSEGV, handleSegfault);
-    if (sigsetjmp(jmpBuffer, 1) != 0) {
-        fprintf(stderr, "Error occurred. Exiting...\n");
-        return 1;
+    if (sigsetjmp(rootJmpBuffer, 1) != 0) {
+        fprintf(stderr,"Root exception handler caught an exception\n");
+        printException();
+        exit(1);
     }
+    signal(SIGSEGV, handleSegfault);
 
     if (argc > 1 && strcmp(argv[1], "--help") == 0) {
         print_usage(argv[0]);
@@ -875,13 +884,8 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "cliffi %s. Starting REPL... Type 'help' for assistance. Type 'exit' to quit:\n", VERSION);
 
         // Start the REPL
-        if (sigsetjmp(jmpBuffer, 1) == 0) {
-            startRepl();
-        } else {
-            if (isTestEnvExit1OnFail) exit(1);
-            fprintf(stderr, "Error occurred. Restarting REPL...\n");
-            startRepl();
-        }
+        startRepl();
+        
         return 0;
     }
 
