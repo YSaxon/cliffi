@@ -8,6 +8,7 @@
 #include "var_map.h"
 #include <setjmp.h>
 #include <signal.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -77,7 +78,14 @@ void printStackTrace() {
 }
 #endif
 
-void exit_or_restart(int status) {
+
+void raiseException(int status, char* formatstr, ...) {
+    if (formatstr != NULL) {
+        va_list args;
+        va_start(args, formatstr);
+        vprintf(formatstr, args);
+        va_end(args);
+    }
 #ifdef use_backtrace
     if (status != 0) printStackTrace();
 #endif
@@ -256,11 +264,13 @@ void* loadFunctionHandle(void* lib_handle, const char* function_name) {
 #endif
     if (!func) {
 #ifdef _WIN32
-        fprintf(stderr, "Failed to find function: %lu\n", GetLastError());
+        raiseException(1,  "Failed to find function: %lu\n", GetLastError());
+
+
 #else
-        fprintf(stderr, "Failed to find function: %s\n", dlerror());
+        raiseException(1,  "Failed to find function: %s\n", dlerror());
+
 #endif
-        exit_or_restart(1);
         return NULL; // just to silence a warning, not actually reachable
     }
     return func;
@@ -277,8 +287,8 @@ void printVariableWithArgInfo(char* varName, ArgInfo* arg) {
 void parsePrintVariable(char* varName) {
     ArgInfo* arg = getVar(varName);
     if (arg == NULL) {
-        fprintf(stderr, "Error printing var: Variable %s not found.\n", varName);
-        exit_or_restart(1);
+        raiseException(1,  "Error printing var: Variable %s not found.\n", varName);
+
     } else {
         printVariableWithArgInfo(varName, arg);
     }
@@ -287,12 +297,12 @@ void parsePrintVariable(char* varName) {
 void parseStoreToMemoryWithAddressAndValue(char* addressStr, int varValueCount, char** varValues) {
 
     if (addressStr == NULL || strlen(addressStr) == 0) {
-        fprintf(stderr, "Memory address cannot be empty.\n");
-        exit_or_restart(1);
+        raiseException(1,  "Memory address cannot be empty.\n");
+
     }
     if (varValues == NULL || varValueCount == 0 || strlen(varValues[0]) == 0) {
-        fprintf(stderr, "Variable value cannot be empty.\n");
-        exit_or_restart(1);
+        raiseException(1,  "Variable value cannot be empty.\n");
+
     }
 
     void* destAddress = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
@@ -300,9 +310,9 @@ void parseStoreToMemoryWithAddressAndValue(char* addressStr, int varValueCount, 
     int args_used = 0;
     ArgInfo* arg = parse_one_arg(varValueCount, varValues, &args_used, false);
     if (args_used + 1 != varValueCount) {
-        fprintf(stderr, "Invalid variable value. Parser failed to consume entire line.\n");
         free(arg);
-        exit_or_restart(1);
+        raiseException(1,  "Invalid variable value. Parser failed to consume entire line.\n");
+
         return;
     }
 
@@ -333,20 +343,20 @@ void parseStoreToMemoryWithAddressAndValue(char* addressStr, int varValueCount, 
 
 ArgInfo* parseLoadMemoryToArgWithType(char* addressStr, int typeArgc, char** typeArgv) {
     if (addressStr == NULL || strlen(addressStr) == 0) {
-        fprintf(stderr, "Memory address cannot be empty.\n");
-        exit_or_restart(1);
+        raiseException(1,  "Memory address cannot be empty.\n");
+
     }
     if (typeArgv == NULL || typeArgc == 0 || strlen(typeArgv[0]) == 0) {
-        fprintf(stderr, "Variable type cannot be empty.\n");
-        exit_or_restart(1);
+        raiseException(1,  "Variable type cannot be empty.\n");
+
     }
 
     int args_used = 0;
     ArgInfo* arg = parse_one_arg(typeArgc, typeArgv, &args_used, true);
     if (args_used + 1 != typeArgc) {
-        fprintf(stderr, "Invalid type. Specify it as if it were a return type (ie types only, no dashes).\n");
         free(arg);
-        exit_or_restart(1);
+        raiseException(1,  "Invalid type. Specify it as if it were a return type (ie types only, no dashes).\n");
+
         return NULL;
     }
 
@@ -378,30 +388,30 @@ void parseDumpMemoryWithAddressAndType(char* addressStr, int varValueCount, char
 void parseSetVariableWithNameAndValue(char* varName, int varValueCount, char** varValues) {
 
     if (varName == NULL || strlen(varName) == 0) {
-        fprintf(stderr, "Variable name cannot be empty.\n");
-        exit_or_restart(1);
+        raiseException(1,  "Variable name cannot be empty.\n");
+
     } else if (varValues == NULL || varValueCount == 0 || strlen(varValues[0]) == 0) {
-        fprintf(stderr, "Variable value cannot be empty.\n");
-        exit_or_restart(1);
+        raiseException(1,  "Variable value cannot be empty.\n");
+
     }
 
     if (strlen(varName) == 1 && charToType(*varName) != TYPE_UNKNOWN) {
-        fprintf(stderr, "Variable name cannot be a character used in parsing types, such as %s which is used for %s\n", varName, typeToString(charToType(*varName)));
-        exit_or_restart(1);
+        raiseException(1,  "Variable name cannot be a character used in parsing types, such as %s which is used for %s\n", varName, typeToString(charToType(*varName)));
+
     } else if (*varName == '-') {
-        fprintf(stderr, "Variable names cannot start with a dash.\n");
-        exit_or_restart(1);
+        raiseException(1,  "Variable names cannot start with a dash.\n");
+
     } else if (isAllDigits(varName) || isHexFormat(varName) || isFloatingPoint(varName)) {
-        fprintf(stderr, "Variable names cannot be a number.\n");
-        exit_or_restart(1);
+        raiseException(1,  "Variable names cannot be a number.\n");
+
     }
 
     int args_used = 0;
     ArgInfo* arg = parse_one_arg(varValueCount, varValues, &args_used, false);
     if (args_used + 1 != varValueCount) {
-        fprintf(stderr, "Invalid variable value (parser failed to consume entire value line)\n");
         free(arg);
-        exit_or_restart(1);
+        raiseException(1,  "Invalid variable value (parser failed to consume entire value line)\n");
+
         return;
     }
     printVariableWithArgInfo(varName, arg);
@@ -413,15 +423,15 @@ void executeREPLCommand(char* command) {
     int argc;
     char** argv;
     if (tokenize(command, &argc, &argv) != 0) {
-        fprintf(stderr, "Error: Tokenization failed for command\n");
-        exit_or_restart(1);
+        raiseException(1,  "Error: Tokenization failed for command\n");
+
     }
 
     // syntactic sugar for set <var> <value> and print <var>
     if (argc == 1) {
         if (isHexFormat(argv[0])) {
-            fprintf(stderr, "You can't print a memory address with specifying a type, try again with: dump <type> %s\n", argv[0]);
-            exit_or_restart(1);
+            raiseException(1,  "You can't print a memory address with specifying a type, try again with: dump <type> %s\n", argv[0]);
+
         } else {
             parsePrintVariable(argv[0]);
         }
@@ -436,22 +446,22 @@ void executeREPLCommand(char* command) {
     }
 
     if (argc < 3) {
-        fprintf(stderr, "Invalid command '%s'. Type 'help' for assistance.\n", command);
-        exit_or_restart(1);
+        raiseException(1,  "Invalid command '%s'. Type 'help' for assistance.\n", command);
+
     }
     FunctionCallInfo* call_info = parse_arguments(argc, argv);
     log_function_call_info(call_info);
     void* lib_handle = getOrLoadLibrary(call_info->library_path);
     if (lib_handle == NULL) {
-        fprintf(stderr, "Failed to load library: %s\n", call_info->library_path);
-        exit_or_restart(1);
+        raiseException(1,  "Failed to load library: %s\n", call_info->library_path);
+
     }
     void* func = loadFunctionHandle(lib_handle, call_info->function_name);
 
     int invoke_result = invoke_and_print_return_value(call_info, func);
     if (invoke_result != 0) {
-        fprintf(stderr, "Error: Function invocation failed\n");
-        exit_or_restart(1);
+        raiseException(1,  "Error: Function invocation failed\n");
+
     }
 }
 
@@ -485,8 +495,8 @@ void parseSetVariable(char* varCommand) {
     tokenize(varCommand, &argc, &argv);
     // <var> <value>
     if (argc < 2) {
-        fprintf(stderr, "Error: Invalid number of arguments for set\n");
-        exit_or_restart(1);
+        raiseException(1,  "Error: Invalid number of arguments for set\n");
+
         return;
     }
     char* varName = argv[0];      // first argument is the variable name
@@ -502,8 +512,8 @@ void parseStoreToMemory(char* memCommand) {
     tokenize(memCommand, &argc, &argv);
     // <address> <value>
     if (argc < 2) {
-        fprintf(stderr, "Error: Invalid number of arguments for storemem\n");
-        exit_or_restart(1);
+        raiseException(1,  "Error: Invalid number of arguments for storemem\n");
+
         return;
     }
     char* address = argv[0];      // first argument is the address
@@ -519,8 +529,8 @@ void parseDumpMemory(char* memCommand) {
     tokenize(memCommand, &argc, &argv);
     // <type> <address>
     if (argc < 2) {
-        fprintf(stderr, "Error: Invalid number of arguments for dumpmem\n");
-        exit_or_restart(1);
+        raiseException(1,  "Error: Invalid number of arguments for dumpmem\n");
+
         return;
     }
     char* address = argv[argc - 1]; // last argument is the address
@@ -535,8 +545,8 @@ void parseLoadMemoryToVar(char* loadCommand) {
     tokenize(loadCommand, &argc, &argv);
     // <var> <type> <address>
     if (argc < 3) {
-        fprintf(stderr, "Error: Invalid number of arguments for loadmem\n");
-        exit_or_restart(1);
+        raiseException(1,  "Error: Invalid number of arguments for loadmem\n");
+
         return;
     }
     char* varName = argv[0];
@@ -555,8 +565,8 @@ void parseCalculateOffset(char* calculateCommand) {
     tokenize(calculateCommand, &argc, &argv);
     // <var> <library> <symbol> <address>
     if (argc < 4) {
-        fprintf(stderr, "Error: Invalid number of arguments for calculate_offset\n");
-        exit_or_restart(1);
+        raiseException(1,  "Error: Invalid number of arguments for calculate_offset\n");
+
         return;
     }
     char* varName = argv[0];
@@ -573,8 +583,8 @@ void parseCalculateOffset(char* calculateCommand) {
     symbol_address &= ~1;                           // clear the thumb bit
     #endif
     if (symbol_address < (uintptr_t)address) {
-        fprintf(stderr, "Error: Calculated offset is negative. This is likely an error and the variable probably won't work.\n");
-        exit_or_restart(1);
+        raiseException(1,  "Error: Calculated offset is negative. This is likely an error and the variable probably won't work.\n");
+
     }
     ptrdiff_t offset = symbol_address - (uintptr_t)address; // maybe technically we should use ptrdiff_t instead but it's unlikely that the offset would be negative
     printf("Calculation: dlsym(%s,%s)=%p; %p - %p = %p\n", libraryName, symbolName, symbol_handle, symbol_handle, address, (void*)offset);
@@ -593,16 +603,16 @@ void parseHexdump(char* hexdumpCommand) {
     tokenize(hexdumpCommand, &argc, &argv);
     // <address> <size>
     if (argc < 2) {
-        fprintf(stderr, "Error: Invalid number of arguments for hexdump\n");
-        exit_or_restart(1);
+        raiseException(1,  "Error: Invalid number of arguments for hexdump\n");
+
         return;
     }
     char* addressStr = argv[0];
     char* sizeStr = argv[1];
     void* address = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
     if (address==NULL) {
-        fprintf(stderr, "Error: Invalid address for hexdump\n");
-        exit_or_restart(1);
+        raiseException(1,  "Error: Invalid address for hexdump\n");
+
         return;
     }
     size_t size = strtoul(sizeStr, NULL, 0);

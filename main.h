@@ -1,7 +1,7 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-void exit_or_restart(int status);
+void raiseException(int status, char* formatstr, ...);
 void setCodeSectionForSegfaultHandler(const char* section);
 void unsetCodeSectionForSegfaultHandler();
 
