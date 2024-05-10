@@ -26,12 +26,9 @@ double multiply(double a, double b) {
 }
 
 // A function that takes a pointer to an integer, increments it, and returns the result
-int increment_at_pointer(int* a) {
-    if (a) {
-        (*a)++;
-        return *a;
-    }
-    return 0;
+int increment_at_pointer(int* a) { //deliberately unsafe
+    (*a)++;
+    return *a;
 }
 
 int* get_array_of_int(int a, size_t size) {
