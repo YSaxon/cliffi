@@ -36,7 +36,7 @@ int add_history(const char *line);
 #include <features.h> // Typically for Linux, to include GNU extensions
 #endif
 // Feature test macro to see if vasprintf is available
-#if (defined(__APPLE__) && defined(__MACH__)) || defined(_GNU_SOURCE) && !defined(HAVE_VASPRINTF)
+#if (defined(__APPLE__) && defined(__MACH__)) || (defined(_GNU_SOURCE) && defined(HAVE_VASPRINTF))
 #define HAVE_VASPRINTF
 #endif
 
