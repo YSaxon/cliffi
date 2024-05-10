@@ -49,6 +49,7 @@ const char* NAME = "cliffi";
 const char* VERSION = "v1.10.19";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
+bool isTestEnvExit1OnFail = false;
 sigjmp_buf jmpBuffer;
 
 #ifdef use_backtrace
@@ -80,6 +81,9 @@ void exit_or_restart(int status) {
 #ifdef use_backtrace
     if (status != 0) printStackTrace();
 #endif
+    if (isTestEnvExit1OnFail) {
+        exit(1);
+    }
     siglongjmp(jmpBuffer, status);
 }
 
@@ -100,6 +104,9 @@ void handleSegfault(int signal) {
     // Log the segfault
     logSegfault();
 
+    if (isTestEnvExit1OnFail) {
+        exit(1);
+    }
     // Perform cleanup if needed
 
     // Jump back to the REPL loop
@@ -750,6 +757,7 @@ int main(int argc, char* argv[]) {
     }
     if (argc > 1 && strcmp(argv[1], "--repltest") == 0) {
         #if !defined(_WIN32) && !defined(_WIN64)
+        isTestEnvExit1OnFail = true;
         int pipefd[2];
         if (pipe(pipefd) == -1) {
             perror("pipe");
@@ -766,6 +774,7 @@ int main(int argc, char* argv[]) {
             close(pipefd[1]);              // Close write end of pipe
             dup2(pipefd[0], STDIN_FILENO); // Redirect STDIN to read from pipe
             close(pipefd[0]);              // Close read end, not needed anymore
+            isTestEnvExit1OnFail = true;
             goto replmode;
         } else {              // Parent process
             close(pipefd[0]); // Close the write end of the pipe
@@ -774,8 +783,9 @@ int main(int argc, char* argv[]) {
                 write(pipefd[1], " ", 1);
             }
             close(pipefd[1]); // Close the write end of the pipe
-            waitpid(pid, NULL, 0);
-            return 0;
+            int status;
+            waitpid(pid, &status, 0);
+            exit(WEXITSTATUS(status));
         }
 #else // a simpler version for windows
         checkAndRunCliffiInits();
