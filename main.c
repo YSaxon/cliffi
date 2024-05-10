@@ -16,11 +16,6 @@
 #include <inttypes.h>
 
 
-#if defined(_WIN32) || defined(_WIN64)
-#define sigjmp_buf jmp_buf
-#define sigsetjmp(env, save) setjmp(env)
-#define siglongjmp(env, val) longjmp(env, val)
-#endif
 
 #include "tokenize.h"
 #if  !defined(_WIN32) && !defined(_WIN64)
@@ -50,31 +45,74 @@ const char* NAME = "cliffi";
 const char* VERSION = "v1.10.20";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
+#if defined(_WIN32) || defined(_WIN64)
+#define sigjmp_buf jmp_buf
+#define sigsetjmp(env, save) setjmp(env)
+#define siglongjmp(env, val) longjmp(env, val)
+#endif
+
 bool isTestEnvExit1OnFail = false;
 sigjmp_buf jmpBuffer;
 
+_Thread_local sigjmp_buf* current_exception_buffer = NULL;
+_Thread_local char* current_exception_message = NULL;
+
+#define TRY \
+    sigjmp_buf newjmpBuffer; \
+    sigjmp_buf* old_exception_buffer = current_exception_buffer; \
+    current_exception_buffer = &newjmpBuffer; \
+    if (sigsetjmp(newjmpBuffer, 1) == 0) {
+
+#define CATCH(messageSearchString) } else { \
+    current_exception_buffer = old_exception_buffer; \
+    if (messageSearchString != NULL && strstr(messageSearchString, current_exception_message) == NULL) { /* this means that the catch handler shouldn't catch it*/ \
+        if (old_exception_buffer != NULL) { siglongjmp(current_exception_buffer, 1); \
+        else { \
+            fprintf("Not able to rethrow exception.\n"); \
+            goto handleException; \
+        } \
+    } else { \
+        handleException: \
+        current_exception_buffer = old_exception_buffer;
+
+#define END_TRY }} \
+    current_exception_buffer = old_exception_buffer;
+
+
 #ifdef use_backtrace
-void printStackTrace() {
+
+_Thread_local char** current_stacktrace_strings = NULL;
+_Thread_local size_t current_stacktrace_size = 0;
+void saveStackTrace() {
     void* array[10];
     size_t size;
     char** strings;
     size_t i;
 
-    size = backtrace(array, 10);
+    current_stacktrace_size = backtrace(array, 10);
 
-    if (size == 0) {
-        // fprintf(stderr, "No stack trace available\n");
+    if (current_stacktrace_size == 0) {
+        // current_stacktrace_size = 1;
+        // current_stacktrace_strings = malloc(sizeof(char*));
+        // current_stacktrace_strings[0] = strdup("No stack trace available");
         return;
     }
 
-    strings = backtrace_symbols(array, size);
+    current_stacktrace_strings = backtrace_symbols(array, size);
+}
 
-    fprintf(stderr, "Stack trace:\n");
-    for (i = 0; i < size; i++) {
-        fprintf(stderr, "%s\n", strings[i]);
+void printStackTrace(){
+    if (current_stacktrace_size == 0) {
+        fprintf(stderr, "No stack trace available\n");
+        return;
     }
-
-    free(strings);
+    fprintf(stderr, "Stack trace:\n");
+    for (size_t i = 0; i < current_stacktrace_size; i++) {
+        fprintf(stderr, "%s\n", current_stacktrace_strings[i]);
+    }
+    free(current_stacktrace_strings);
+    current_stacktrace_strings = NULL;
+    current_stacktrace_size = 0;
 }
 #endif
 
@@ -83,20 +121,27 @@ void raiseException(int status, char* formatstr, ...) {
     if (formatstr != NULL) {
         va_list args;
         va_start(args, formatstr);
-        vprintf(formatstr, args);
+        vasprintf(&current_exception_message, formatstr, args);
         va_end(args);
     }
 #ifdef use_backtrace
-    if (status != 0) printStackTrace();
+    if (status != 0) saveStackTrace();
 #endif
-    if (isTestEnvExit1OnFail) {
-        exit(1);
-    }
     siglongjmp(jmpBuffer, status);
 }
 
-const char* SEGFAULT_SECTION_UNSET = "(unset)";
-const char* SEGFAULT_SECTION = "(unset)";
+void printException() {
+    if (current_exception_message != NULL) {
+        fprintf(stderr, "Error: %s\n", current_exception_message);
+    }
+#ifdef use_backtrace
+    printStackTrace();
+#endif
+}
+
+#define SEGFAULT_SECTION_UNSET "(unset)";
+_Thread_local const char* SEGFAULT_SECTION = SEGFAULT_SECTION_UNSET;
+
 void setCodeSectionForSegfaultHandler(const char* section) {
     SEGFAULT_SECTION = section;
 }
@@ -104,22 +149,12 @@ void unsetCodeSectionForSegfaultHandler() {
     SEGFAULT_SECTION = SEGFAULT_SECTION_UNSET;
 }
 
-void logSegfault() {
-    fprintf(stderr, "Segmentation fault occurred in: %s\n", SEGFAULT_SECTION);
-}
-
 void handleSegfault(int signal) {
-    // Log the segfault
-    logSegfault();
-
-    if (isTestEnvExit1OnFail) {
-        exit(1);
-    }
-    // Perform cleanup if needed
-
-    // Jump back to the REPL loop
+    vasprintf(&current_exception_message, "Segmentation fault in section: %s", (char*)SEGFAULT_SECTION);
     siglongjmp(jmpBuffer, 1);
 }
+
+
 
 void print_usage(char* argv0) {
     printf("%s %s\n", NAME, VERSION);
@@ -842,6 +877,7 @@ int main(int argc, char* argv[]) {
         if (sigsetjmp(jmpBuffer, 1) == 0) {
             startRepl();
         } else {
+            if (isTestEnvExit1OnFail) exit(1);
             fprintf(stderr, "Error occurred. Restarting REPL...\n");
             startRepl();
         }
