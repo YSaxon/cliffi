@@ -78,14 +78,12 @@ ffi_type* make_ffi_type_for_struct(const ArgInfo* arg) { // does not handle poin
         struct_type->elements[i] = arg_type_to_ffi_type(struct_info->info.args[i], true);
         if (!struct_type->elements[i]) {
             raiseException(1,  "Failed to convert struct field %d to ffi_type.\n", i);
-
         }
     }
     // if (!ispacked)
     ffi_status status = ffi_get_struct_offsets(FFI_DEFAULT_ABI, struct_type, NULL); // this will set size and such
     if (status != FFI_OK) {
         raiseException(1,  "Failed to get struct offsets.\n");
-
     }
     if (ispacked) {
         size_t offsets[struct_info->info.arg_count];
@@ -97,7 +95,6 @@ ffi_type* make_ffi_type_for_struct(const ArgInfo* arg) { // does not handle poin
 size_t get_size_of_struct(const ArgInfo* arg) {
     if (arg->type != TYPE_STRUCT) {
         raiseException(1,  "get_size_of_struct called with non-struct argument.\n");
-
         return 0;
     }
     ffi_type* struct_type = make_ffi_type_for_struct(arg);
@@ -191,14 +188,12 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return) { //, f
     ffi_status struct_status = struct_arginfo->struct_info->is_packed ? get_packed_offset(struct_arginfo, struct_type, offsets) : ffi_get_struct_offsets(FFI_DEFAULT_ABI, struct_type, offsets);
     if (struct_status != FFI_OK) {
         raiseException(1,  "Failed to get struct offsets.\n");
-
     }
 
     void* raw_memory = calloc(1, struct_type->size);
     free_ffi_type(struct_type);
     if (!raw_memory) {
         raiseException(1,  "Failed to allocate memory for struct.\n");
-
     }
 
     for (int i = 0; i < struct_info->info.arg_count; i++) {
@@ -267,7 +262,6 @@ void fix_struct_pointers(ArgInfo* struct_arg, void* raw_memory) {
     free_ffi_type(struct_type);
     if (struct_status != FFI_OK) {
         raiseException(1,  "Failed to get struct offsets.\n");
-
     }
 
     for (int i = 0; i < struct_info->info.arg_count; i++) {
@@ -324,7 +318,6 @@ void handle_promoting_vararg_if_necessary(ffi_type** arg_type_ptr, ArgInfo* arg,
             arg->type = TYPE_UINT;
         } else { // if its too small but not one of the above types then we don't know what to do so just fail
             raiseException(1,  "Error: arg[%d] is a vararg but its %s type %s is of size %zu which is less than sizeof(int) which is %zu\nYou should probably %s explicit type flag", argnum, arg->explicitType ? "explicit" : "inferred", typeToString(arg->type), arg_type->size, int_size, arg->explicitType ? "correct the" : "add an");
-
         }
         // if it was one of the above types that we COULD convert
         if (arg->explicitType) { // only bother them with a warning if they explicitly set the type
@@ -348,7 +341,6 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
         if (args != NULL) free(args);
         if (values != NULL) free(values);
         raiseException(1,  "Memory allocation failed in invoke_dynamic_function.\n");
-
         return -1;
     }
     for (int i = 0; i < call_info->info.arg_count; ++i) {
@@ -362,7 +354,6 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
             if (args != NULL) free(args);
             if (values != NULL) free(values);
             raiseException(1,  "Failed to convert arg[%d].type = %c to ffi_type.\n", i, call_info->info.args[i]->type);
-
             return -1;
         }
         if (call_info->info.args[i]->type != TYPE_STRUCT) { //|| call_info->info.args[i]->pointer_depth == 0) {
@@ -396,7 +387,6 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
         if (args != NULL) free(args);
         if (values != NULL) free(values);
         raiseException(1,  "ffi_prep_cif failed. Return status = %s\n", ffi_status_to_string(status));
-
         return -1;
     }
 

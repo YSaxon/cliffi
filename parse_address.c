@@ -10,12 +10,10 @@ void* getAddressFromAddressStringOrNameOfCoercableVariable(const char* addressSt
 
     if (addressStr == NULL || strlen(addressStr) == 0) {
         raiseException(1,  "Memory address cannot be empty.\n");
-
     }
 
     if (addressStr[0] == '-') {
         raiseException(1,  "Memory address cannot be negative and variables can't start with a dash.\n");
-
     }
 
     addressStr = strdup(addressStr); // copy the string so we can modify it
@@ -34,7 +32,6 @@ void* getAddressFromAddressStringOrNameOfCoercableVariable(const char* addressSt
         // fprintf(stderr,"Address calculation: %p %c %p\n", operand_1, operand, operand_2);
         if (operand_1 == NULL || operand_2 == NULL) {
             raiseException(1,  "Error: Invalid addition, one or more strings was not a valid address.\n");
-
         }
         if (operand == '*') {
             return (void*)((uintptr_t)operand_1 * (uintptr_t)operand_2);
@@ -42,7 +39,6 @@ void* getAddressFromAddressStringOrNameOfCoercableVariable(const char* addressSt
             return (void*)((uintptr_t)operand_1 + (uintptr_t)operand_2);
         } else {
             raiseException(1,  "Error: Should be impossible to reach this code, %c", operand);
-
         }
     }
 
@@ -57,7 +53,6 @@ void* getAddressFromAddressStringOrNameOfCoercableVariable(const char* addressSt
         ArgInfo* var = getVar(addressStr);
         if (var == NULL) {
             raiseException(1,  "%s is neither a valid pointer address nor an existing variable.\n", addressStr);
-
             return NULL;
         } else {
             switch (var->type) {
@@ -82,7 +77,6 @@ void* getAddressFromAddressStringOrNameOfCoercableVariable(const char* addressSt
                     break;
                 } else {
                     raiseException(1,  "Error: %s is not a (void*) type, (nor any other type that could be coerced to a pointer).\n", addressStr);
-
                     return NULL;
                 }
             }

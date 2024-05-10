@@ -94,7 +94,6 @@ void hexdump(const void *data, size_t size) {
     size_t size = typeToSize(type, 0);
     if (size == 0) {
         raiseException(1,  "Size of type %s is 0\n", typeToString(type));
-
     }
     if ((size_t)value % size != 0)  {
         alligned_copy = malloc(size);
@@ -146,13 +145,11 @@ void hexdump(const void *data, size_t size) {
             break;
         case TYPE_POINTER:
             raiseException(1,  "Should not be printing pointer values directly");
-
         case TYPE_VOID:
             printf("(void)");
             break;
         case TYPE_STRUCT:
             raiseException(1,  "Should not be printing struct values directly");
-
         default:
             printf("Unsupported type");
             break;

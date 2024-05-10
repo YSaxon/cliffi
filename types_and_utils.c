@@ -219,12 +219,10 @@ ArgType infer_arg_type_single(const char* argval) {
         long long int test = strtoll(argval, NULL, 0);
         if (errno == ERANGE) {
             raiseException(1,  "Error: Value %s is out of range even for long long\n", argval);
-
         }
         if (test > ULONG_MAX) {
             // todo implement longlong?
             raiseException(1,  "Error: Value %s is too large to fit into an unsigned long, and we haven't implemented longlong yet\n", argval);
-
         } else if (test > LONG_MAX) {
             return TYPE_ULONG; // no alternative so long as we don't have longlong
         } else if (test > UINT_MAX) {
@@ -249,7 +247,6 @@ ArgType infer_arg_type_single(const char* argval) {
             return is_negative ? TYPE_LONG : TYPE_ULONG;
         else {
             raiseException(1,  "Error: Hex string %s is %zu bytes, which is too long to fit into a single type. If you meant to specify an array or a string, flag it as such.\n", argval, length);
-
         }
     }
 
@@ -303,7 +300,6 @@ void* hex_string_to_bytes(const char* hexStr) {
         if (val1 < 0 || val2 < 0) {
             // free(output); // Cleanup on error
             raiseException(1,  "Error: Invalid hex character in string: %s\n", hexStr);
-
         }
 
         output[j] = (unsigned char)((val1 << 4) + val2);
@@ -376,7 +372,6 @@ void set_arg_value_nullish(ArgInfo* arg){
 
     } else if (arg->type == TYPE_STRUCT){
         raiseException(1,  "Setting struct types to NULL should not be getting handled by this function. Please report this.");
-
     } else { // non pointer set to null is just setting the value to 0
         memset(arg->value, 0, typeToSize(arg->type, 0));
     }
@@ -424,7 +419,6 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr) {
             return;
         } else {
             raiseException(1,  "Error: Argstr %s is interpreted as NULL. We cannot initialize a null array with no sizing info. If you WANT a null pointer you should use the pointer flag instead\n", argStr);
-
         }
     }
 
@@ -447,17 +441,14 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr) {
         if (isHexFormat(argStr)) {
             if (arg->array_value_pointer_depth > 0) {
                 raiseException(1,  "Error: You can't use the hex array initialization method with an array of pointer types");
-
             }
             // consider argstr to be a hex string containing the raw values for the array (mostly only useful for char arrays)
             int hexstring_bytes = (strlen(argStr) - 2) / 2;
             if (size_of_type == 0) {
                 raiseException(1,  "Error: Unsupported type for array: %c\n with size of 0", typeToChar(arg->type));
-
             }
             if (hexstring_bytes % size_of_type != 0) {
                 raiseException(1,  "Error: Hex string bytes length %d is not a multiple of the size of the type %zu\n in hex string being converted to array %s", hexstring_bytes, size_of_type, argStr);
-
             }
             array_size_implicit = hexstring_bytes / size_of_type;
             array_values = hex_string_to_bytes(argStr);
@@ -474,7 +465,6 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr) {
             char* token = strtok_r(rest, ",", &rest);
             if (token == NULL) {
                 raiseException(1,  "Error: Failed to tokenize array string %s, probably an off by one error\n", argStr);
-
             }
             void* convertedValue = convert_to_type(arg->type, token);
             convertedValue = makePointerLevel(convertedValue, arg->array_value_pointer_depth);
@@ -510,7 +500,6 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr) {
             // alternatively we could add a field to the arginfo to store the implicit size
         } else {
             raiseException(1,  "Error: Unsupported array size mode %d\n", arg->is_array);
-
         }
 }
 
@@ -522,7 +511,6 @@ void convert_arg_value(ArgInfo* arg, const char* argStr) {
         void* convertedValue = convert_to_type(arg->type, argStr);
         if (convertedValue == NULL) {
             raiseException(1,  "Error: Failed to convert argument value %s to type %c\n", argStr, typeToChar(arg->type));
-
         }
 
         switch (arg->type) {
@@ -695,7 +683,6 @@ size_t typeToSize(ArgType type, int array_value_pointer_depth) {
     // case TYPE_UNKNOWN: return 0;
     default:
         raiseException(1,  "Error: Unsupported type %c\n", typeToChar(type));
-
         fprintf(stderr, "Error: we should never reach here");
         exit(1);
     }
@@ -744,10 +731,8 @@ void convert_argnum_sized_array_to_arginfo_ptr(ArgInfo* arg, ArgInfoContainer* i
     if (arg->is_array == ARRAY_SIZE_AT_ARGNUM) {
         if (arg->array_sizet_arg.argnum_of_size_t_to_be_replaced > info->arg_count) {
             raiseException(1,  "Error: array was specified to have its size_t be at argnum %d, but there are only %d args\n", arg->array_sizet_arg.argnum_of_size_t_to_be_replaced, info->arg_count);
-
         } else if (arg->array_sizet_arg.argnum_of_size_t_to_be_replaced < 0) {
             raiseException(1,  "Error: array was specified to have its size_t be at argnum %d, but argnums must be positive\n", arg->array_sizet_arg.argnum_of_size_t_to_be_replaced);
-
         } else {
             arg->is_array = ARRAY_SIZE_AT_ARGINFO_PTR; // TODO maybe we should replace 0 with R for return value?
             if (arg->array_sizet_arg.argnum_of_size_t_to_be_replaced == 0)
@@ -798,7 +783,6 @@ size_t get_size_for_arginfo_sized_array(const ArgInfo* arg) {
             return (size_t) * *(unsigned long**)size_t_param_val;
         default:
             raiseException(1,  "Error: array was specified to have its size_t be another argument, but the arg at that position is not a numeric type\n");
-
         }
 #endif
     case ARRAY_STATIC_SIZE:
@@ -806,16 +790,12 @@ size_t get_size_for_arginfo_sized_array(const ArgInfo* arg) {
         return arg->static_or_implied_size;
     case ARRAY_STATIC_SIZE_UNSET:
         raiseException(1,  "Error: getSizeForSizeTArray was called on an array on static_unset mode\n");
-
     case ARRAY_SIZE_AT_ARGNUM:
         raiseException(1,  "Error: getSizeForSizeTArray was called on an arginfo with is_array ARRAY_SIZE_AT_ARGNUM. Call convert_all_arrays_to_arginfo_ptr_sized_after_parsing() first.\n");
-
     case NOT_ARRAY:
         raiseException(1,  "Error: getSizeForSizeTArray was called on an arginfo with is_array NOT_ARRAY\n");
-
     default:
         raiseException(1,  "Error: getSizeForSizeTArray was called on an arginfo with unsupported is_array mode %d\n", arg->is_array);
-
     }
     fprintf(stderr, "Error: getSizeForSizeTArray fell through to the end of the function\n");
     exit(1);
@@ -1076,11 +1056,9 @@ void castArgValueToType(ArgInfo* destinationTypedArg, ArgInfo* sourceValueArg){
                     sourceType = TYPE_POINTER;
                 } else {
                     raiseException(1,  "Error: Cannot cast a struct to an array of a different type other than char or uchar\n");
-
                 }
             } else {
                 raiseException(1,  "Error: Cannot cast a struct to a different type\n");
-
             }
     }
     if (destinationTypedArg->pointer_depth > 0 || destinationTypedArg->is_array) {
@@ -1095,11 +1073,9 @@ void castArgValueToType(ArgInfo* destinationTypedArg, ArgInfo* sourceValueArg){
                     destinationType = TYPE_POINTER;
                 } else {
                     raiseException(1,  "Error: Cannot cast an array of a type other than char or uchar to a struct\n");
-
                 }
             } else {
                 raiseException(1,  "Error: Cannot cast a different type to a struct\n");
-
             }
     }
     if (sourceValueArg->type == TYPE_STRUCT) { // assuming destinationType is now TYPE_POINTER
@@ -1108,7 +1084,6 @@ void castArgValueToType(ArgInfo* destinationTypedArg, ArgInfo* sourceValueArg){
     void* convertedValue = dynamicCast(sourceValueArg->value, sourceType, destinationType);
     if (convertedValue == NULL) {
         raiseException(1,  "Error: Failed to cast value from type %c to type %c\n", typeToChar(sourceType), typeToChar(destinationType));
-
     }
 
     if (destinationTypedArg->type == TYPE_STRUCT){ // assuming sourceType is now TYPE_POINTER
