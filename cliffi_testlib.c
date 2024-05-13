@@ -45,9 +45,11 @@ void do_double_free() {
 
 void do_buffer_overflow() {
     char buffer[10];
-    for (int i = 0; i < 20; i++) {
-        buffer[i] = 'A';
-    }
+    // mark it to override warnings
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Warray-bounds"
+    buffer[15] = 'a';
+    #pragma clang diagnostic pop
 }
 
 void do_segfault_in_another_thread() {
