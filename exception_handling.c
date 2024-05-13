@@ -89,15 +89,19 @@ void printStackTrace(){
 
 
 void raiseException(int status, char* formatstr, ...) {
+#ifdef use_backtrace
+    saveStackTrace(); // call it first so that the stack trace is saved with the old message before the message is overwritten
+#endif
+    if (current_exception_message != NULL) {
+        free(current_exception_message);
+        current_exception_message = NULL;
+    }
     if (formatstr != NULL) {
         va_list args;
         va_start(args, formatstr);
         vasprintf(&current_exception_message, formatstr, args);
         va_end(args);
     }
-#ifdef use_backtrace
-    saveStackTrace();
-#endif
     siglongjmp(*current_exception_buffer, status);
 }
 
