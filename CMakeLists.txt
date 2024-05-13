@@ -79,6 +79,7 @@ var_map.c
 tokenize.c
 parse_address.c
 shims.c
+exception_handling.c
 )
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})

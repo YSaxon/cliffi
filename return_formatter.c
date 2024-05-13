@@ -6,7 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
-#include "main.h"
+#include "exception_handling.h"
+
 
 void print_char_with_escape(char c) {
     switch (c) {

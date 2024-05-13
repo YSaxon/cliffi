@@ -14,6 +14,8 @@
 #include "types_and_utils.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "exception_handling.h"
+
 
 ffi_type* arg_type_to_ffi_type(const ArgInfo* arg, bool is_inside_struct); // putting this declaration here instead of header since it's only used in this file
 

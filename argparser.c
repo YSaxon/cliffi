@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "exception_handling.h"
 
 // Function to allocate and initialize a new ArgInfo struct
 // ArgInfo* create_arg_info(ArgType type, const char* value) {

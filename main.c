@@ -6,8 +6,7 @@
 #include "return_formatter.h"
 #include "types_and_utils.h"
 #include "var_map.h"
-#include <setjmp.h>
-#include <signal.h>
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -15,7 +14,7 @@
 #include <string.h>
 #include <inttypes.h>
 
-
+#include "exception_handling.h"
 
 #include "tokenize.h"
 #if  !defined(_WIN32) && !defined(_WIN64)
@@ -25,13 +24,7 @@
 #include <unistd.h>   // only used for forking for --repltest repl test harness mode
 #endif
 
-#if (defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))) && !defined(__ANDROID__)
-#define use_backtrace
-#endif
 
-#ifdef use_backtrace
-#include <execinfo.h>
-#endif
 
 #ifdef _WIN32
 #include <windows.h>
@@ -45,168 +38,9 @@ const char* NAME = "cliffi";
 const char* VERSION = "v1.10.22";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
-#if defined(_WIN32) || defined(_WIN64)
-#define sigjmp_buf jmp_buf
-#define sigsetjmp(env, save) setjmp(env)
-#define siglongjmp(env, val) longjmp(env, val)
-#endif
+
 
 bool isTestEnvExit1OnFail = false;
-sigjmp_buf rootJmpBuffer;
-
-_Thread_local sigjmp_buf* current_exception_buffer = &rootJmpBuffer;
-_Thread_local char* current_exception_message = NULL;
-
-#define TRY \
-    sigjmp_buf newjmpBuffer; \
-    sigjmp_buf* old_exception_buffer = current_exception_buffer; \
-    current_exception_buffer = &newjmpBuffer; \
-    if (sigsetjmp(newjmpBuffer, 1) == 0) {
-
-#define CATCH(messageSearchString) } else { \
-    current_exception_buffer = old_exception_buffer; \
-    if (messageSearchString != NULL && strstr(messageSearchString, current_exception_message) == NULL) { /* this means that the catch handler shouldn't catch it*/ \
-        if (old_exception_buffer != NULL) { siglongjmp(*current_exception_buffer, 1); \
-        } else { \
-            fprintf(stderr, "Not able to rethrow exception.\n"); \
-            goto handleException; \
-        } \
-    } else { \
-        handleException: \
-        current_exception_buffer = old_exception_buffer;
-
-#define CATCHALL CATCH(NULL)
-
-#if defined (use_backtrace)
-#define freebacktrace free(current_stacktrace_strings); current_stacktrace_strings = NULL; current_stacktrace_size = 0;
-#else
-#define freebacktrace
-#endif
-
-#define END_TRY }} \
-    current_exception_buffer = old_exception_buffer; \
-    if (current_exception_message != NULL) { \
-        free(current_exception_message); \
-        current_exception_message = NULL; \
-    } \
-    freebacktrace \
-
-
-#ifdef use_backtrace
-
-_Thread_local char** current_stacktrace_strings = NULL;
-_Thread_local size_t current_stacktrace_size = 0;
-void saveStackTrace() {
-    void* array[10];
-    size_t i;
-
-    if (current_stacktrace_strings == NULL) {
-
-        current_stacktrace_size = backtrace(array, 10);
-        if (current_stacktrace_size == 0) {
-            // current_stacktrace_size = 1;
-            // current_stacktrace_strings = malloc(sizeof(char*));
-            // current_stacktrace_strings[0] = strdup("(no stack trace available)");
-            return;
-        }
-
-        current_stacktrace_strings = backtrace_symbols(array, current_stacktrace_size);
-
-    } else {
-        size_t new_size = backtrace(array, 10);
-        char** new_strings = backtrace_symbols(array, current_stacktrace_size);
-
-        int lines_for_subheader = 1;
-
-        char** combined_strings = malloc((current_stacktrace_size + lines_for_subheader + new_size) * sizeof(char*));
-
-        // Add the new stack trace first
-        for (i = 0; i < new_size; i++) {
-            combined_strings[i] = new_strings[i];
-        }
-
-        // Add the subheader
-        char* whileHandling = malloc(strlen("\n\tWhile handling exception: \n") + strlen(current_exception_message) + 1);
-        strcpy(whileHandling, "\n\tWhile handling exception: ");
-        strcat(whileHandling, current_exception_message);
-        combined_strings[new_size] = whileHandling;
-
-        // Add the original stack trace after the subheader
-        for (i = 0; i < current_stacktrace_size; i++) {
-            combined_strings[new_size + lines_for_subheader + i] = current_stacktrace_strings[i];
-        }
-
-        free(current_stacktrace_strings);
-        free(new_strings);
-        current_stacktrace_strings = combined_strings;
-    }
-}
-
-void printStackTrace(){
-    if (current_stacktrace_size == 0) {
-        fprintf(stderr, "No stack trace available\n");
-        return;
-    }
-    fprintf(stderr, "Stack trace:\n");
-    for (size_t i = 0; i < current_stacktrace_size; i++) {
-        fprintf(stderr, "%s\n", current_stacktrace_strings[i]);
-    }
-    free(current_stacktrace_strings);
-    current_stacktrace_strings = NULL;
-    current_stacktrace_size = 0;
-}
-#endif
-
-
-void raiseException(int status, char* formatstr, ...) {
-    if (formatstr != NULL) {
-        va_list args;
-        va_start(args, formatstr);
-        vasprintf(&current_exception_message, formatstr, args);
-        va_end(args);
-    }
-#ifdef use_backtrace
-    saveStackTrace();
-#endif
-    siglongjmp(*current_exception_buffer, status);
-}
-
-void printException() {
-    if (current_exception_message == NULL || strlen(current_exception_message) == 0){
-        fprintf(stderr, "Error thrown with no message\n");
-    } else {
-        fprintf(stderr, "%s\n", current_exception_message);
-        free(current_exception_message);
-        current_exception_message = NULL;
-    }
-#ifdef use_backtrace
-    printStackTrace();
-#endif
-}
-
-#define SEGFAULT_SECTION_UNSET "(unset)";
-_Thread_local const char* SEGFAULT_SECTION = SEGFAULT_SECTION_UNSET;
-
-void setCodeSectionForSegfaultHandler(const char* section) {
-    SEGFAULT_SECTION = section;
-}
-void unsetCodeSectionForSegfaultHandler() {
-    SEGFAULT_SECTION = SEGFAULT_SECTION_UNSET;
-}
-
-void handleSegfault(int signal) {
-    if (current_exception_message != NULL) {
-        printf("Freeing current_exception_message which was unexpectedly not null: %s\n", current_exception_message);
-        free(current_exception_message);
-        current_exception_message = NULL;
-    }
-    current_exception_message = malloc(strlen("Segmentation fault in section: ") + strlen(SEGFAULT_SECTION) + 1);
-    strcpy(current_exception_message, "Segmentation fault in section: ");
-    strcat(current_exception_message, SEGFAULT_SECTION);
-    // vasprintf(&current_exception_message, "Segmentation fault in section: %s", (char*)SEGFAULT_SECTION);
-    siglongjmp(*current_exception_buffer, 1);
-}
-
 
 
 void print_usage(char* argv0) {
@@ -829,15 +663,9 @@ void checkAndRunCliffiInits() {
 }
 
 int main(int argc, char* argv[]) {
-
     setbuf(stdout, NULL); // disable buffering for stdout
     setbuf(stderr, NULL); // disable buffering for stderr
-    if (sigsetjmp(rootJmpBuffer, 1) != 0) {
-        fprintf(stderr,"Root exception handler caught an exception\n");
-        printException();
-        exit(1);
-    }
-    signal(SIGSEGV, handleSegfault);
+    main_method_install_exception_handlers();
 
     if (argc > 1 && strcmp(argv[1], "--help") == 0) {
         print_usage(argv[0]);
