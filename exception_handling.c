@@ -20,6 +20,7 @@
 #if defined(__i386__) || defined(__x86_64__) || defined(__riscv)
     #include <ucontext.h>
 #endif
+#include <ucontext.h>
 #include "shims.h"
 #include "exception_handling.h"
 
