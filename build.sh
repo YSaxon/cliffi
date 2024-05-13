@@ -5,6 +5,7 @@ if [ -f "CMakeLists.txt" ]; then
     else
     cmake  .. -DCMAKE_BUILD_TYPE=Debug
     fi
+    find . -name "*.gcda" -delete
     make && ctest .. --output-on-failure && \
     lcov --capture --directory . --output-file ../coverage.info && \
     genhtml ../coverage.info --output-directory ../coverage-html
