@@ -48,7 +48,8 @@ void saveStackTrace() {
 
         int lines_for_subheader = 1;
 
-        char** combined_strings = malloc((current_stacktrace_size + lines_for_subheader + new_size) * sizeof(char*));
+        size_t combined_size = current_stacktrace_size + lines_for_subheader + new_size;
+        char** combined_strings = malloc(combined_size * sizeof(char*));
 
         // Add the new stack trace first
         for (i = 0; i < new_size; i++) {
@@ -69,6 +70,7 @@ void saveStackTrace() {
         free(current_stacktrace_strings);
         free(new_strings);
         current_stacktrace_strings = combined_strings;
+        current_stacktrace_size = combined_size;
     }
 }
 
