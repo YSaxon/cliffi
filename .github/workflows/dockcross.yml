@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: version
         id: version
         # parse the VERSION from main.c
@@ -22,12 +22,12 @@ jobs:
 
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.version.outputs.version }}
-          release_name: ${{ github.ref_name == 'master' && 'Release' || 'DevBuild' }} ${{ steps.version.outputs.version }}
+          name: ${{ github.ref_name == 'master' && 'Release' || 'DevBuild' }} ${{ steps.version.outputs.version }}
           draft: true
           prerelease: true
     outputs:
