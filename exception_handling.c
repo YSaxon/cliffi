@@ -181,25 +181,138 @@ void terminateThread() {
     pthread_exit(NULL);
 }
 
+
+void *get_instruction_pointer(ucontext_t *context) {
+    void *ip = NULL;
+
+    #if defined(__APPLE__)
+        #if defined(__x86_64__)
+            ip = (void *)context->uc_mcontext->__ss.__rip;
+        #elif defined(__i386__)
+            ip = (void *)context->uc_mcontext->__ss.__eip;
+        #elif defined(__aarch64__)
+            ip = (void *)context->uc_mcontext->__ss.__pc;
+        #elif defined(__arm__)
+            ip = (void *)context->uc_mcontext->__ss.__pc;
+        #elif defined(__ppc__)
+            ip = (void *)context->uc_mcontext->__ss.__srr0;
+        #elif defined(__riscv)
+            ip = (void *)context->uc_mcontext.__gregs[REG_PC];
+        #else
+            #error "Unsupported architecture on Apple"
+        #endif
+    #elif defined(__linux__)
+        #if defined(__x86_64__)
+            ip = (void *)context->uc_mcontext.gregs[REG_RIP];
+        #elif defined(__i386__)
+            ip = (void *)context->uc_mcontext.gregs[REG_EIP];
+        #elif defined(__aarch64__)
+            ip = (void *)context->uc_mcontext.pc;
+        #elif defined(__arm__)
+            ip = (void *)context->uc_mcontext.arm_pc;
+        #elif defined(__ppc__)
+            ip = (void *)context->uc_mcontext.regs->nip;
+        #elif defined(__mips__)
+            ip = (void *)context->uc_mcontext.pc;
+        #elif defined(__sparc__)
+            ip = (void *)context->uc_mcontext.gregs[REG_PC];
+        #elif defined(__riscv)
+            ip = (void *)context->uc_mcontext.__gregs[REG_PC];
+        #elif defined(__alpha__)
+            ip = (void *)context->uc_mcontext.sc_pc;
+        #elif defined(__ia64__)
+            ip = (void *)context->uc_mcontext.sc_ip;
+        #else
+            #error "Unsupported architecture on Linux"
+        #endif
+    #elif defined(__FreeBSD__)
+        #if defined(__x86_64__)
+            ip = (void *)context->uc_mcontext.mc_rip;
+        #elif defined(__i386__)
+            ip = (void *)context->uc_mcontext.mc_eip;
+        #elif defined(__aarch64__)
+            ip = (void *)context->uc_mcontext.mc_gpregs.gp_elr;
+        #elif defined(__arm__)
+            ip = (void *)context->uc_mcontext.mc_gpregs.gp_pc;
+        #elif defined(__ppc__)
+            ip = (void *)context->uc_mcontext.mc_srr0;
+        #elif defined(__riscv)
+            ip = (void *)context->uc_mcontext.__gregs[REG_PC];
+        #elif defined(__alpha__)
+            ip = (void *)context->uc_mcontext.mc_pc;
+        #elif defined(__ia64__)
+            ip = (void *)context->uc_mcontext.mc_ip;
+        #else
+            #error "Unsupported architecture on FreeBSD"
+        #endif
+    #elif defined(_WIN32)
+        #if defined(_M_X64)
+            ip = (void *)context->Rip;
+        #elif defined(_M_IX86)
+            ip = (void *)context->Eip;
+        #elif defined(_M_ARM64)
+            ip = (void *)context->Pc;
+        #elif defined(_M_ARM)
+            ip = (void *)context->Pc;
+        #elif defined(_M_IA64)
+            ip = (void *)context->StIIP;
+        #else
+            #error "Unsupported architecture on Windows"
+        #endif
+    #else
+        #error "Unsupported operating system"
+    #endif
+
+    return ip;
+}
+
 void handleSegfault(int signal) {
     if (!is_main_thread()) {
         fprintf(stderr, "Caught segfault on non-main thread. Terminating thread.\n");
         terminateThread();
     }
-    if (current_exception_message != NULL) {
-        printf("Freeing current_exception_message which was unexpectedly not null: %s\n", current_exception_message);
-        free(current_exception_message);
-        current_exception_message = NULL;
-    }
     current_exception_message = malloc(strlen("Segmentation fault in section: ") + strlen(SEGFAULT_SECTION) + 1);
     strcpy(current_exception_message, "Segmentation fault in section: ");
     strcat(current_exception_message, SEGFAULT_SECTION);
-    // vasprintf(&current_exception_message, "Segmentation fault in section: %s", (char*)SEGFAULT_SECTION);
+
+    if (!is_main_thread()) {
+        fprintf(stderr, "Caught segfault on non-main thread. Terminating thread.\n");
+        printStackTrace();
+        if (isTestEnvExit1OnFail) exit(1);
+        terminateThread();
+    }
     siglongjmp(*current_exception_buffer, 1);
 }
 
 
+void advanced_segfault_handler(int sig, siginfo_t *info, void *ucontext) {
+    // Cast ucontext to ucontext_t to get register info
+    ucontext_t *context = (ucontext_t *)ucontext;
 
+    // Get the address where the fault occurred
+    void *fault_address = info->si_addr;
+
+    char* segfault_message;
+    void *ip = get_instruction_pointer(context);
+    // Print fault address
+    asprintf(&segfault_message,
+     "Segmentation fault at address: %p\n"
+     "Instruction pointer: %p\n", fault_address, ip);
+
+    // Get the stack trace
+
+    if(!is_main_thread()){
+        fprintf(stderr, "Caught segfault on non-main thread. Terminating thread.\n");
+        printf("%s\n", segfault_message);
+        saveStackTrace();
+        printStackTrace();
+        if (isTestEnvExit1OnFail) exit(1);
+        terminateThread();
+    } else {
+        printf("advanced_segfault_handler calling raiseException\n");
+        raiseException(1, "%s\n", segfault_message);
+    }
+}
 
 
 void install_root_exception_handler() {
@@ -209,15 +322,24 @@ void install_root_exception_handler() {
             fprintf(stderr,"Root exception handler caught an exception on main thread\n");
             printException();
             exit(1);
-        }
-        else {
-            fprintf(stderr, "Caught exception on non-main thread\n");
+        } else {
+            fprintf(stderr,"Root exception handler caught an exception on non-main thread. Terminating thread.\n");
             printException();
+            if (isTestEnvExit1OnFail) exit(1);
+            terminateThread();
         }
     }
 }
 void install_segfault_handler() {
-    signal(SIGSEGV, handleSegfault);
+    // signal(SIGSEGV, handleSegfault);
+    struct sigaction sa;
+    sa.sa_sigaction = advanced_segfault_handler;
+    sa.sa_flags = SA_SIGINFO;
+
+    if (sigaction(SIGSEGV, &sa, NULL) == -1) {
+        perror("sigaction");
+        exit(EXIT_FAILURE);
+    }
 }
 
 void main_method_install_exception_handlers() {
