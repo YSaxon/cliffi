@@ -16,6 +16,10 @@
 #include <setjmp.h>
 #include <signal.h>
 #include <stdint.h>
+ /*x86 or risc based systems*/
+#if defined(__i386__) || defined(__x86_64__) || defined(__riscv)
+    #include <ucontext.h>
+#endif
 #include "shims.h"
 #include "exception_handling.h"
 
@@ -205,18 +209,14 @@ void* get_instruction_pointer(ucontext_t *context) {
         #elif defined(__ppc__)
             ip = (uintptr_t)context->uc_mcontext->__ss.__srr0;
         #elif defined(__riscv)
-        #include <ucontext.h>
             ip = (uintptr_t)context->uc_mcontext.__gregs[REG_PC];
         #else
             #error "Unsupported architecture on Apple"
         #endif
     #elif defined(__linux__)
         #if defined(__x86_64__)
-        #include <ucontext.h>
-        #include <sys/ucontext.h>
             ip = (uintptr_t)context->uc_mcontext.gregs[REG_RIP];
         #elif defined(__i386__)
-        #include <ucontext.h>
             ip = (uintptr_t)context->uc_mcontext.gregs[REG_EIP];
         #elif defined(__aarch64__)
             ip = (uintptr_t)context->uc_mcontext.pc;
@@ -227,10 +227,8 @@ void* get_instruction_pointer(ucontext_t *context) {
         #elif defined(__mips__)
             ip = (uintptr_t)context->uc_mcontext.pc;
         #elif defined(__sparc__)
-        #include <ucontext.h>
             ip = (uintptr_t)context->uc_mcontext.gregs[REG_PC];
         #elif defined(__riscv)
-        #include <ucontext.h>
             ip = (uintptr_t)context->uc_mcontext.__gregs[REG_PC];
         #elif defined(__alpha__)
             ip = (uintptr_t)context->uc_mcontext.sc_pc;
@@ -253,7 +251,6 @@ void* get_instruction_pointer(ucontext_t *context) {
         #elif defined(__ppc__)
             ip = (uintptr_t)context->uc_mcontext.mc_srr0;
         #elif defined(__riscv)
-        #include <ucontext.h>
             ip = (uintptr_t)context->uc_mcontext.__gregs[REG_PC];
         #elif defined(__alpha__)
             ip = (uintptr_t)context->uc_mcontext.mc_pc;
