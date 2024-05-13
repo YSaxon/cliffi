@@ -22,10 +22,10 @@ sigjmp_buf rootJmpBuffer;
 
 _Thread_local sigjmp_buf* current_exception_buffer = &rootJmpBuffer;
 _Thread_local char* current_exception_message = NULL;
-
-#ifdef use_backtrace
 _Thread_local char** current_stacktrace_strings = NULL;
 _Thread_local size_t current_stacktrace_size = 0;
+
+#ifdef use_backtrace
 void saveStackTrace() {
     void* array[10];
     size_t i;
@@ -87,6 +87,33 @@ void printStackTrace(){
     current_stacktrace_strings = NULL;
     current_stacktrace_size = 0;
 }
+#else
+    #just save the previous error message(s) in a buffer in order to print "while handling exception: " in the catch block
+    void saveStackTrace() {
+        if (current_exception_message == NULL) return;
+        // put the existing message in the stack trace buffer and free it for the new message
+        if (current_stacktrace_strings == NULL) {
+            current_stacktrace_strings = malloc(sizeof(char*));
+            current_stacktrace_strings[0] = current_exception_message;
+            current_stacktrace_size = 1;
+        } else {
+            size_t combined_size = current_stacktrace_size + 1;
+            char** combined_strings = malloc(combined_size * sizeof(char*));
+            for (size_t i = 0; i < current_stacktrace_size; i++)
+                combined_strings[i] = current_stacktrace_strings[i];
+            combined_strings[current_stacktrace_size] = current_exception_message;
+            free(current_stacktrace_strings);
+            current_stacktrace_strings = combined_strings;
+            current_stacktrace_size = combined_size;
+        }
+
+    }
+    void printStackTrace() {
+        for (size_t i = 0; i < current_stacktrace_size; i++) {
+            fprintf(stderr, "While handling exception: %s\n", current_stacktrace_strings[i]);
+
+    }
+
 #endif
 
 
