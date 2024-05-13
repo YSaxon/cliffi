@@ -100,7 +100,7 @@ void saveStackTrace() {
         return;
     }
 
-    current_stacktrace_strings = backtrace_symbols(array, size);
+    current_stacktrace_strings = backtrace_symbols(array, current_stacktrace_size);
 }
 
 void printStackTrace(){
@@ -127,7 +127,7 @@ void raiseException(int status, char* formatstr, ...) {
         va_end(args);
     }
 #ifdef use_backtrace
-    if (status != 0) saveStackTrace();
+    saveStackTrace();
 #endif
     siglongjmp(*current_exception_buffer, status);
 }
