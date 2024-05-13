@@ -620,7 +620,6 @@ set_tests_properties(repl_smoketest PROPERTIES PASS_REGULAR_EXPRESSION "Function
 add_test(NAME repl_metatest_tests_fail_on_bad_input
 COMMAND cliffi --repltest
 thisisnotagoodcommand \n
-should_not_reach_here = 1 \n
 )
 set_tests_properties(repl_metatest_tests_fail_on_bad_input PROPERTIES WILL_FAIL TRUE) # this test is expected to fail
 
@@ -630,6 +629,35 @@ null_pointer = -P 0 \n
 ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_at_pointer null_pointer \n
 )
 set_tests_properties(repl_metatest_tests_fail_on_segfault PROPERTIES WILL_FAIL TRUE) # this test is expected to fail
+
+add_test(NAME repl_metatest_tests_fail_on_segfault_in_function_created_thread
+COMMAND cliffi --repltest
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v do_segfault_in_another_thread \n
+)
+set_tests_properties(repl_metatest_tests_fail_on_segfault_in_function_created_thread PROPERTIES WILL_FAIL TRUE) # this test is expected to fail
+
+add_test(NAME repl_metatest_tests_dont_fail_on_bad_input_with_nofail_option
+COMMAND cliffi --repltest --noexitonfail
+thisisnotagoodcommand \n
+should_reach_here = 1 \n
+)
+set_tests_properties(repl_metatest_tests_dont_fail_on_bad_input_with_nofail_option PROPERTIES PASS_REGULAR_EXPRESSION "should_reach_here = 1")
+
+add_test(NAME repl_metatest_tests_dont_fail_on_segfault_with_nofail_option
+COMMAND cliffi --repltest --noexitonfail
+null_pointer = -P 0 \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i increment_at_pointer null_pointer \n
+should_reach_here = 1 \n
+)
+set_tests_properties(repl_metatest_tests_dont_fail_on_segfault_with_nofail_option PROPERTIES PASS_REGULAR_EXPRESSION "should_reach_here = 1")
+
+add_test(NAME repl_metatest_tests_dont_fail_on_segfault_in_function_created_thread_with_nofail_option
+COMMAND cliffi --repltest --noexitonfail
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} v do_segfault_in_another_thread \n
+should_reach_here = 1 \n
+)
+set_tests_properties(repl_metatest_tests_dont_fail_on_segfault_in_function_created_thread_with_nofail_option PROPERTIES PASS_REGULAR_EXPRESSION "should_reach_here = 1")
+
 
 add_test(NAME repl_test_globals #
 COMMAND cliffi --repltest

@@ -672,8 +672,14 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     if (argc > 1 && strcmp(argv[1], "--repltest") == 0) {
+        if (argc > 2 && strcmp(argv[2], "--noexitonfail") == 0) {
+            argc--;
+            argv++;
+            isTestEnvExit1OnFail = false;
+        } else {
+            isTestEnvExit1OnFail = true; // in general we want to exit on fail in test mode so that mistakes in the test script are caught
+        }
         #if !defined(_WIN32) && !defined(_WIN64)
-        isTestEnvExit1OnFail = true;
         int pipefd[2];
         if (pipe(pipefd) == -1) {
             perror("pipe");
@@ -690,7 +696,6 @@ int main(int argc, char* argv[]) {
             close(pipefd[1]);              // Close write end of pipe
             dup2(pipefd[0], STDIN_FILENO); // Redirect STDIN to read from pipe
             close(pipefd[0]);              // Close read end, not needed anymore
-            isTestEnvExit1OnFail = true;
             goto replmode;
         } else {              // Parent process
             close(pipefd[0]); // Close the write end of the pipe

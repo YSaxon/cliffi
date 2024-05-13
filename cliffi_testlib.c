@@ -31,6 +31,37 @@ int increment_at_pointer(int* a) { //deliberately unsafe
     return *a;
 }
 
+void do_segfault() {
+    int* p = NULL;
+    *p = 42;
+}
+
+void do_double_free() {
+    int* p = malloc(sizeof(int));
+    free(p);
+    free(p);
+}
+
+void do_buffer_overflow() {
+    char buffer[10];
+    for (int i = 0; i < 20; i++) {
+        buffer[i] = 'A';
+    }
+}
+
+void do_segfault_in_another_thread() {
+    //start another thread that does a segfault
+    #if !defined(_WIN32) && !defined(_WIN64)
+    #include <pthread.h>
+    pthread_t thread;
+    pthread_create(&thread, NULL, (void* (*)(void*))do_segfault, NULL);
+    pthread_join(thread, NULL);
+    #else
+    #include <windows.h>
+    CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)do_segfault, NULL, 0, NULL);
+    #endif
+}
+
 int* get_array_of_int(int a, size_t size) {
     int* arr = calloc(size, sizeof(int));
     for (size_t i = 0; i < size; i++) {
