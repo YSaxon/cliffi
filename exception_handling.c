@@ -127,9 +127,8 @@ void printStackTrace(){
 
 
 void raiseException(int status, char* formatstr, ...) {
-#ifdef use_backtrace
     saveStackTrace(); // call it first so that the stack trace is saved with the old message before the message is overwritten
-#endif
+
     if (current_exception_message != NULL) {
         free(current_exception_message);
         current_exception_message = NULL;
@@ -151,9 +150,7 @@ void printException() {
         free(current_exception_message);
         current_exception_message = NULL;
     }
-#ifdef use_backtrace
     printStackTrace();
-#endif
 }
 
 #define SEGFAULT_SECTION_UNSET "(unset)";
