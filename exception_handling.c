@@ -121,7 +121,7 @@ void printStackTrace(){
     void printStackTrace() {
         for (size_t i = 0; i < current_stacktrace_size; i++) {
             fprintf(stderr, "While handling exception: %s\n", current_stacktrace_strings[i]);
-
+        }
     }
 
 #endif
