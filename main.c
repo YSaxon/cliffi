@@ -42,7 +42,7 @@
 #include "shims.h"
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.10.21";
+const char* VERSION = "v1.10.22";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -77,19 +77,20 @@ _Thread_local char* current_exception_message = NULL;
 
 #define CATCHALL CATCH(NULL)
 
+#if defined (use_backtrace)
+#define freebacktrace free(current_stacktrace_strings); current_stacktrace_strings = NULL; current_stacktrace_size = 0;
+#else
+#define freebacktrace
+#endif
+
 #define END_TRY }} \
     current_exception_buffer = old_exception_buffer; \
     if (current_exception_message != NULL) { \
         free(current_exception_message); \
         current_exception_message = NULL; \
     } \
-    #ifdef use_backtrace \
-    if (current_stacktrace_strings != NULL) { \
-        free(current_stacktrace_strings); \
-        current_stacktrace_strings = NULL; \
-        current_stacktrace_size = 0; \
-    } \
-    #endif
+    freebacktrace \
+
 
 #ifdef use_backtrace
 
