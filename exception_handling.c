@@ -15,6 +15,7 @@
 #endif
 #include <setjmp.h>
 #include <signal.h>
+#include <stdint.h>
 #include "shims.h"
 #include "exception_handling.h"
 
