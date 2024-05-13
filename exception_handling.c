@@ -188,24 +188,24 @@ void terminateThread() {
 }
 
 
-void *get_instruction_pointer(ucontext_t *context) {
+void* get_instruction_pointer(ucontext_t *context) {
 
-    void *ip = NULL;
+    uintptr_t ip = 0;
 
     #if defined(__APPLE__)
         #if defined(__x86_64__)
-            ip = (void *)context->uc_mcontext->__ss.__rip;
+            ip = (uintptr_t)context->uc_mcontext->__ss.__rip;
         #elif defined(__i386__)
-            ip = (void *)context->uc_mcontext->__ss.__eip;
+            ip = (uintptr_t)context->uc_mcontext->__ss.__eip;
         #elif defined(__aarch64__)
-            ip = (void *)context->uc_mcontext->__ss.__pc;
+            ip = (uintptr_t)context->uc_mcontext->__ss.__pc;
         #elif defined(__arm__)
-            ip = (void *)context->uc_mcontext->__ss.__pc;
+            ip = (uintptr_t)context->uc_mcontext->__ss.__pc;
         #elif defined(__ppc__)
-            ip = (void *)context->uc_mcontext->__ss.__srr0;
+            ip = (uintptr_t)context->uc_mcontext->__ss.__srr0;
         #elif defined(__riscv)
         #include <ucontext.h>
-            ip = (void *)context->uc_mcontext.__gregs[REG_PC];
+            ip = (uintptr_t)context->uc_mcontext.__gregs[REG_PC];
         #else
             #error "Unsupported architecture on Apple"
         #endif
@@ -213,65 +213,65 @@ void *get_instruction_pointer(ucontext_t *context) {
         #if defined(__x86_64__)
         #include <ucontext.h>
         #include <sys/ucontext.h>
-            ip = (void *)context->uc_mcontext.gregs[REG_RIP];
+            ip = (uintptr_t)context->uc_mcontext.gregs[REG_RIP];
         #elif defined(__i386__)
         #include <ucontext.h>
-            ip = (void *)context->uc_mcontext.gregs[REG_EIP];
+            ip = (uintptr_t)context->uc_mcontext.gregs[REG_EIP];
         #elif defined(__aarch64__)
-            ip = (void *)context->uc_mcontext.pc;
+            ip = (uintptr_t)context->uc_mcontext.pc;
         #elif defined(__arm__)
-            ip = (void *)context->uc_mcontext.arm_pc;
+            ip = (uintptr_t)context->uc_mcontext.arm_pc;
         #elif defined(__ppc__)
-            ip = (void *)context->uc_mcontext.regs->nip;
+            ip = (uintptr_t)context->uc_mcontext.regs->nip;
         #elif defined(__mips__)
-            ip = (void *)context->uc_mcontext.pc;
+            ip = (uintptr_t)context->uc_mcontext.pc;
         #elif defined(__sparc__)
         #include <ucontext.h>
-            ip = (void *)context->uc_mcontext.gregs[REG_PC];
+            ip = (uintptr_t)context->uc_mcontext.gregs[REG_PC];
         #elif defined(__riscv)
         #include <ucontext.h>
-            ip = (void *)context->uc_mcontext.__gregs[REG_PC];
+            ip = (uintptr_t)context->uc_mcontext.__gregs[REG_PC];
         #elif defined(__alpha__)
-            ip = (void *)context->uc_mcontext.sc_pc;
+            ip = (uintptr_t)context->uc_mcontext.sc_pc;
         #elif defined(__ia64__)
-            ip = (void *)context->uc_mcontext.sc_ip;
+            ip = (uintptr_t)context->uc_mcontext.sc_ip;
         #elif defined(__s390__)
-            ip = (void *)context->uc_mcontext.psw.addr;
+            ip = (uintptr_t)context->uc_mcontext.psw.addr;
         #else
             #error "Unsupported architecture on Linux"
         #endif
     #elif defined(__FreeBSD__)
         #if defined(__x86_64__)
-            ip = (void *)context->uc_mcontext.mc_rip;
+            ip = (uintptr_t)context->uc_mcontext.mc_rip;
         #elif defined(__i386__)
-            ip = (void *)context->uc_mcontext.mc_eip;
+            ip = (uintptr_t)context->uc_mcontext.mc_eip;
         #elif defined(__aarch64__)
-            ip = (void *)context->uc_mcontext.mc_gpregs.gp_elr;
+            ip = (uintptr_t)context->uc_mcontext.mc_gpregs.gp_elr;
         #elif defined(__arm__)
-            ip = (void *)context->uc_mcontext.mc_gpregs.gp_pc;
+            ip = (uintptr_t)context->uc_mcontext.mc_gpregs.gp_pc;
         #elif defined(__ppc__)
-            ip = (void *)context->uc_mcontext.mc_srr0;
+            ip = (uintptr_t)context->uc_mcontext.mc_srr0;
         #elif defined(__riscv)
         #include <ucontext.h>
-            ip = (void *)context->uc_mcontext.__gregs[REG_PC];
+            ip = (uintptr_t)context->uc_mcontext.__gregs[REG_PC];
         #elif defined(__alpha__)
-            ip = (void *)context->uc_mcontext.mc_pc;
+            ip = (uintptr_t)context->uc_mcontext.mc_pc;
         #elif defined(__ia64__)
-            ip = (void *)context->uc_mcontext.mc_ip;
+            ip = (uintptr_t)context->uc_mcontext.mc_ip;
         #else
             #error "Unsupported architecture on FreeBSD"
         #endif
     #elif defined(_WIN32)
         #if defined(_M_X64)
-            ip = (void *)context->Rip;
+            ip = (uintptr_t)context->Rip;
         #elif defined(_M_IX86)
-            ip = (void *)context->Eip;
+            ip = (uintptr_t)context->Eip;
         #elif defined(_M_ARM64)
-            ip = (void *)context->Pc;
+            ip = (uintptr_t)context->Pc;
         #elif defined(_M_ARM)
-            ip = (void *)context->Pc;
+            ip = (uintptr_t)context->Pc;
         #elif defined(_M_IA64)
-            ip = (void *)context->StIIP;
+            ip = (uintptr_t)context->StIIP;
         #else
             #error "Unsupported architecture on Windows"
         #endif
@@ -279,7 +279,7 @@ void *get_instruction_pointer(ucontext_t *context) {
         #error "Unsupported operating system"
     #endif
 
-    return ip;
+    return (void*)ip;
 }
 
 void handleSegfault(int signal) {
