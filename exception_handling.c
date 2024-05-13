@@ -212,6 +212,7 @@ void *get_instruction_pointer(ucontext_t *context) {
     #elif defined(__linux__)
         #if defined(__x86_64__)
         #include <ucontext.h>
+        #include <sys/ucontext.h>
             ip = (void *)context->uc_mcontext.gregs[REG_RIP];
         #elif defined(__i386__)
         #include <ucontext.h>
