@@ -134,6 +134,15 @@ void raiseException(int status, char* formatstr, ...) {
         current_exception_message = NULL;
     }
     if (formatstr != NULL) {
+        size_t formatstr_len = strlen(formatstr);
+        if (formatstr[formatstr_len - 1] != '\n') {
+            char* new_formatstr = malloc(formatstr_len + 2);
+            strcpy(new_formatstr, formatstr);
+            new_formatstr[formatstr_len] = '\n';
+            new_formatstr[formatstr_len + 1] = '\0';
+            free(formatstr);
+            formatstr = new_formatstr;
+        }
         va_list args;
         va_start(args, formatstr);
         vasprintf(&current_exception_message, formatstr, args);
