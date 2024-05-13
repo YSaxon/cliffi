@@ -228,6 +228,8 @@ void *get_instruction_pointer(ucontext_t *context) {
             ip = (void *)context->uc_mcontext.sc_pc;
         #elif defined(__ia64__)
             ip = (void *)context->uc_mcontext.sc_ip;
+        #elif defined(__s390__)
+            ip = (void *)context->uc_mcontext.psw.addr;
         #else
             #error "Unsupported architecture on Linux"
         #endif
