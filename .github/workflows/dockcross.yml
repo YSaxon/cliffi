@@ -27,7 +27,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.version.outputs.version }}
-          release_name: ${{ github.ref_name == 'master' && 'Release' || 'DevBuild' }} ${{ steps.version.outputs.version }} ${{ github.ref_name == 'master'  || format('{0}{1}{2}', github.run_number, github.run_attempt == 1 && '' || format('.{0}', github.run_attempt), github.ref_name) }}
+          release_name: ${{ github.ref_name == 'master' && format ('Release {0}' , steps.version.outputs.version ) || format('Build {0}{1} on {2}, {3}', github.run_number, github.run_attempt == 1 && '' || format('.{0}', github.run_attempt), github.ref_name , github.sha )  }}
           draft: true
           prerelease: true
     outputs:
