@@ -11,6 +11,7 @@
 
 #include <setjmp.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #if defined(_WIN32) || defined(_WIN64)
 #define sigjmp_buf jmp_buf
