@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 // Simple function that adds two integers
 int add(int a, int b) {
@@ -52,7 +53,6 @@ void do_buffer_overflow() {
 void do_segfault_in_another_thread() {
     //start another thread that does a segfault
     #if !defined(_WIN32) && !defined(_WIN64)
-    #include <pthread.h>
     pthread_t thread;
     pthread_create(&thread, NULL, (void* (*)(void*))do_segfault, NULL);
     pthread_join(thread, NULL);
