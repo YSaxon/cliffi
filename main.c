@@ -42,7 +42,7 @@
 #include "shims.h"
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.10.20";
+const char* VERSION = "v1.10.21";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -78,8 +78,18 @@ _Thread_local char* current_exception_message = NULL;
 #define CATCHALL CATCH(NULL)
 
 #define END_TRY }} \
-    current_exception_buffer = old_exception_buffer;
-
+    current_exception_buffer = old_exception_buffer; \
+    if (current_exception_message != NULL) { \
+        free(current_exception_message); \
+        current_exception_message = NULL; \
+    } \
+    #ifdef use_backtrace \
+    if (current_stacktrace_strings != NULL) { \
+        free(current_stacktrace_strings); \
+        current_stacktrace_strings = NULL; \
+        current_stacktrace_size = 0; \
+    } \
+    #endif
 
 #ifdef use_backtrace
 
@@ -87,20 +97,48 @@ _Thread_local char** current_stacktrace_strings = NULL;
 _Thread_local size_t current_stacktrace_size = 0;
 void saveStackTrace() {
     void* array[10];
-    size_t size;
-    char** strings;
     size_t i;
 
-    current_stacktrace_size = backtrace(array, 10);
+    if (current_stacktrace_strings == NULL) {
 
-    if (current_stacktrace_size == 0) {
-        // current_stacktrace_size = 1;
-        // current_stacktrace_strings = malloc(sizeof(char*));
-        // current_stacktrace_strings[0] = strdup("No stack trace available");
-        return;
+        current_stacktrace_size = backtrace(array, 10);
+        if (current_stacktrace_size == 0) {
+            // current_stacktrace_size = 1;
+            // current_stacktrace_strings = malloc(sizeof(char*));
+            // current_stacktrace_strings[0] = strdup("(no stack trace available)");
+            return;
+        }
+
+        current_stacktrace_strings = backtrace_symbols(array, current_stacktrace_size);
+
+    } else {
+        size_t new_size = backtrace(array, 10);
+        char** new_strings = backtrace_symbols(array, current_stacktrace_size);
+
+        int lines_for_subheader = 1;
+
+        char** combined_strings = malloc((current_stacktrace_size + lines_for_subheader + new_size) * sizeof(char*));
+
+        // Add the new stack trace first
+        for (i = 0; i < new_size; i++) {
+            combined_strings[i] = new_strings[i];
+        }
+
+        // Add the subheader
+        char* whileHandling = malloc(strlen("\n\tWhile handling exception: \n") + strlen(current_exception_message) + 1);
+        strcpy(whileHandling, "\n\tWhile handling exception: ");
+        strcat(whileHandling, current_exception_message);
+        combined_strings[new_size] = whileHandling;
+
+        // Add the original stack trace after the subheader
+        for (i = 0; i < current_stacktrace_size; i++) {
+            combined_strings[new_size + lines_for_subheader + i] = current_stacktrace_strings[i];
+        }
+
+        free(current_stacktrace_strings);
+        free(new_strings);
+        current_stacktrace_strings = combined_strings;
     }
-
-    current_stacktrace_strings = backtrace_symbols(array, current_stacktrace_size);
 }
 
 void printStackTrace(){
