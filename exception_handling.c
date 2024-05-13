@@ -46,6 +46,12 @@ void saveStackTrace() {
         current_stacktrace_strings = backtrace_symbols(array, current_stacktrace_size);
 
     } else {
+
+        if (current_exception_message == NULL) {
+            printf("While handling exception, current_stacktrace exists but current_exception_message does not. We may have called saveStackTrace twice by mistake\n");
+            current_exception_message = strdup("(null message)");
+            }
+
         size_t new_size = backtrace(array, 10);
         char** new_strings = backtrace_symbols(array, current_stacktrace_size);
 
