@@ -9,6 +9,7 @@
     #define pthread_t DWORD
     #define pthread_self GetCurrentThreadId
     #define pthread_equal(a, b) (a == b)
+    #define pthread_exit ExitThread
 #else
     #include <pthread.h>
 #endif
@@ -23,7 +24,6 @@ _Thread_local sigjmp_buf* current_exception_buffer = &rootJmpBuffer;
 _Thread_local char* current_exception_message = NULL;
 
 #ifdef use_backtrace
-
 _Thread_local char** current_stacktrace_strings = NULL;
 _Thread_local size_t current_stacktrace_size = 0;
 void saveStackTrace() {
@@ -128,7 +128,26 @@ void unsetCodeSectionForSegfaultHandler() {
     SEGFAULT_SECTION = SEGFAULT_SECTION_UNSET;
 }
 
+
+
+pthread_t main_thread_id;
+void set_main_threadid() {
+    main_thread_id = pthread_self();
+}
+
+bool is_main_thread() {
+    return pthread_equal(main_thread_id, pthread_self());
+}
+
+void terminateThread() {
+    pthread_exit(NULL);
+}
+
 void handleSegfault(int signal) {
+    if (!is_main_thread()) {
+        fprintf(stderr, "Caught segfault on non-main thread. Terminating thread.\n");
+        terminateThread();
+    }
     if (current_exception_message != NULL) {
         printf("Freeing current_exception_message which was unexpectedly not null: %s\n", current_exception_message);
         free(current_exception_message);
@@ -143,14 +162,7 @@ void handleSegfault(int signal) {
 
 
 
-pthread_t main_thread_id;
-void set_main_threadid() {
-    main_thread_id = pthread_self();
-}
 
-bool is_main_thread() {
-    return pthread_equal(main_thread_id, pthread_self());
-}
 
 void install_root_exception_handler() {
     set_main_threadid();
