@@ -97,7 +97,7 @@ void printStackTrace(){
     current_stacktrace_size = 0;
 }
 #else
-    #just save the previous error message(s) in a buffer in order to print "while handling exception: " in the catch block
+    //just save the previous error message(s) in a buffer in order to print "while handling exception: " in the catch block
     void saveStackTrace() {
         if (current_exception_message == NULL) return;
         // put the existing message in the stack trace buffer and free it for the new message
