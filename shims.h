@@ -1,5 +1,6 @@
 #ifndef SHIMS_H
 #define SHIMS_H
+#include <stdarg.h>
 #if defined(_WIN32) || defined(_WIN64)
 
 
