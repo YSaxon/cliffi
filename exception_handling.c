@@ -18,6 +18,9 @@
 #include "shims.h"
 #include "exception_handling.h"
 
+
+bool isTestEnvExit1OnFail = false;
+
 sigjmp_buf rootJmpBuffer;
 
 _Thread_local sigjmp_buf* current_exception_buffer = &rootJmpBuffer;

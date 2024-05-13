@@ -10,12 +10,16 @@
 #endif
 
 #include <setjmp.h>
+#include <stdbool.h>
 
 #if defined(_WIN32) || defined(_WIN64)
 #define sigjmp_buf jmp_buf
 #define sigsetjmp(env, save) setjmp(env)
 #define siglongjmp(env, val) longjmp(env, val)
 #endif
+#
+
+extern bool isTestEnvExit1OnFail;
 
 extern _Thread_local sigjmp_buf* current_exception_buffer;
 extern _Thread_local char* current_exception_message;

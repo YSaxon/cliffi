@@ -40,7 +40,6 @@ const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[
 
 
 
-bool isTestEnvExit1OnFail = false;
 
 
 void print_usage(char* argv0) {
