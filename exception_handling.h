@@ -19,6 +19,10 @@
 
 extern _Thread_local sigjmp_buf* current_exception_buffer;
 extern _Thread_local char* current_exception_message;
+#ifdef use_backtrace
+extern _Thread_local char** current_stacktrace_strings;
+extern _Thread_local size_t current_stacktrace_size;
+#endif
 
 void raiseException(int status, char* formatstr, ...);
 void printException();
@@ -31,7 +35,7 @@ void printException();
 
 #define CATCH(messageSearchString) } else { \
     current_exception_buffer = old_exception_buffer; \
-    if (messageSearchString != NULL && strstr(messageSearchString, current_exception_message) == NULL) { \
+    if (messageSearchString != NULL && strstr(messageSearchString, current_exception_message) == NULL) { /* this means that the catch handler shouldn't catch it*/ \
         if (old_exception_buffer != NULL) { siglongjmp(*current_exception_buffer, 1); \
         } else { \
             fprintf(stderr, "Not able to rethrow exception.\n"); \
@@ -43,12 +47,19 @@ void printException();
 
 #define CATCHALL CATCH(NULL)
 
+#if defined (use_backtrace)
+#define freebacktrace free(current_stacktrace_strings); current_stacktrace_strings = NULL; current_stacktrace_size = 0;
+#else
+#define freebacktrace
+#endif
+
 #define END_TRY }} \
     current_exception_buffer = old_exception_buffer; \
     if (current_exception_message != NULL) { \
         free(current_exception_message); \
         current_exception_message = NULL; \
-    }
+    } \
+    freebacktrace \
 
 void raiseException(int status, char* formatstr, ...);
 void setCodeSectionForSegfaultHandler(const char* section);
