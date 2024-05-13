@@ -20,6 +20,13 @@ jobs:
         # parse the VERSION from main.c
         run: echo ::set-output name=version::$(grep -oP 'VERSION = "\K[^"]+' main.c)
 
+      - name: Set short git commit SHA
+        id: vars
+        run: |
+          calculatedSha=$(git rev-parse --short ${{ github.sha }})
+          echo "COMMIT_SHORT_SHA=$calculatedSha" >> $GITHUB_ENV
+
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -27,7 +34,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.version.outputs.version }}
-          release_name: ${{ github.ref_name == 'master' && format ('Release {0}' , steps.version.outputs.version ) || format('Build {0}{1} on {2}, {3}', github.run_number, github.run_attempt == 1 && '' || format('.{0}', github.run_attempt), github.ref_name , github.sha )  }}
+          release_name: ${{ github.ref_name == 'master' && format ('Release {0}' , steps.version.outputs.version ) || format('Build {0}{1} on {2}, {3}', github.run_number, github.run_attempt == 1 && '' || format('.{0}', github.run_attempt), github.ref_name ,  steps.vars.outputs.COMMIT_SHORT_SHA ) }}
           draft: true
           prerelease: true
     outputs:
