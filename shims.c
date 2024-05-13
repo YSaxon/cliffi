@@ -118,22 +118,44 @@ int add_history(const char *line) {
 // If vasprintf is still not defined, we provide our own implementation
 #ifndef HAVE_VASPRINTF
 
-// int vasprintf(char **str, const char *fmt, va_list args) {
-//     va_list tmp_args;
-//     va_copy(tmp_args, args);
-//     int required_len = vsnprintf(NULL, 0, fmt, tmp_args);
-//     va_end(tmp_args);
+int vasprintf(char **strp, const char *fmt, va_list ap) {
+    va_list ap_copy;
+    int len;
+    char *buffer;
 
-//     if (required_len < 0) {
-//         return -1;
-//     }
+    // Copy the va_list to calculate the size needed
+    va_copy(ap_copy, ap);
+    len = vsnprintf(NULL, 0, fmt, ap_copy);
+    va_end(ap_copy);
 
-//     *str = (char *)malloc(required_len + 1);
-//     if (!*str) {
-//         return -1;
-//     }
+    if (len < 0) {
+        return -1;
+    }
 
-//     return vsnprintf(*str, required_len + 1, fmt, args);
-// }
+    // Allocate memory for the formatted string
+    buffer = (char *)malloc(len + 1);
+    if (!buffer) {
+        return -1;
+    }
+
+    // Print to the allocated buffer
+    len = vsnprintf(buffer, len + 1, fmt, ap);
+    if (len < 0) {
+        free(buffer);
+        return -1;
+    }
+
+    *strp = buffer;
+    return len;
+}
+
+int asprintf(char **strp, const char *fmt, ...) {
+    va_list ap;
+    int len;
+    va_start(ap, fmt);
+    len = vasprintf(strp, fmt, ap);
+    va_end(ap);
+    return len;
+}
 
 #endif
