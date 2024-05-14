@@ -35,7 +35,7 @@
 #include "shims.h"
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.10.22";
+const char* VERSION = "v1.11.0";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 
@@ -174,6 +174,13 @@ int invoke_and_print_return_value(FunctionCallInfo* call_info, void (*func)(void
 }
 
 void* loadFunctionHandle(void* lib_handle, const char* function_name) {
+
+    TRY
+    void* addressDirectly = getAddressFromAddressStringOrNameOfCoercableVariable(function_name);
+    return addressDirectly;
+    CATCHALL
+    END_TRY
+
     void (*func)(void) = NULL;
 #ifdef _WIN32
     FARPROC temp = GetProcAddress(lib_handle, function_name);

@@ -1005,6 +1005,14 @@ set_tests_properties(repl_test_modifypoint_var_after_function PROPERTIES PASS_RE
 set_tests_properties(repl_test_modifypoint_var_after_function PROPERTIES PASS_REGULAR_EXPRESSION "foo.*\{ int 6, double 2.3.* \}")
 
 
+add_test(NAME callFunctionByAddress
+COMMAND cliffi --repltest
+getMesgFuncAddr = -P 0 \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} getMesgFuncAddr getAddressOfGetMessage \n
+${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} s getMesgFuncAddr \n
+)
+set_tests_properties(callFunctionByAddress PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?Hello, cliffi.\"?")
+
 add_test(NAME repl_test_cast_int_to_char
 COMMAND cliffi --repltest
 set var1 35 \n

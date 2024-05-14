@@ -77,6 +77,11 @@ char* get_message() {
     return "Hello, cliffi!"; // this maybe shows us we need to handle string literals in data?
 }
 
+void* getAddressOfGetMessage() {
+    return &get_message;
+}
+
+
 // Struct for demonstration
 typedef struct Point {
     int x;
