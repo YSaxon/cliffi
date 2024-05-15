@@ -490,13 +490,12 @@ void parseCalculateOffset(char* calculateCommand) {
     }
     ptrdiff_t offset = symbol_address - (uintptr_t)address; // maybe technically we should use ptrdiff_t instead but it's unlikely that the offset would be negative
     printf("Calculation: dlsym(%s,%s)=%p; %p - %p = %p\n", libraryName, symbolName, symbol_handle, symbol_handle, address, (void*)offset);
-    // it's a little convoluted but we'll just convert to a string and call a func to convert it back
-    char offsetStr[32];
-    snprintf(offsetStr, sizeof(offsetStr), "%zu", offset);
-    char* varValues[2];
-    varValues[0] = "-P";
-    varValues[1] = offsetStr;
-    parseSetVariableWithNameAndValue(varName, 2, varValues);
+
+
+    ArgInfo* offsetArg = getPVar((void*)offset);
+    setVar(varName, offsetArg);
+    printVariableWithArgInfo(varName, offsetArg);
+
 }
 
 void parseHexdump(char* hexdumpCommand) {

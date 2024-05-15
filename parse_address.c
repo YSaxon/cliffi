@@ -5,6 +5,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+ArgInfo* getPVar(void* address) {
+    ArgInfo* var = (ArgInfo*)calloc(1, sizeof(ArgInfo));
+    var->type = TYPE_VOIDPOINTER;
+    var->explicitType = true;
+    var->value = malloc(sizeof(*var->value));
+    var->value->ptr_val = address;
+    return var;
+}
+
 void* getAddressFromAddressStringOrNameOfCoercableVariable(const char* addressStr) {
     void* address = NULL;
 
