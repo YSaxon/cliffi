@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "parse_address.h"
+
 
 ArgInfo* getPVar(void* address) {
     ArgInfo* var = (ArgInfo*)calloc(1, sizeof(ArgInfo));
@@ -12,6 +14,31 @@ ArgInfo* getPVar(void* address) {
     var->value = malloc(sizeof(*var->value));
     var->value->ptr_val = address;
     return var;
+}
+
+void storeOffsetForLibLoadedAtAddress(void* libhandle, void* address) {
+    char* varname;
+    asprintf(&varname, "liboffset_%p", libhandle);
+    setVar(varname, getPVar(address));
+}
+
+void* getAddressFromStoredOffsetRelativeToLibLoadedAtAddress(void* libhandle, const char* addressStr) {
+    char* varname;
+    asprintf(&varname, "liboffset_%p", libhandle);
+    ArgInfo* offset = getVar(varname);
+    if (offset == NULL) {
+        raiseException(1,  "Error: No offset stored for library loaded at address %p\n. Try again after running calculate_offset.", libhandle);
+        return NULL;
+    }
+
+    //Should we use a TRY block here to reformulate the error message?
+    void* address = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
+    if (address == NULL) {
+        return NULL;
+    }
+
+    return (void*)((uintptr_t)offset->value->ptr_val + (uintptr_t)address);
+
 }
 
 void* getAddressFromAddressStringOrNameOfCoercableVariable(const char* addressStr) {

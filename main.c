@@ -9,6 +9,7 @@
 
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -175,8 +176,20 @@ int invoke_and_print_return_value(FunctionCallInfo* call_info, void (*func)(void
 
 void* loadFunctionHandle(void* lib_handle, const char* function_name) {
 
+    if (isHexFormat(function_name)) { // parse it as an offset of the library
+        void* address_offset_relative_to_lib = getAddressFromStoredOffsetRelativeToLibLoadedAtAddress(lib_handle, function_name);
+        if (address_offset_relative_to_lib != NULL) {
+            printf("Parsed func '%s' as relative address to the library offset, 0x%" PRIxPTR "\n", function_name, (uintptr_t)address_offset_relative_to_lib);
+            return address_offset_relative_to_lib;
+        } else {
+            raiseException(1,  "Error: Could not find a stored offset for your library. Try again after running calculate_offset\n");
+            return NULL;
+        }
+    }
+
     TRY
     void* addressDirectly = getAddressFromAddressStringOrNameOfCoercableVariable(function_name);
+    printf("Parsed func '%s' as an absolute address -> 0x%" PRIxPTR "\n", function_name, (uintptr_t)addressDirectly);
     return addressDirectly;
     CATCHALL
     END_TRY
@@ -467,15 +480,17 @@ void parseCalculateOffset(char* calculateCommand) {
     int argc;
     char** argv;
     tokenize(calculateCommand, &argc, &argv);
-    // <var> <library> <symbol> <address>
-    if (argc < 4) {
+    // [<var>] <library> <symbol> <address>
+    if (argc < 3 || argc > 4) {
         raiseException(1,  "Error: Invalid number of arguments for calculate_offset\n");
         return;
     }
-    char* varName = argv[0];
-    char* libraryName = argv[1];
-    char* symbolName = argv[2];
-    char* addressStr = argv[3];
+
+    bool hasVar = argc == 4;
+    char* varName = hasVar ? argv[0] : NULL;
+    char* libraryName = argv[0 + hasVar];
+    char* symbolName =  argv[1 + hasVar];
+    char* addressStr =  argv[2 + hasVar];
     void* address = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
     // possibly should pass this through the parser to get the actual path of the library
     void* lib_handle = getOrLoadLibrary(libraryName);
@@ -491,11 +506,13 @@ void parseCalculateOffset(char* calculateCommand) {
     ptrdiff_t offset = symbol_address - (uintptr_t)address; // maybe technically we should use ptrdiff_t instead but it's unlikely that the offset would be negative
     printf("Calculation: dlsym(%s,%s)=%p; %p - %p = %p\n", libraryName, symbolName, symbol_handle, symbol_handle, address, (void*)offset);
 
+    if (hasVar) {
+        ArgInfo* offsetArg = getPVar((void*)offset);
+        setVar(varName, offsetArg);
+        printVariableWithArgInfo(varName, offsetArg);
+    }
 
-    ArgInfo* offsetArg = getPVar((void*)offset);
-    setVar(varName, offsetArg);
-    printVariableWithArgInfo(varName, offsetArg);
-
+    storeOffsetForLibLoadedAtAddress(lib_handle, (void*)offset);
 }
 
 void parseHexdump(char* hexdumpCommand) {
@@ -539,8 +556,8 @@ int parseREPLCommand(char* command){
                        "  store <address> <value>: Set the value of a memory address\n"
                        "  dump <type> <address>: Print the value at a memory address\n"
                        "  load <var> <type> <address>: Load the value at a memory address into a variable\n"
-                       "  calculate_offset <variable> <library> <symbol> <address>:"
-                       "      Calculate a memory offset by comparing the address of a known symbol\n"
+                       "  calculate_offset [<variable>] <library> <symbol> <address>:"
+                       "      Calculate memory offset by comparing the address of a known symbol [and store in var]\n"
                        "  hexdump <address> <size>: Print a hexdump of memory\n"
                        "Shared Library Management:\n"
                        "  list: List all opened libraries\n"

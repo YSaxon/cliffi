@@ -1015,6 +1015,7 @@ ${TESTLIB} s getMesgFuncAddr \n
 )
 set_tests_properties(callFunctionByAddress PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?Hello, cliffi.\"?")
 
+
 find_program(NM_COMMAND nm)
 if(NM_COMMAND)
 
@@ -1077,6 +1078,15 @@ ${TESTLIB} i ${NM_ADD_OFFSET} 3 4 \n
 )
 set_tests_properties(repl_test_calculate_offset_call_function_relative_address PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 7")
 
+add_test(NAME repl_test_calculate_offset_call_function_absolute_address
+COMMAND cliffi --repltest
+calculate_offset testlib_offset ${TESTLIB} add ${NM_ADD_OFFSET} \n
+${TESTLIB} s testlib_offset+${NM_GET_MESSAGE_OFFSET} \n
+)
+set_tests_properties(repl_test_calculate_offset_call_function_absolute_address PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?Hello, cliffi.\"?")
+
+
+endif()
 
 add_test(NAME repl_test_cast_int_to_char
 COMMAND cliffi --repltest
