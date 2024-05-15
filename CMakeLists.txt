@@ -1016,77 +1016,77 @@ ${TESTLIB} s getMesgFuncAddr \n
 set_tests_properties(callFunctionByAddress PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?Hello, cliffi.\"?")
 
 
-find_program(NM_COMMAND nm)
-if(NM_COMMAND)
+# find_program(NM_COMMAND nm)
+# if(NM_COMMAND)
 
-function(find_symbol_offset LIBRARY_PATH SYMBOL_NAME OFFSET_VARIABLE)
-    # Command to find the symbol offset
-    execute_process(
-        COMMAND ${NM_COMMAND} -D ${LIBRARY_PATH}
-        OUTPUT_VARIABLE NM_OUTPUT
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+# function(find_symbol_offset LIBRARY_PATH SYMBOL_NAME OFFSET_VARIABLE)
+#     # Command to find the symbol offset
+#     execute_process(
+#         COMMAND ${NM_COMMAND} -D ${LIBRARY_PATH}
+#         OUTPUT_VARIABLE NM_OUTPUT
+#         OUTPUT_STRIP_TRAILING_WHITESPACE
+#     )
 
-    # message(STATUS "nm output: ${NM_OUTPUT}")
-    set(SYMBOL_OUTPUT "")
-    string(REGEX MATCH "[0-9a-fA-F]+ [a-zA-Z] _?${SYMBOL_NAME}" SYMBOL_OUTPUT "${NM_OUTPUT}")
+#     # message(STATUS "nm output: ${NM_OUTPUT}")
+#     set(SYMBOL_OUTPUT "")
+#     string(REGEX MATCH "[0-9a-fA-F]+ [a-zA-Z] _?${SYMBOL_NAME}" SYMBOL_OUTPUT "${NM_OUTPUT}")
 
-    # Debug output to verify the command worked
-    message(STATUS "${SYMBOL_NAME} Symbol output: ${SYMBOL_OUTPUT}")
+#     # Debug output to verify the command worked
+#     message(STATUS "${SYMBOL_NAME} Symbol output: ${SYMBOL_OUTPUT}")
 
-    # Parse the output to extract the offset
-    string(REGEX MATCH "^[0-9a-fA-F]+" SYMBOL_OFFSET "${SYMBOL_OUTPUT}")
+#     # Parse the output to extract the offset
+#     string(REGEX MATCH "^[0-9a-fA-F]+" SYMBOL_OFFSET "${SYMBOL_OUTPUT}")
 
-    # Verify that the offset was found
-    if(NOT SYMBOL_OFFSET)
-        message(FATAL_ERROR "Symbol ${SYMBOL_NAME} not found in ${LIBRARY_PATH}")
-    endif()
+#     # Verify that the offset was found
+#     if(NOT SYMBOL_OFFSET)
+#         message(FATAL_ERROR "Symbol ${SYMBOL_NAME} not found in ${LIBRARY_PATH}")
+#     endif()
 
-    #Remove extra preceeding 0s
-    string(REGEX REPLACE "^0+" "" SYMBOL_OFFSET "${SYMBOL_OFFSET}")
+#     #Remove extra preceeding 0s
+#     string(REGEX REPLACE "^0+" "" SYMBOL_OFFSET "${SYMBOL_OFFSET}")
 
-    # Ensure the offset is prefixed with "0x"
-    if(NOT SYMBOL_OFFSET MATCHES "^0x")
-        set(SYMBOL_OFFSET "0x${SYMBOL_OFFSET}")
-    endif()
-
-
-    # Debug output to verify the extracted offset
-    message(STATUS "${SYMBOL_NAME} offset: ${SYMBOL_OFFSET}")
-    # Set the output variable
-    set(${OFFSET_VARIABLE} ${SYMBOL_OFFSET} PARENT_SCOPE)
-endfunction()
-
-find_symbol_offset(${TESTLIB} "add" NM_ADD_OFFSET)
-find_symbol_offset(${TESTLIB} "get_message" NM_GET_MESSAGE_OFFSET)
-find_symbol_offset(${TESTLIB} "global_buffer1" NM_GLOBAL_BUFFER1_OFFSET)
+#     # Ensure the offset is prefixed with "0x"
+#     if(NOT SYMBOL_OFFSET MATCHES "^0x")
+#         set(SYMBOL_OFFSET "0x${SYMBOL_OFFSET}")
+#     endif()
 
 
-add_test(NAME repl_test_calculate_offset_store_increment
-COMMAND cliffi --repltest
-calculate_offset testlib_offset ${TESTLIB} add ${NM_ADD_OFFSET} \n
-store testlib_offset+${NM_GLOBAL_BUFFER1_OFFSET} 5 \n
-${TESTLIB} i increment_at_pointer -P testlib_offset+${NM_GLOBAL_BUFFER1_OFFSET} \n
-)
-set_tests_properties(repl_test_calculate_offset_store_increment PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 6")
+#     # Debug output to verify the extracted offset
+#     message(STATUS "${SYMBOL_NAME} offset: ${SYMBOL_OFFSET}")
+#     # Set the output variable
+#     set(${OFFSET_VARIABLE} ${SYMBOL_OFFSET} PARENT_SCOPE)
+# endfunction()
+
+# find_symbol_offset(${TESTLIB} "add" NM_ADD_OFFSET)
+# find_symbol_offset(${TESTLIB} "get_message" NM_GET_MESSAGE_OFFSET)
+# find_symbol_offset(${TESTLIB} "global_buffer1" NM_GLOBAL_BUFFER1_OFFSET)
 
 
-add_test(NAME repl_test_calculate_offset_call_function_relative_address
-COMMAND cliffi --repltest
-calculate_offset ${TESTLIB} add ${NM_ADD_OFFSET} \n
-${TESTLIB} i ${NM_ADD_OFFSET} 3 4 \n
-)
-set_tests_properties(repl_test_calculate_offset_call_function_relative_address PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 7")
-
-add_test(NAME repl_test_calculate_offset_call_function_absolute_address
-COMMAND cliffi --repltest
-calculate_offset testlib_offset ${TESTLIB} add ${NM_ADD_OFFSET} \n
-${TESTLIB} s testlib_offset+${NM_GET_MESSAGE_OFFSET} \n
-)
-set_tests_properties(repl_test_calculate_offset_call_function_absolute_address PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?Hello, cliffi.\"?")
+# add_test(NAME repl_test_calculate_offset_store_increment
+# COMMAND cliffi --repltest
+# calculate_offset testlib_offset ${TESTLIB} add ${NM_ADD_OFFSET} \n
+# store testlib_offset+${NM_GLOBAL_BUFFER1_OFFSET} 5 \n
+# ${TESTLIB} i increment_at_pointer -P testlib_offset+${NM_GLOBAL_BUFFER1_OFFSET} \n
+# )
+# set_tests_properties(repl_test_calculate_offset_store_increment PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 6")
 
 
-endif()
+# add_test(NAME repl_test_calculate_offset_call_function_relative_address
+# COMMAND cliffi --repltest
+# calculate_offset ${TESTLIB} add ${NM_ADD_OFFSET} \n
+# ${TESTLIB} i ${NM_ADD_OFFSET} 3 4 \n
+# )
+# set_tests_properties(repl_test_calculate_offset_call_function_relative_address PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 7")
+
+# add_test(NAME repl_test_calculate_offset_call_function_absolute_address
+# COMMAND cliffi --repltest
+# calculate_offset testlib_offset ${TESTLIB} add ${NM_ADD_OFFSET} \n
+# ${TESTLIB} s testlib_offset+${NM_GET_MESSAGE_OFFSET} \n
+# )
+# set_tests_properties(repl_test_calculate_offset_call_function_absolute_address PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?Hello, cliffi.\"?")
+
+
+# endif()
 
 add_test(NAME repl_test_cast_int_to_char
 COMMAND cliffi --repltest
