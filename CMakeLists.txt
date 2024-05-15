@@ -1070,6 +1070,14 @@ ${TESTLIB} i increment_at_pointer -P testlib_offset+${NM_GLOBAL_BUFFER1_OFFSET} 
 set_tests_properties(repl_test_calculate_offset_store_increment PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 6")
 
 
+add_test(NAME repl_test_calculate_offset_call_function_relative_address
+COMMAND cliffi --repltest
+calculate_offset ${TESTLIB} add ${NM_ADD_OFFSET} \n
+${TESTLIB} i ${NM_ADD_OFFSET} 3 4 \n
+)
+set_tests_properties(repl_test_calculate_offset_call_function_relative_address PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 7")
+
+
 add_test(NAME repl_test_cast_int_to_char
 COMMAND cliffi --repltest
 set var1 35 \n
