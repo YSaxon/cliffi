@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
+#include <time.h>
 
 #include "exception_handling.h"
 
@@ -36,10 +37,10 @@
 #include "shims.h"
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.11.0";
+const char* VERSION = "v1.11.5";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
-
+bool print_timestamps = false;
 
 
 
@@ -618,6 +619,11 @@ void startRepl() {
     char* command;
 
     while ((command = readline("> ")) != NULL) {
+        if (print_timestamps) {
+            time_t t = time(NULL);
+            struct tm tm = *localtime(&t);
+            printf("[%02d:%02d:%02d] : %s", tm.tm_hour, tm.tm_min, tm.tm_sec, command);
+        }
         int breakRepl = 0;
         TRY
         if (strlen(command) > 0) {
@@ -753,6 +759,13 @@ int main(int argc, char* argv[]) {
         #endif
     } else if (argc > 1 && strcmp(argv[1], "--repl") == 0)
     replmode: {
+        while(argc > 2) {
+            if (strcmp(argv[2], "--timestamp") == 0) {
+                print_timestamps = true;
+            }
+            argv++;
+            argc--;
+        }
         checkAndRunCliffiInits();
         // rl_completion_entry_function = (Function*)cliffi_completion;
         rl_bind_key('\t', rl_complete);
