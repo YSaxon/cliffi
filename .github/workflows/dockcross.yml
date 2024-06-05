@@ -187,8 +187,8 @@ jobs:
       - name: Download Release
         uses: robinraju/release-downloader@v1.10
         with:
-          release_id: ${{ needs.create_release.outputs.release_id }}
-          file_name: cliffi-${{ matrix.os == 'windows-latest' && 'windows-static-x64.exe' || 'linux-x64' }}
+          releaseId: ${{ needs.create_release.outputs.release_id }}
+          fileName: cliffi-${{ matrix.os == 'windows-latest' && 'windows-static-x64.exe' || 'linux-x64' }}
           out-file-path: cliffi
 
       - name: Run Smoke Test

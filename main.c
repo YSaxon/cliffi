@@ -42,7 +42,7 @@
 #include "shims.h"
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.10.28";
+const char* VERSION = "v1.10.29";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 #if defined(_WIN32) || defined(_WIN64)
