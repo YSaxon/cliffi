@@ -38,22 +38,11 @@ static bool file_exists(const char* path) {
     return (stat(path, &buffer) == 0);
 }
 
-// Function to check and resolve path
-static bool CheckAndResolvePath(const char* path, char* resolved_path) {
-    if (file_exists(path)) {
-        setCodeSectionForSegfaultHandler("CheckAndResolvePath: strncpy");
-        strncpy(resolved_path, path, MAX_PATH_LENGTH);
-        resolved_path[4095] = '\0'; // Ensure null-termination
-        return true;
-    }
-    return false;
-}
-
 // Function to find library in a given path
 static bool FindInPath(const char* base_path, const char* library_name, char* resolved_path) {
     snprintf(resolved_path, MAX_PATH_LENGTH, "%s/%s", base_path, library_name);
     setCodeSectionForSegfaultHandler("FindInPath: CheckAndResolvePath");
-    return CheckAndResolvePath(resolved_path, resolved_path);
+    return file_exists(resolved_path);
 }
 
 // Function to find library in an environment variable
@@ -152,7 +141,11 @@ static bool FindSharedLibrary(const char* library_name, char* resolved_path) {
 
     if (library_name[0] == '/') {
         free(local_library_name);
-        return CheckAndResolvePath(library_name, resolved_path);
+        if (file_exists(library_name)) {
+            resolved_path = strdup(library_name);
+            return true;
+        }
+        return false;
     }
 
     bool found = FindInEnvVar("LD_LIBRARY_PATH", local_library_name, resolved_path)
