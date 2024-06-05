@@ -32,10 +32,21 @@ int increment_at_pointer(int* a) { //deliberately unsafe
     return *a;
 }
 
-void do_segfault() {
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+DWORD WINAPI do_segfault(LPVOID lpParam) {
     int* p = NULL;
     *p = 42;
+    return 0;
 }
+#else
+#include <pthread.h>
+void* do_segfault(void* arg) {
+    int* p = NULL;
+    *p = 42;
+    return NULL;
+}
+#endif
 
 void do_double_free() {
     int* p = malloc(sizeof(int));
@@ -60,7 +71,7 @@ void do_segfault_in_another_thread() {
     pthread_join(thread, NULL);
     #else
     #include <windows.h>
-    CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)do_segfault, NULL, 0, NULL);
+    CreateThread(NULL, 0, do_segfault, NULL, 0, NULL);
     #endif
 }
 
