@@ -137,16 +137,17 @@ static bool FindSharedLibrary(const char* library_name, char* resolved_path) {
 #else
 // Combined function to find shared library on Unix-like systems
 static bool FindSharedLibrary(const char* library_name, char* resolved_path) {
-    char* local_library_name = strdup(library_name);
 
     if (library_name[0] == '/') {
-        free(local_library_name);
         if (file_exists(library_name)) {
-            resolved_path = strdup(library_name);
+            strncpy(resolved_path, library_name, MAX_PATH_LENGTH);
+            resolved_path[MAX_PATH_LENGTH - 1] = '\0';
             return true;
         }
         return false;
     }
+
+    char* local_library_name = strdup(library_name);
 
     bool found = FindInEnvVar("LD_LIBRARY_PATH", local_library_name, resolved_path)
                  || FindInLdSoConfFile("/etc/ld.so.conf", local_library_name, resolved_path)
