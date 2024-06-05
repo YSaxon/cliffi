@@ -5,7 +5,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdbool.h>
-#include "main.h" // after merge will need to be exception_handler.h
+#include "exception_handling.h"
 
 #ifdef _WIN32
 #include <windows.h>
