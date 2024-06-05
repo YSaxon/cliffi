@@ -280,7 +280,42 @@ void* get_instruction_pointer(ucontext_t *context) {
     return (void*)ip;
 }
 
-void handleSegfault(int signal) {
+
+
+#ifndef _WIN32
+void segfault_handler(int sig, siginfo_t *info, void *ucontext) {
+    // Cast ucontext to ucontext_t to get register info
+    ucontext_t *context = (ucontext_t *)ucontext;
+
+    // Get the address where the fault occurred
+    void *fault_address = info->si_addr;
+
+    char* segfault_message;
+    void *ip = get_instruction_pointer(context);
+    // Print fault address
+    asprintf(&segfault_message,
+     "Segmentation fault at address: %p\n"
+     "Instruction pointer: %p\n"
+     "In Section: %s\n"
+     , fault_address, ip, SEGFAULT_SECTION);
+
+     current_exception_message = segfault_message;
+
+    // Get the stack trace
+
+    if(!is_main_thread()){
+        fprintf(stderr, "Caught segfault on non-main thread. Terminating thread.\n");
+        printf("%s\n", segfault_message);
+        saveStackTrace();
+        printStackTrace();
+        if (isTestEnvExit1OnFail) exit(1);
+        terminateThread();
+    } else {
+        raiseException(1, "%s\n", segfault_message);
+    }
+}
+#else
+void segfault_handler(int signal) {
     if (!is_main_thread()) {
         fprintf(stderr, "Caught segfault on non-main thread. Terminating thread.\n");
         terminateThread();
@@ -295,38 +330,12 @@ void handleSegfault(int signal) {
         if (isTestEnvExit1OnFail) exit(1);
         terminateThread();
     }
-    siglongjmp(*current_exception_buffer, 1);
+
+    raiseException(1, "Segmentation fault in section: %s\n", SEGFAULT_SECTION);
+    // siglongjmp(*current_exception_buffer, 1);
 }
 
-
-void advanced_segfault_handler(int sig, siginfo_t *info, void *ucontext) {
-    // Cast ucontext to ucontext_t to get register info
-    ucontext_t *context = (ucontext_t *)ucontext;
-
-    // Get the address where the fault occurred
-    void *fault_address = info->si_addr;
-
-    char* segfault_message;
-    void *ip = get_instruction_pointer(context);
-    // Print fault address
-    asprintf(&segfault_message,
-     "Segmentation fault at address: %p\n"
-     "Instruction pointer: %p\n", fault_address, ip);
-
-    // Get the stack trace
-
-    if(!is_main_thread()){
-        fprintf(stderr, "Caught segfault on non-main thread. Terminating thread.\n");
-        printf("%s\n", segfault_message);
-        saveStackTrace();
-        printStackTrace();
-        if (isTestEnvExit1OnFail) exit(1);
-        terminateThread();
-    } else {
-        printf("advanced_segfault_handler calling raiseException\n");
-        raiseException(1, "%s\n", segfault_message);
-    }
-}
+#endif
 
 
 void install_root_exception_handler() {
@@ -345,15 +354,18 @@ void install_root_exception_handler() {
     }
 }
 void install_segfault_handler() {
-    // signal(SIGSEGV, handleSegfault);
+    #ifndef _WIN32
     struct sigaction sa;
-    sa.sa_sigaction = advanced_segfault_handler;
+    sa.sa_sigaction = segfault_handler;
     sa.sa_flags = SA_SIGINFO;
 
     if (sigaction(SIGSEGV, &sa, NULL) == -1) {
         perror("sigaction");
         exit(EXIT_FAILURE);
     }
+    #else
+    signal(SIGSEGV, segfault_handler);
+    #endif
 }
 
 void main_method_install_exception_handlers() {
