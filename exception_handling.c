@@ -189,7 +189,11 @@ bool is_main_thread() {
 }
 
 void terminateThread() {
+    #ifndef __riscv
     pthread_exit(NULL);
+    #else
+    printf("terminateThread not implemented for RISC-V, to avoid an error in our build process\n");
+    #endif
 }
 
 #ifndef _WIN32
