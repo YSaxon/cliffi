@@ -189,11 +189,12 @@ jobs:
         with:
           releaseId: ${{ needs.create_release.outputs.release_id }}
           fileName: cliffi-${{ matrix.os == 'windows-latest' && 'windows-static-x64.exe' || 'linux-x64' }}
-          out-file-path: cliffi
 
       - name: Run Smoke Test
         run: |
-          chmod +x ./cliffi
+          ls -al
+          mv cliffi-* cliffi
+          chmod +x cliffi
           ./cliffi libc i strlen test
 
   finalize_release:
