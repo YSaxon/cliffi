@@ -1,5 +1,6 @@
 #ifndef SHIMS_H
 #define SHIMS_H
+#include <stdarg.h>
 #if defined(_WIN32) || defined(_WIN64)
 
 
@@ -30,32 +31,18 @@ int add_history(const char *line);
 
 #endif
 
-//shim vasprintf
-// #if (!defined(_GNU_SOURCE))
-#undef vasprintf
-#define vasprintf(p, f, a) \
-size_t size = vsprintf(NULL, f, a); \
-*p = malloc(size); \
-if (*p) { \
-    vsprintf(*p, f, a); \
-    size = strlen(*p); \
-} else { \
-    size = 0; \
-} \
-size
-
-#undef asprintf
-#define asprintf(p, f, ...) \
-size_t size = sprintf(NULL, f, __VA_ARGS__); \
-*p = malloc(size); \
-if (*p) { \
-    sprintf(*p, f, __VA_ARGS__); \
-    size = strlen(*p); \
-} else { \
-    size = 0; \
-} \
-size
-// #endif
+// Check if we're on a POSIX system that might support vasprintf directly
+#if defined(__unix__) || defined(__unix) || defined(unix)
+#include <unistd.h>  // Include for POSIX Operating System API
+#include <features.h> // Typically for Linux, to include GNU extensions
+#endif
+// Feature test macro to see if vasprintf is available
+#if (defined(__APPLE__) && defined(__MACH__)) || (defined(_GNU_SOURCE) && defined(HAVE_VASPRINTF)) || defined(__ANDROID__)
+#define HAVE_VASPRINTF
+#else
+int vasprintf(char **strp, const char *fmt, va_list ap);
+int asprintf(char **strp, const char *fmt, ...);
+#endif
 
 
 #endif // SHIMS_H

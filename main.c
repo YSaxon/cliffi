@@ -6,16 +6,16 @@
 #include "return_formatter.h"
 #include "types_and_utils.h"
 #include "var_map.h"
-#include <setjmp.h>
-#include <signal.h>
+
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
 
-
+#include "exception_handling.h"
 
 #include "tokenize.h"
 #if  !defined(_WIN32) && !defined(_WIN64)
@@ -25,13 +25,7 @@
 #include <unistd.h>   // only used for forking for --repltest repl test harness mode
 #endif
 
-#if (defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))) && !defined(__ANDROID__)
-#define use_backtrace
-#endif
 
-#ifdef use_backtrace
-#include <execinfo.h>
-#endif
 
 #ifdef _WIN32
 #include <windows.h>
@@ -42,131 +36,10 @@
 #include "shims.h"
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.10.29";
+const char* VERSION = "v1.11.8";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
-#if defined(_WIN32) || defined(_WIN64)
-#define sigjmp_buf jmp_buf
-#define sigsetjmp(env, save) setjmp(env)
-#define siglongjmp(env, val) longjmp(env, val)
-#endif
 
-bool isTestEnvExit1OnFail = false;
-sigjmp_buf rootJmpBuffer;
-
-_Thread_local sigjmp_buf* current_exception_buffer = &rootJmpBuffer;
-_Thread_local char* current_exception_message = NULL;
-
-#define TRY \
-    sigjmp_buf newjmpBuffer; \
-    sigjmp_buf* old_exception_buffer = current_exception_buffer; \
-    current_exception_buffer = &newjmpBuffer; \
-    if (sigsetjmp(newjmpBuffer, 1) == 0) {
-
-#define CATCH(messageSearchString) } else { \
-    current_exception_buffer = old_exception_buffer; \
-    if (messageSearchString != NULL && strstr(messageSearchString, current_exception_message) == NULL) { /* this means that the catch handler shouldn't catch it*/ \
-        if (old_exception_buffer != NULL) { siglongjmp(*current_exception_buffer, 1); \
-        } else { \
-            fprintf(stderr, "Not able to rethrow exception.\n"); \
-            goto handleException; \
-        } \
-    } else { \
-        handleException: \
-        current_exception_buffer = old_exception_buffer;
-
-#define CATCHALL CATCH(NULL)
-
-#define END_TRY }} \
-    current_exception_buffer = old_exception_buffer;
-
-
-#ifdef use_backtrace
-
-_Thread_local char** current_stacktrace_strings = NULL;
-_Thread_local size_t current_stacktrace_size = 0;
-void saveStackTrace() {
-    void* array[10];
-    size_t size;
-    char** strings;
-    size_t i;
-
-    current_stacktrace_size = backtrace(array, 10);
-
-    if (current_stacktrace_size == 0) {
-        // current_stacktrace_size = 1;
-        // current_stacktrace_strings = malloc(sizeof(char*));
-        // current_stacktrace_strings[0] = strdup("No stack trace available");
-        return;
-    }
-
-    current_stacktrace_strings = backtrace_symbols(array, size);
-}
-
-void printStackTrace(){
-    if (current_stacktrace_size == 0) {
-        fprintf(stderr, "No stack trace available\n");
-        return;
-    }
-    fprintf(stderr, "Stack trace:\n");
-    for (size_t i = 0; i < current_stacktrace_size; i++) {
-        fprintf(stderr, "%s\n", current_stacktrace_strings[i]);
-    }
-    free(current_stacktrace_strings);
-    current_stacktrace_strings = NULL;
-    current_stacktrace_size = 0;
-}
-#endif
-
-
-void raiseException(int status, char* formatstr, ...) {
-    if (formatstr != NULL) {
-        va_list args;
-        va_start(args, formatstr);
-        vasprintf(&current_exception_message, formatstr, args);
-        va_end(args);
-    }
-#ifdef use_backtrace
-    if (status != 0) saveStackTrace();
-#endif
-    siglongjmp(*current_exception_buffer, status);
-}
-
-void printException() {
-    if (current_exception_message == NULL || strlen(current_exception_message) == 0){
-        fprintf(stderr, "Error thrown with no message\n");
-    } else {
-        fprintf(stderr, "%s\n", current_exception_message);
-        free(current_exception_message);
-        current_exception_message = NULL;
-    }
-#ifdef use_backtrace
-    printStackTrace();
-#endif
-}
-
-#define SEGFAULT_SECTION_UNSET "(unset)";
-_Thread_local const char* SEGFAULT_SECTION = SEGFAULT_SECTION_UNSET;
-
-void setCodeSectionForSegfaultHandler(const char* section) {
-    SEGFAULT_SECTION = section;
-}
-void unsetCodeSectionForSegfaultHandler() {
-    SEGFAULT_SECTION = SEGFAULT_SECTION_UNSET;
-}
-
-void handleSegfault(int signal) {
-    if (current_exception_message != NULL) {
-        printf("Freeing current_exception_message which was unexpectedly not null: %s\n", current_exception_message);
-        free(current_exception_message);
-        current_exception_message = NULL;
-    }
-    current_exception_message = malloc(strlen("Segmentation fault in section: ") + strlen(SEGFAULT_SECTION) + 1);
-    strcpy(current_exception_message, "Segmentation fault in section: ");
-    strcat(current_exception_message, SEGFAULT_SECTION);
-    // vasprintf(&current_exception_message, "Segmentation fault in section: %s", (char*)SEGFAULT_SECTION);
-    siglongjmp(*current_exception_buffer, 1);
-}
 
 
 
@@ -302,6 +175,25 @@ int invoke_and_print_return_value(FunctionCallInfo* call_info, void (*func)(void
 }
 
 void* loadFunctionHandle(void* lib_handle, const char* function_name) {
+
+    if (isHexFormat(function_name)) { // parse it as an offset of the library
+        void* address_offset_relative_to_lib = getAddressFromStoredOffsetRelativeToLibLoadedAtAddress(lib_handle, function_name);
+        if (address_offset_relative_to_lib != NULL) {
+            printf("Parsed func '%s' as relative address to the library offset, 0x%" PRIxPTR "\n", function_name, (uintptr_t)address_offset_relative_to_lib);
+            return address_offset_relative_to_lib;
+        } else {
+            raiseException(1,  "Error: Could not find a stored offset for your library. Try again after running calculate_offset\n");
+            return NULL;
+        }
+    }
+
+    TRY
+    void* addressDirectly = getAddressFromAddressStringOrNameOfCoercableVariable(function_name);
+    printf("Parsed func '%s' as an absolute address -> 0x%" PRIxPTR "\n", function_name, (uintptr_t)addressDirectly);
+    return addressDirectly;
+    CATCHALL
+    END_TRY
+
     void (*func)(void) = NULL;
 #ifdef _WIN32
     FARPROC temp = GetProcAddress(lib_handle, function_name);
@@ -315,10 +207,8 @@ void* loadFunctionHandle(void* lib_handle, const char* function_name) {
 #ifdef _WIN32
         raiseException(1,  "Failed to find function: %lu\n", GetLastError());
 
-
 #else
         raiseException(1,  "Failed to find function: %s\n", dlerror());
-
 #endif
         return NULL; // just to silence a warning, not actually reachable
     }
@@ -337,7 +227,6 @@ void parsePrintVariable(char* varName) {
     ArgInfo* arg = getVar(varName);
     if (arg == NULL) {
         raiseException(1,  "Error printing var: Variable %s not found.\n", varName);
-
     } else {
         printVariableWithArgInfo(varName, arg);
     }
@@ -347,11 +236,9 @@ void parseStoreToMemoryWithAddressAndValue(char* addressStr, int varValueCount, 
 
     if (addressStr == NULL || strlen(addressStr) == 0) {
         raiseException(1,  "Memory address cannot be empty.\n");
-
     }
     if (varValues == NULL || varValueCount == 0 || strlen(varValues[0]) == 0) {
         raiseException(1,  "Variable value cannot be empty.\n");
-
     }
 
     void* destAddress = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
@@ -361,7 +248,6 @@ void parseStoreToMemoryWithAddressAndValue(char* addressStr, int varValueCount, 
     if (args_used + 1 != varValueCount) {
         free(arg);
         raiseException(1,  "Invalid variable value. Parser failed to consume entire line.\n");
-
         return;
     }
 
@@ -393,11 +279,9 @@ void parseStoreToMemoryWithAddressAndValue(char* addressStr, int varValueCount, 
 ArgInfo* parseLoadMemoryToArgWithType(char* addressStr, int typeArgc, char** typeArgv) {
     if (addressStr == NULL || strlen(addressStr) == 0) {
         raiseException(1,  "Memory address cannot be empty.\n");
-
     }
     if (typeArgv == NULL || typeArgc == 0 || strlen(typeArgv[0]) == 0) {
         raiseException(1,  "Variable type cannot be empty.\n");
-
     }
 
     int args_used = 0;
@@ -405,7 +289,6 @@ ArgInfo* parseLoadMemoryToArgWithType(char* addressStr, int typeArgc, char** typ
     if (args_used + 1 != typeArgc) {
         free(arg);
         raiseException(1,  "Invalid type. Specify it as if it were a return type (ie types only, no dashes).\n");
-
         return NULL;
     }
 
@@ -438,21 +321,16 @@ void parseSetVariableWithNameAndValue(char* varName, int varValueCount, char** v
 
     if (varName == NULL || strlen(varName) == 0) {
         raiseException(1,  "Variable name cannot be empty.\n");
-
     } else if (varValues == NULL || varValueCount == 0 || strlen(varValues[0]) == 0) {
         raiseException(1,  "Variable value cannot be empty.\n");
-
     }
 
     if (strlen(varName) == 1 && charToType(*varName) != TYPE_UNKNOWN) {
         raiseException(1,  "Variable name cannot be a character used in parsing types, such as %s which is used for %s\n", varName, typeToString(charToType(*varName)));
-
     } else if (*varName == '-') {
         raiseException(1,  "Variable names cannot start with a dash.\n");
-
     } else if (isAllDigits(varName) || isHexFormat(varName) || isFloatingPoint(varName)) {
         raiseException(1,  "Variable names cannot be a number.\n");
-
     }
 
     int args_used = 0;
@@ -460,7 +338,6 @@ void parseSetVariableWithNameAndValue(char* varName, int varValueCount, char** v
     if (args_used + 1 != varValueCount) {
         free(arg);
         raiseException(1,  "Invalid variable value (parser failed to consume entire value line)\n");
-
         return;
     }
     printVariableWithArgInfo(varName, arg);
@@ -473,14 +350,12 @@ void executeREPLCommand(char* command) {
     char** argv;
     if (tokenize(command, &argc, &argv) != 0) {
         raiseException(1,  "Error: Tokenization failed for command\n");
-
     }
 
     // syntactic sugar for set <var> <value> and print <var>
     if (argc == 1) {
         if (isHexFormat(argv[0])) {
             raiseException(1,  "You can't print a memory address with specifying a type, try again with: dump <type> %s\n", argv[0]);
-
         } else {
             parsePrintVariable(argv[0]);
         }
@@ -496,21 +371,18 @@ void executeREPLCommand(char* command) {
 
     if (argc < 3) {
         raiseException(1,  "Invalid command '%s'. Type 'help' for assistance.\n", command);
-
     }
     FunctionCallInfo* call_info = parse_arguments(argc, argv);
     log_function_call_info(call_info);
     void* lib_handle = getOrLoadLibrary(call_info->library_path);
     if (lib_handle == NULL) {
         raiseException(1,  "Failed to load library: %s\n", call_info->library_path);
-
     }
     void* func = loadFunctionHandle(lib_handle, call_info->function_name);
 
     int invoke_result = invoke_and_print_return_value(call_info, func);
     if (invoke_result != 0) {
         raiseException(1,  "Error: Function invocation failed\n");
-
     }
 }
 
@@ -545,7 +417,6 @@ void parseSetVariable(char* varCommand) {
     // <var> <value>
     if (argc < 2) {
         raiseException(1,  "Error: Invalid number of arguments for set\n");
-
         return;
     }
     char* varName = argv[0];      // first argument is the variable name
@@ -562,7 +433,6 @@ void parseStoreToMemory(char* memCommand) {
     // <address> <value>
     if (argc < 2) {
         raiseException(1,  "Error: Invalid number of arguments for storemem\n");
-
         return;
     }
     char* address = argv[0];      // first argument is the address
@@ -579,7 +449,6 @@ void parseDumpMemory(char* memCommand) {
     // <type> <address>
     if (argc < 2) {
         raiseException(1,  "Error: Invalid number of arguments for dumpmem\n");
-
         return;
     }
     char* address = argv[argc - 1]; // last argument is the address
@@ -595,7 +464,6 @@ void parseLoadMemoryToVar(char* loadCommand) {
     // <var> <type> <address>
     if (argc < 3) {
         raiseException(1,  "Error: Invalid number of arguments for loadmem\n");
-
         return;
     }
     char* varName = argv[0];
@@ -612,16 +480,17 @@ void parseCalculateOffset(char* calculateCommand) {
     int argc;
     char** argv;
     tokenize(calculateCommand, &argc, &argv);
-    // <var> <library> <symbol> <address>
-    if (argc < 4) {
+    // [<var>] <library> <symbol> <address>
+    if (argc < 3 || argc > 4) {
         raiseException(1,  "Error: Invalid number of arguments for calculate_offset\n");
-
         return;
     }
-    char* varName = argv[0];
-    char* libraryName = argv[1];
-    char* symbolName = argv[2];
-    char* addressStr = argv[3];
+
+    bool hasVar = argc == 4;
+    char* varName = hasVar ? argv[0] : NULL;
+    char* libraryName = argv[0 + hasVar];
+    char* symbolName =  argv[1 + hasVar];
+    char* addressStr =  argv[2 + hasVar];
     void* address = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
     // possibly should pass this through the parser to get the actual path of the library
     void* lib_handle = getOrLoadLibrary(libraryName);
@@ -633,17 +502,17 @@ void parseCalculateOffset(char* calculateCommand) {
     #endif
     if (symbol_address < (uintptr_t)address) {
         raiseException(1,  "Error: Calculated offset is negative. This is likely an error and the variable probably won't work.\n");
-
     }
     ptrdiff_t offset = symbol_address - (uintptr_t)address; // maybe technically we should use ptrdiff_t instead but it's unlikely that the offset would be negative
     printf("Calculation: dlsym(%s,%s)=%p; %p - %p = %p\n", libraryName, symbolName, symbol_handle, symbol_handle, address, (void*)offset);
-    // it's a little convoluted but we'll just convert to a string and call a func to convert it back
-    char offsetStr[32];
-    snprintf(offsetStr, sizeof(offsetStr), "%zu", offset);
-    char* varValues[2];
-    varValues[0] = "-P";
-    varValues[1] = offsetStr;
-    parseSetVariableWithNameAndValue(varName, 2, varValues);
+
+    if (hasVar) {
+        ArgInfo* offsetArg = getPVar((void*)offset);
+        setVar(varName, offsetArg);
+        printVariableWithArgInfo(varName, offsetArg);
+    }
+
+    storeOffsetForLibLoadedAtAddress(lib_handle, (void*)offset);
 }
 
 void parseHexdump(char* hexdumpCommand) {
@@ -653,7 +522,6 @@ void parseHexdump(char* hexdumpCommand) {
     // <address> <size>
     if (argc < 2) {
         raiseException(1,  "Error: Invalid number of arguments for hexdump\n");
-
         return;
     }
     char* addressStr = argv[0];
@@ -661,7 +529,6 @@ void parseHexdump(char* hexdumpCommand) {
     void* address = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
     if (address==NULL) {
         raiseException(1,  "Error: Invalid address for hexdump\n");
-
         return;
     }
     size_t size = strtoul(sizeStr, NULL, 0);
@@ -689,8 +556,8 @@ int parseREPLCommand(char* command){
                        "  store <address> <value>: Set the value of a memory address\n"
                        "  dump <type> <address>: Print the value at a memory address\n"
                        "  load <var> <type> <address>: Load the value at a memory address into a variable\n"
-                       "  calculate_offset <variable> <library> <symbol> <address>:"
-                       "      Calculate a memory offset by comparing the address of a known symbol\n"
+                       "  calculate_offset [<variable>] <library> <symbol> <address>:"
+                       "      Calculate memory offset by comparing the address of a known symbol [and store in var]\n"
                        "  hexdump <address> <size>: Print a hexdump of memory\n"
                        "Shared Library Management:\n"
                        "  list: List all opened libraries\n"
@@ -818,23 +685,23 @@ void checkAndRunCliffiInits() {
 }
 
 int main(int argc, char* argv[]) {
-
     setbuf(stdout, NULL); // disable buffering for stdout
     setbuf(stderr, NULL); // disable buffering for stderr
-    if (sigsetjmp(rootJmpBuffer, 1) != 0) {
-        fprintf(stderr,"Root exception handler caught an exception\n");
-        printException();
-        exit(1);
-    }
-    signal(SIGSEGV, handleSegfault);
+    main_method_install_exception_handlers();
 
     if (argc > 1 && strcmp(argv[1], "--help") == 0) {
         print_usage(argv[0]);
         return 0;
     }
     if (argc > 1 && strcmp(argv[1], "--repltest") == 0) {
+        if (argc > 2 && strcmp(argv[2], "--noexitonfail") == 0) {
+            argc--;
+            argv++;
+            isTestEnvExit1OnFail = false;
+        } else {
+            isTestEnvExit1OnFail = true; // in general we want to exit on fail in test mode so that mistakes in the test script are caught
+        }
         #if !defined(_WIN32) && !defined(_WIN64)
-        isTestEnvExit1OnFail = true;
         int pipefd[2];
         if (pipe(pipefd) == -1) {
             perror("pipe");
@@ -851,7 +718,6 @@ int main(int argc, char* argv[]) {
             close(pipefd[1]);              // Close write end of pipe
             dup2(pipefd[0], STDIN_FILENO); // Redirect STDIN to read from pipe
             close(pipefd[0]);              // Close read end, not needed anymore
-            isTestEnvExit1OnFail = true;
             goto replmode;
         } else {              // Parent process
             close(pipefd[0]); // Close the write end of the pipe
