@@ -41,7 +41,6 @@ static bool file_exists(const char* path) {
 // Function to find library in a given path
 static bool FindInPath(const char* base_path, const char* library_name, char* resolved_path) {
     snprintf(resolved_path, MAX_PATH_LENGTH, "%s/%s", base_path, library_name);
-    setCodeSectionForSegfaultHandler("FindInPath: CheckAndResolvePath");
     return file_exists(resolved_path);
 }
 
@@ -64,6 +63,7 @@ static bool FindInEnvVar(const char* env_var, const char* library_name, char* re
             free(search_paths);
             return true;
         }
+        setCodeSectionForSegfaultHandler("FindInEnvVar: strtok_r");
         current_path = strtok_r(NULL, ENV_DELIM, &save_token);
     }
     free(search_paths);
@@ -74,6 +74,8 @@ static bool FindInEnvVar(const char* env_var, const char* library_name, char* re
 static bool FindInStandardPaths(const char* library_name, char* resolved_path) {
 #ifdef __ANDROID__
     const char* standard_paths[] = {"/system/lib", "/system/lib64", "/system/vendor/lib", "/system/vendor/lib64", NULL};
+#elseif defined(__APPLE__)
+    const char* standard_paths[] = {"/usr/lib", "/lib", "/usr/local/lib", "/opt/local/lib", "/opt/homebrew/lib", NULL};
 #else
     const char* standard_paths[] = {"/usr/lib", "/lib", "/usr/local/lib", NULL};
 #endif
@@ -120,22 +122,7 @@ static bool FindInLdSoConfFile(const char* conf_file, const char* library_name, 
 }
 #endif
 
-#ifdef _WIN32
-// Function to attempt to resolve the library path on Windows
-static bool FindSharedLibrary(const char* library_name, char* resolved_path) {
-    // Attempt to find the library relative to the current directory
-    setCodeSectionForSegfaultHandler("FindSharedLibrary: FindInPath");
-    if (FindInPath(".", library_name, resolved_path)) {
-        return true;
-    }
 
-    // Attempt to find the library in PATH
-    setCodeSectionForSegfaultHandler("FindSharedLibrary: FindInEnvVar");
-    return FindInEnvVar("PATH", library_name, resolved_path);
-
-}
-#else
-// Combined function to find shared library on Unix-like systems
 static bool FindSharedLibrary(const char* library_name, char* resolved_path) {
 
     if (library_name[0] == '/') {
@@ -147,16 +134,17 @@ static bool FindSharedLibrary(const char* library_name, char* resolved_path) {
         return false;
     }
 
-    char* local_library_name = strdup(library_name);
 
-    bool found = FindInEnvVar("LD_LIBRARY_PATH", local_library_name, resolved_path)
-                 || FindInLdSoConfFile("/etc/ld.so.conf", local_library_name, resolved_path)
-                 || FindInStandardPaths(local_library_name, resolved_path);
+        #ifdef _WIN32
+    bool found = FindInEnvVar("PATH", library_name, resolved_path);
+        #else
+    bool found = FindInEnvVar("LD_LIBRARY_PATH", library_name, resolved_path)
+                 || FindInLdSoConfFile("/etc/ld.so.conf", library_name, resolved_path)
+                 || FindInStandardPaths(library_name, resolved_path);
+        #endif
 
-    free(local_library_name);
     return found;
 }
-#endif
 
 // Function to attempt to resolve the library path
 char* resolve_library_path(const char* library_name) {
