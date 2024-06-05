@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include "main.h" // after merge will need to be exception_handler.h
 
 #ifdef _WIN32
 #include <windows.h>
@@ -126,12 +127,15 @@ static bool FindInLdSoConfFile(const char* conf_file, const char* library_name, 
 // Function to attempt to resolve the library path on Windows
 static bool FindSharedLibrary(const char* library_name, char* resolved_path) {
     // Attempt to find the library relative to the current directory
+    setCodeSectionForSegfaultHandler("FindSharedLibrary: FindInPath");
     if (FindInPath(".", library_name, resolved_path)) {
         return true;
     }
 
     // Attempt to find the library in PATH
+    setCodeSectionForSegfaultHandler("FindSharedLibrary: FindInEnvVar");
     return FindInEnvVar("PATH", library_name, resolved_path);
+
 }
 #else
 // Combined function to find shared library on Unix-like systems
@@ -158,7 +162,7 @@ char* resolve_library_path(const char* library_name) {
         return NULL;
     }
 
-    char resolved_path[MAX_PATH_LENGTH]; 
+    char resolved_path[MAX_PATH_LENGTH];
     if (FindSharedLibrary(library_name, resolved_path)) {
         return strdup(resolved_path);
     }
