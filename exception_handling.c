@@ -9,7 +9,7 @@
     #define pthread_t DWORD
     #define pthread_self GetCurrentThreadId
     #define pthread_equal(a, b) (a == b)
-    #define pthread_exit ExitThread
+    #define pthread_exit(a) ExitThread(0)
 #else
     #include <pthread.h>
 #endif
@@ -209,7 +209,7 @@ void* get_instruction_pointer(ucontext_t *context) {
         #elif defined(__ppc__)
             ip = (uintptr_t)context->uc_mcontext->__ss.__srr0;
         #else
-            #error "Unsupported architecture on Apple"
+            return NULL;
         #endif
     #elif defined(__linux__)
         #if defined(__x86_64__)
@@ -234,8 +234,10 @@ void* get_instruction_pointer(ucontext_t *context) {
             ip = (uintptr_t)context->uc_mcontext.sc_ip;
         #elif defined(__s390__)
             ip = (uintptr_t)context->uc_mcontext.psw.addr;
+        #elif defined(__powerpc__)
+        return NULL;
         #else
-            #error "Unsupported architecture on Linux"
+            return NULL;
         #endif
     #elif defined(__FreeBSD__)
         #if defined(__x86_64__)
@@ -255,7 +257,7 @@ void* get_instruction_pointer(ucontext_t *context) {
         #elif defined(__ia64__)
             ip = (uintptr_t)context->uc_mcontext.mc_ip;
         #else
-            #error "Unsupported architecture on FreeBSD"
+            return NULL;
         #endif
     #elif defined(_WIN32)
         #if defined(_M_X64)
@@ -269,10 +271,10 @@ void* get_instruction_pointer(ucontext_t *context) {
         #elif defined(_M_IA64)
             ip = (uintptr_t)context->StIIP;
         #else
-            #error "Unsupported architecture on Windows"
+            return NULL;
         #endif
     #else
-        #error "Unsupported operating system"
+        return NULL;
     #endif
 
     return (void*)ip;
