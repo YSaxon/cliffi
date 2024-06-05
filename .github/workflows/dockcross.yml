@@ -34,7 +34,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.version.outputs.version }}
+          tag_name: ${{ github.ref_name == 'master' && steps.version.outputs.version || format ('{0}-{1}', steps.version.outputs.version, steps.vars.outputs.COMMIT_SHORT_SHA) }}
           name: ${{ github.ref_name == 'master' && format ('Release {0}' , steps.version.outputs.version ) || format('Build {0}{1} on {2} ({3}) {4}', github.run_number, github.run_attempt == 1 && '' || format('.{0}', github.run_attempt), github.ref_name , steps.vars.outputs.COMMIT_SHORT_SHA , github.event.head_commit.message  ) }}
           draft: true
           prerelease: true
