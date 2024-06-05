@@ -10,10 +10,13 @@
 #ifdef _WIN32
 #include <windows.h>
 const char* library_extension = ".dll";
+const char* ENV_DELIM = ";";
 #elif defined(__APPLE__)
 const char* library_extension = ".dylib";
+const char* ENV_DELIM = ":";
 #else
 const char* library_extension = ".so";
+const char* ENV_DELIM = ":";
 #endif
 
 #define MAX_PATH_LENGTH 4096
@@ -38,6 +41,7 @@ static bool file_exists(const char* path) {
 // Function to check and resolve path
 static bool CheckAndResolvePath(const char* path, char* resolved_path) {
     if (file_exists(path)) {
+        setCodeSectionForSegfaultHandler("CheckAndResolvePath: strncpy");
         strncpy(resolved_path, path, MAX_PATH_LENGTH);
         resolved_path[4095] = '\0'; // Ensure null-termination
         return true;
@@ -48,26 +52,30 @@ static bool CheckAndResolvePath(const char* path, char* resolved_path) {
 // Function to find library in a given path
 static bool FindInPath(const char* base_path, const char* library_name, char* resolved_path) {
     snprintf(resolved_path, MAX_PATH_LENGTH, "%s/%s", base_path, library_name);
+    setCodeSectionForSegfaultHandler("FindInPath: CheckAndResolvePath");
     return CheckAndResolvePath(resolved_path, resolved_path);
 }
 
 // Function to find library in an environment variable
 static bool FindInEnvVar(const char* env_var, const char* library_name, char* resolved_path) {
+    setCodeSectionForSegfaultHandler("FindInEnvVar: getenv");
     const char* env_value = getenv(env_var);
     if (!env_value) {
         return false;
     }
 
+    setCodeSectionForSegfaultHandler("FindInEnvVar: strtok_r");
     char* search_paths = strdup(env_value);
     char* save_token;
-    char* current_path = strtok_r(search_paths, ":", &save_token);
+    char* current_path = strtok_r(search_paths, ENV_DELIM, &save_token);
 
     while (current_path) {
+        setCodeSectionForSegfaultHandler("FindInEnvVar: FindInPath");
         if (FindInPath(current_path, library_name, resolved_path)) {
             free(search_paths);
             return true;
         }
-        current_path = strtok_r(NULL, ":", &save_token);
+        current_path = strtok_r(NULL, ENV_DELIM, &save_token);
     }
     free(search_paths);
     return false;
