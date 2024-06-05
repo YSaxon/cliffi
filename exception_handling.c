@@ -192,7 +192,7 @@ void terminateThread() {
     pthread_exit(NULL);
 }
 
-
+#ifndef _WIN32
 void* get_instruction_pointer(ucontext_t *context) {
 
     uintptr_t ip = 0;
@@ -259,20 +259,6 @@ void* get_instruction_pointer(ucontext_t *context) {
         #else
             return NULL;
         #endif
-    #elif defined(_WIN32)
-        #if defined(_M_X64)
-            ip = (uintptr_t)context->Rip;
-        #elif defined(_M_IX86)
-            ip = (uintptr_t)context->Eip;
-        #elif defined(_M_ARM64)
-            ip = (uintptr_t)context->Pc;
-        #elif defined(_M_ARM)
-            ip = (uintptr_t)context->Pc;
-        #elif defined(_M_IA64)
-            ip = (uintptr_t)context->StIIP;
-        #else
-            return NULL;
-        #endif
     #else
         return NULL;
     #endif
@@ -280,9 +266,6 @@ void* get_instruction_pointer(ucontext_t *context) {
     return (void*)ip;
 }
 
-
-
-#ifndef _WIN32
 void segfault_handler(int sig, siginfo_t *info, void *ucontext) {
     // Cast ucontext to ucontext_t to get register info
     ucontext_t *context = (ucontext_t *)ucontext;
