@@ -31,12 +31,33 @@ int add_history(const char *line);
 
 #endif
 
-// Check if we're on a POSIX system that might support vasprintf directly
+//shim vasprintf
+// #if (!defined(_GNU_SOURCE))
 #undef vasprintf
-#undef asprintf
+#define vasprintf(p, f, a) \
+size_t size = vsprintf(NULL, f, a); \
+*p = malloc(size); \
+if (*p) { \
+    vsprintf(*p, f, a); \
+    size = strlen(*p); \
+} else { \
+    size = 0; \
+} \
+size
 
-int vasprintf(char **strp, const char *fmt, va_list ap);
-int asprintf(char **strp, const char *fmt, ...);
+#undef asprintf
+#define asprintf(p, f, ...) \
+size_t size = sprintf(NULL, f, __VA_ARGS__); \
+*p = malloc(size); \
+if (*p) { \
+    sprintf(*p, f, __VA_ARGS__); \
+    size = strlen(*p); \
+} else { \
+    size = 0; \
+} \
+size
+// #endif
 
 
 #endif // SHIMS_H
+
