@@ -214,10 +214,8 @@ void* get_instruction_pointer(ucontext_t *context) {
     #elif defined(__linux__)
         #if defined(__x86_64__)
         return NULL;
-            ip = (uintptr_t)context->uc_mcontext.gregs[REG_RIP];
         #elif defined(__i386__)
         return NULL;
-            ip = (uintptr_t)context->uc_mcontext.gregs[REG_EIP];
         #elif defined(__aarch64__)
             ip = (uintptr_t)context->uc_mcontext.pc;
         #elif defined(__arm__)
@@ -228,10 +226,8 @@ void* get_instruction_pointer(ucontext_t *context) {
             ip = (uintptr_t)context->uc_mcontext.pc;
         #elif defined(__sparc__)
         return NULL;
-            ip = (uintptr_t)context->uc_mcontext.gregs[REG_PC];
         #elif defined(__riscv)
         return NULL;
-            ip = (uintptr_t)context->uc_mcontext.__gregs[REG_PC];
         #elif defined(__alpha__)
             ip = (uintptr_t)context->uc_mcontext.sc_pc;
         #elif defined(__ia64__)
@@ -254,7 +250,6 @@ void* get_instruction_pointer(ucontext_t *context) {
             ip = (uintptr_t)context->uc_mcontext.mc_srr0;
         #elif defined(__riscv)
         return NULL;
-            ip = (uintptr_t)context->uc_mcontext.__gregs[REG_PC];
         #elif defined(__alpha__)
             ip = (uintptr_t)context->uc_mcontext.mc_pc;
         #elif defined(__ia64__)
