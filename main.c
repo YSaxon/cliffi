@@ -36,7 +36,7 @@
 #include "shims.h"
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.12.1";
+const char* VERSION = "v1.12.2";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 
@@ -544,6 +544,15 @@ void parseHexdump(char* hexdumpCommand) {
 
 typedef int(*JNI_CreateJavaVM_t)(JavaVM **p_vm, JNIEnv **p_env, void *vm_args);
 typedef jint(*registerNatives_t)(JNIEnv *env, jclass clazz);
+
+#if __aarch64__
+#define APEX_LIBRARY_PATH "/apex/com.android.runtime/lib64/"
+#else
+#define APEX_LIBRARY_PATH "/apex/com.android.runtime/lib/"
+#endif
+
+typedef int (*JNI_OnLoadFunc)(void* vm, void* reserved);
+
 
 int init_jvm(JavaVM **p_vm, JNIEnv **p_env, size_t argc, char** argv) {
   //https://android.googlesource.com/platform/frameworks/native/+/ce3a0a5/services/surfaceflinger/DdmConnection.cpp
