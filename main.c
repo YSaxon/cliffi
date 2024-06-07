@@ -536,6 +536,117 @@ void parseHexdump(char* hexdumpCommand) {
 }
 
 
+#ifdef __ANDROID__
+#include <jni.h>
+#include <dlfcn.h>
+
+typedef int(*JNI_CreateJavaVM_t)(JavaVM **p_vm, JNIEnv **p_env, void *vm_args);
+typedef jint(*registerNatives_t)(JNIEnv *env, jclass clazz);
+
+int init_jvm(JavaVM **p_vm, JNIEnv **p_env, size_t argc, char** argv) {
+  //https://android.googlesource.com/platform/frameworks/native/+/ce3a0a5/services/surfaceflinger/DdmConnection.cpp
+//   JavaVMOption opt[4];
+//   opt[0].optionString = "-Djava.class.path=/data/local/tmp/target-app.apk";
+//   opt[1].optionString = "-agentlib:jdwp=transport=dt_android_adb,suspend=n,server=y";
+//   opt[2].optionString = "-Djava.library.path=/data/local/tmp";
+//   opt[3].optionString = "-verbose:jni"; // may want to remove this, it's noisy
+
+JavaVMOption[argc] options = {0};
+for (int i = 0; i < argc; i++) {
+    options[i].optionString = argv[i];
+}
+
+  // Add this option if you're hacking stuff and need it, not normally required
+  // opt[4].optionString = "-Xno_sig_chain"; // may not be require prior to ART vm, may even cause issues for DVM
+
+  JavaVMInitArgs args;
+  args.version = JNI_VERSION_1_6;
+  args.options = opt;
+  args.nOptions = 4; // Uptick this to 5, it will pass in the no_sig_chain option
+  args.ignoreUnrecognized = JNI_FALSE;
+
+  void *libdvm_dso = dlopen("libdvm.so", RTLD_NOW);
+  void *libandroid_runtime_dso = dlopen("libandroid_runtime.so", RTLD_NOW);
+
+  if (!libdvm_dso) {
+    libdvm_dso = dlopen("libart.so", RTLD_NOW);
+  }
+
+  if (!libdvm_dso || !libandroid_runtime_dso) {
+    return -1;
+  }
+
+  JNI_CreateJavaVM_t JNI_CreateJavaVM;
+  JNI_CreateJavaVM = (JNI_CreateJavaVM_t) dlsym(libdvm_dso, "JNI_CreateJavaVM");
+  if (!JNI_CreateJavaVM) {
+    return -2;
+  }
+
+  registerNatives_t registerNatives;
+  registerNatives = (registerNatives_t) dlsym(libandroid_runtime_dso, "Java_com_android_internal_util_WithFramework_registerNatives");
+  if (!registerNatives) {
+    // Attempt non-legacy version
+    registerNatives = (registerNatives_t) dlsym(libandroid_runtime_dso, "registerFrameworkNatives");
+    if(!registerNatives) {
+      return -3;
+    }
+  }
+
+  if (JNI_CreateJavaVM(&(*p_vm), &(*p_env), &args)) {
+    return -4;
+  }
+
+  if (registerNatives(*p_env, 0)) {
+    return -5;
+  }
+
+  return 0;
+}
+
+
+void parseInitJNI(char* initJNICommand) {
+    int argc;
+    char** argv;
+    tokenize(initJNICommand, &argc, &argv);
+    // <library> <vm_var> <env_var> [<args>...]
+    if (argc < 3) {
+        raiseException(1,  "Error: Invalid number of arguments for initjni\n");
+        return;
+    }
+    char* libraryName = argv[0];
+    char* vmStr = argv[1];
+    char* envStr = argv[2];
+    void* lib_handle = getOrLoadLibrary(libraryName);
+
+    JNI_OnLoadFunc onLoadFunc = dlsym(lib_handle, "JNI_OnLoad");
+    if(onLoadFunc == NULL) {
+        printf(" [!] No JNI_OnLoad found!\n");
+        return -1;
+    }
+
+    printf(" [+] Initializing JavaVM Instance\n");
+    JavaVM *vm = NULL;
+    JNIEnv *env = NULL;
+
+    int status = initJNI(vm, env, argc - 3, argv + 3);
+
+    if (status == 0) {
+    printf(" [+] Initialization success (vm=%p, env=%p)\n", vm, env);
+  } else {
+    printf(" [!] Initialization failure (%i: %s)\n", status, dlerror());
+    return -1;
+  }
+
+  printf(" [+] Found JNI_OnLoad, attempting to call\n");
+  // Depending on the target you likely want to not pass null
+  onLoadFunc(vm, NULL);
+
+    setVar(vmStr, getPVar(vm));
+    setVar(envStr, getPVar(env));
+
+}
+#endif
+
 
 int parseREPLCommand(char* command){
         command = trim_whitespace(command);
@@ -604,6 +715,10 @@ int parseREPLCommand(char* command){
                     fprintf(stderr, "Warning: SHELL environment variable not set. Running an unprefixed 'sh -i'\n");
                     system("sh -i");
                 }
+            #ifdef __ANDROID__
+            } else if (strncmp(command, "initjni", 7) == 0) {
+                parseInitJNI(command + 7);
+            #endif
             } else {
                 executeREPLCommand(command); // also handles alternate forms of set (<varname>) and print (<varname> = <value>)
             }
