@@ -14,6 +14,8 @@
 #include "types_and_utils.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "exception_handling.h"
+
 
 ffi_type* arg_type_to_ffi_type(const ArgInfo* arg, bool is_inside_struct); // putting this declaration here instead of header since it's only used in this file
 
@@ -77,15 +79,13 @@ ffi_type* make_ffi_type_for_struct(const ArgInfo* arg) { // does not handle poin
     for (int i = 0; i < struct_info->info.arg_count; i++) {
         struct_type->elements[i] = arg_type_to_ffi_type(struct_info->info.args[i], true);
         if (!struct_type->elements[i]) {
-            fprintf(stderr, "Failed to convert struct field %d to ffi_type.\n", i);
-            exit_or_restart(1);
+            raiseException(1,  "Failed to convert struct field %d to ffi_type.\n", i);
         }
     }
     // if (!ispacked)
     ffi_status status = ffi_get_struct_offsets(FFI_DEFAULT_ABI, struct_type, NULL); // this will set size and such
     if (status != FFI_OK) {
-        fprintf(stderr, "Failed to get struct offsets.\n");
-        exit_or_restart(1);
+        raiseException(1,  "Failed to get struct offsets.\n");
     }
     if (ispacked) {
         size_t offsets[struct_info->info.arg_count];
@@ -96,8 +96,7 @@ ffi_type* make_ffi_type_for_struct(const ArgInfo* arg) { // does not handle poin
 
 size_t get_size_of_struct(const ArgInfo* arg) {
     if (arg->type != TYPE_STRUCT) {
-        fprintf(stderr, "get_size_of_struct called with non-struct argument.\n");
-        exit_or_restart(1);
+        raiseException(1,  "get_size_of_struct called with non-struct argument.\n");
         return 0;
     }
     ffi_type* struct_type = make_ffi_type_for_struct(arg);
@@ -190,15 +189,13 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return) { //, f
     size_t offsets[struct_info->info.arg_count];
     ffi_status struct_status = struct_arginfo->struct_info->is_packed ? get_packed_offset(struct_arginfo, struct_type, offsets) : ffi_get_struct_offsets(FFI_DEFAULT_ABI, struct_type, offsets);
     if (struct_status != FFI_OK) {
-        fprintf(stderr, "Failed to get struct offsets.\n");
-        exit_or_restart(1);
+        raiseException(1,  "Failed to get struct offsets.\n");
     }
 
     void* raw_memory = calloc(1, struct_type->size);
     free_ffi_type(struct_type);
     if (!raw_memory) {
-        fprintf(stderr, "Failed to allocate memory for struct.\n");
-        exit_or_restart(1);
+        raiseException(1,  "Failed to allocate memory for struct.\n");
     }
 
     for (int i = 0; i < struct_info->info.arg_count; i++) {
@@ -266,8 +263,7 @@ void fix_struct_pointers(ArgInfo* struct_arg, void* raw_memory) {
     ffi_status struct_status = struct_arg->struct_info->is_packed ? get_packed_offset(struct_arg, struct_type, offsets) : ffi_get_struct_offsets(FFI_DEFAULT_ABI, struct_type, offsets);
     free_ffi_type(struct_type);
     if (struct_status != FFI_OK) {
-        fprintf(stderr, "Failed to get struct offsets.\n");
-        exit_or_restart(1);
+        raiseException(1,  "Failed to get struct offsets.\n");
     }
 
     for (int i = 0; i < struct_info->info.arg_count; i++) {
@@ -323,8 +319,7 @@ void handle_promoting_vararg_if_necessary(ffi_type** arg_type_ptr, ArgInfo* arg,
             arg->value->ui_val = (unsigned int)arg->value->us_val;
             arg->type = TYPE_UINT;
         } else { // if its too small but not one of the above types then we don't know what to do so just fail
-            fprintf(stderr, "Error: arg[%d] is a vararg but its %s type %s is of size %zu which is less than sizeof(int) which is %zu\nYou should probably %s explicit type flag", argnum, arg->explicitType ? "explicit" : "inferred", typeToString(arg->type), arg_type->size, int_size, arg->explicitType ? "correct the" : "add an");
-            exit_or_restart(1);
+            raiseException(1,  "Error: arg[%d] is a vararg but its %s type %s is of size %zu which is less than sizeof(int) which is %zu\nYou should probably %s explicit type flag", argnum, arg->explicitType ? "explicit" : "inferred", typeToString(arg->type), arg_type->size, int_size, arg->explicitType ? "correct the" : "add an");
         }
         // if it was one of the above types that we COULD convert
         if (arg->explicitType) { // only bother them with a warning if they explicitly set the type
@@ -345,10 +340,9 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
     ffi_type** args = malloc(call_info->info.arg_count * sizeof(ffi_type*));
     void** values = malloc(call_info->info.arg_count * sizeof(void*));
     if (args == NULL || values == NULL) {
-        fprintf(stderr, "Memory allocation failed in invoke_dynamic_function.\n");
         if (args != NULL) free(args);
         if (values != NULL) free(values);
-        exit_or_restart(-1);
+        raiseException(1,  "Memory allocation failed in invoke_dynamic_function.\n");
         return -1;
     }
     for (int i = 0; i < call_info->info.arg_count; ++i) {
@@ -359,10 +353,9 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
         if (is_vararg) handle_promoting_vararg_if_necessary(&args[i], call_info->info.args[i], i);
 
         if (!args[i]) {
-            fprintf(stderr, "Failed to convert arg[%d].type = %c to ffi_type.\n", i, call_info->info.args[i]->type);
             if (args != NULL) free(args);
             if (values != NULL) free(values);
-            exit_or_restart(1);
+            raiseException(1,  "Failed to convert arg[%d].type = %c to ffi_type.\n", i, call_info->info.args[i]->type);
             return -1;
         }
         if (call_info->info.args[i]->type != TYPE_STRUCT) { //|| call_info->info.args[i]->pointer_depth == 0) {
@@ -393,10 +386,9 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
     }
 
     if (status != FFI_OK) {
-        fprintf(stderr, "ffi_prep_cif failed. Return status = %s\n", ffi_status_to_string(status));
         if (args != NULL) free(args);
         if (values != NULL) free(values);
-        exit_or_restart(1);
+        raiseException(1,  "ffi_prep_cif failed. Return status = %s\n", ffi_status_to_string(status));
         return -1;
     }
 

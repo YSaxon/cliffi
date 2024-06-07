@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 // Simple function that adds two integers
 int add(int a, int b) {
@@ -31,6 +32,49 @@ int increment_at_pointer(int* a) { //deliberately unsafe
     return *a;
 }
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+DWORD WINAPI do_segfault(LPVOID lpParam) {
+    int* p = NULL;
+    *p = 42;
+    return 0;
+}
+#else
+#include <pthread.h>
+void* do_segfault(void* arg) {
+    int* p = NULL;
+    *p = 42;
+    return NULL;
+}
+#endif
+
+void do_double_free() {
+    int* p = malloc(sizeof(int));
+    free(p);
+    free(p);
+}
+
+void do_buffer_overflow() {
+    char buffer[10];
+    // mark it to override warnings
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Warray-bounds"
+    buffer[15] = 'a';
+    #pragma clang diagnostic pop
+}
+
+void do_segfault_in_another_thread() {
+    //start another thread that does a segfault
+    #if !defined(_WIN32) && !defined(_WIN64)
+    pthread_t thread;
+    pthread_create(&thread, NULL, (void* (*)(void*))do_segfault, NULL);
+    pthread_join(thread, NULL);
+    #else
+    #include <windows.h>
+    CreateThread(NULL, 0, do_segfault, NULL, 0, NULL);
+    #endif
+}
+
 int* get_array_of_int(int a, size_t size) {
     int* arr = calloc(size, sizeof(int));
     for (size_t i = 0; i < size; i++) {
@@ -43,6 +87,11 @@ int* get_array_of_int(int a, size_t size) {
 char* get_message() {
     return "Hello, cliffi!"; // this maybe shows us we need to handle string literals in data?
 }
+
+void* getAddressOfGetMessage() {
+    return &get_message;
+}
+
 
 // Struct for demonstration
 typedef struct Point {
