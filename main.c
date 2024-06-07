@@ -36,7 +36,7 @@
 #include "shims.h"
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.10.31";
+const char* VERSION = "v1.12.0";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 
@@ -537,6 +537,8 @@ void parseHexdump(char* hexdumpCommand) {
 
 
 #ifdef __ANDROID__
+
+// adapted from https://github.com/rednaga/native-shim
 #include <jni.h>
 #include <dlfcn.h>
 
