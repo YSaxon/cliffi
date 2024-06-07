@@ -66,6 +66,11 @@ endif()
 # Include directories
 include_directories(${LIBFFI_INCLUDE_DIRS})
 
+#if android then add -Wl,--export-dynamic
+if(ANDROID)
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
+endif()
+
 # Source files
 set(SOURCES
 main.c
