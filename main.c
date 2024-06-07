@@ -36,7 +36,7 @@
 #include "shims.h"
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.12.0";
+const char* VERSION = "v1.12.1";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 
@@ -630,7 +630,7 @@ void parseInitJNI(char* initJNICommand) {
     JavaVM *vm = NULL;
     JNIEnv *env = NULL;
 
-    int status = initJNI(vm, env, argc - 3, argv + 3);
+    int status = init_jvm(vm, env, argc - 3, argv + 3);
 
     if (status == 0) {
     printf(" [+] Initialization success (vm=%p, env=%p)\n", vm, env);
