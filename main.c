@@ -36,7 +36,7 @@
 #include "shims.h"
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.12.4";
+const char* VERSION = "v1.12.5";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 
@@ -640,6 +640,17 @@ void parseInitJNI(char* initJNICommand) {
     setVar(vmStr, getPVar(vm));
     setVar(envStr, getPVar(env));
 }
+
+typedef bool (*SpecialSignalHandlerFn)(int, siginfo_t*, void*);
+
+JNI_EXPORT void InitializeSignalChain() { return; }
+JNI_EXPORT void ClaimSignalChain(int signal, struct sigaction* oldaction) { return; }
+JNI_EXPORT void UnclaimSignalChain(int signal) { return; }
+JNI_EXPORT void SetSpecialSignalHandlerFn(int signal, SpecialSignalHandlerFn fn) { return; }
+JNI_EXPORT void InvokeUserSignalHandler(int sig, siginfo_t* info, void* context) { return; }
+JNI_EXPORT void EnsureFrontOfChain(int signal, struct sigaction* expected_action) { return; }
+
+
 #endif
 
 
