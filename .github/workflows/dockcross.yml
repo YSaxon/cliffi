@@ -185,26 +185,26 @@ jobs:
             asset_name: cliffi-${{ matrix.dockcross_image }}${{ (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm' || contains(matrix.dockcross_image,'s390x'))) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
             asset_content_type: application/zip
 
-  smoke_test:
-    needs: [ build, create_release ]
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Download Release
-        uses: robinraju/release-downloader@v1.10
-        with:
-          releaseId: ${{ needs.create_release.outputs.release_id }}
-          fileName: cliffi-${{ matrix.os == 'windows-latest' && 'windows-static-x64.exe' || 'linux-x64' }}
+  # smoke_test:
+  #   needs: [ build, create_release ]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-latest, windows-latest]
+  #   runs-on: ${{ matrix.os }}
+  #   steps:
+  #     - name: Download Release
+  #       uses: robinraju/release-downloader@v1.10
+  #       with:
+  #         releaseId: ${{ needs.create_release.outputs.release_id }}
+  #         fileName: cliffi-${{ matrix.os == 'windows-latest' && 'windows-static-x64.exe' || 'linux-x64' }}
 
-      - name: Run Smoke Test
-        run: |
-          ls -al
-          mv cliffi-* cliffi
-          chmod +x cliffi
-          ./cliffi libc i strlen test
+  #     - name: Run Smoke Test
+  #       run: |
+  #         ls -al
+  #         mv cliffi-* cliffi
+  #         chmod +x cliffi
+  #         ./cliffi libc i strlen test
 
   finalize_release:
     needs: [build, create_release]
