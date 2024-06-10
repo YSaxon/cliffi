@@ -643,12 +643,33 @@ void parseInitJNI(char* initJNICommand) {
 
 typedef bool (*SpecialSignalHandlerFn)(int, siginfo_t*, void*);
 
-void InitializeSignalChain() { return; }
-void ClaimSignalChain(int signal, struct sigaction* oldaction) { return; }
-void UnclaimSignalChain(int signal) { return; }
-void SetSpecialSignalHandlerFn(int signal, SpecialSignalHandlerFn fn) { return; }
-void InvokeUserSignalHandler(int sig, siginfo_t* info, void* context) { return; }
-void EnsureFrontOfChain(int signal, struct sigaction* expected_action) { return; }
+JNIEXPORT void InitializeSignalChain() {
+
+}
+
+JNIEXPORT void ClaimSignalChain() {
+
+}
+
+JNIEXPORT void UnclaimSignalChain() {
+
+}
+
+JNIEXPORT void InvokeUserSignalHandler() {
+
+}
+
+JNIEXPORT void EnsureFrontOfChain() {
+
+}
+
+JNIEXPORT void AddSpecialSignalHandlerFn() {
+
+}
+
+JNIEXPORT void RemoveSpecialSignalHandlerFn() {
+
+}
 
 
 #endif
