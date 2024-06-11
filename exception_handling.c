@@ -350,9 +350,21 @@ void install_segfault_handler() {
         perror("sigaction");
         exit(EXIT_FAILURE);
     }
+    //catch bus errors etc
+    sigaction(SIGBUS, &sa, NULL);
+    sigaction(SIGILL, &sa, NULL);
+    sigaction(SIGFPE, &sa, NULL);
+    sigaction(SIGABRT, &sa, NULL);
+
     #else
     signal(SIGSEGV, segfault_handler);
+    signal(SIGBUS, segfault_handler);
+    signal(SIGILL, segfault_handler);
+    signal(SIGFPE, segfault_handler);
+    signal(SIGABRT, segfault_handler);
     #endif
+
+
 }
 
 void main_method_install_exception_handlers() {
