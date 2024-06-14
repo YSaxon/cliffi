@@ -35,6 +35,15 @@
 
 #include "shims.h"
 
+
+#ifdef __ANDROID__
+#include <jni.h>
+#include <dlfcn.h>
+#include "FalsoJNI.h"
+#include "FalsoJNI_Impl.h"
+#include "FalsoJNI_ImplBridge.h"
+#endif
+
 const char* NAME = "cliffi";
 const char* VERSION = "v1.12.5";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
@@ -539,8 +548,6 @@ void parseHexdump(char* hexdumpCommand) {
 #ifdef __ANDROID__
 
 // adapted from https://github.com/rednaga/native-shim
-#include <jni.h>
-#include <dlfcn.h>
 
 typedef int(*JNI_CreateJavaVM_t)(JavaVM **p_vm, JNIEnv **p_env, void *vm_args);
 typedef jint(*registerNatives_t)(JNIEnv *env, jclass clazz);
@@ -600,9 +607,7 @@ typedef int (*JNI_OnLoadFunc)(void* vm, void* reserved);
 //   return 0;
 // }
 
-#include "FalsoJNI.h"
-#include "FalsoJNI_Impl.h"
-#include "FalsoJNI_ImplBridge.h"
+
 
 int init_jvm(JavaVM **p_vm, JNIEnv **p_env, size_t argc, char** argv){
     if (argc > 0) {
