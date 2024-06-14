@@ -89,7 +89,7 @@ exception_handling.c
 )
 
 if (ANDROID)
-    list(APPEND SOURCES fakejni/FalsoJni.c fakejni/FalsoJni_ImplBridge.c fakejni/FalsoJni_Logger.c)
+    list(APPEND SOURCES fakejni/FalsoJNI.c fakejni/FalsoJNI_ImplBridge.c fakejni/FalsoJNI_Logger.c)
 #add header files
     include_directories(fakejni)
 endif()
