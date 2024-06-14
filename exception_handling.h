@@ -24,10 +24,10 @@ extern bool isTestEnvExit1OnFail;
 
 extern _Thread_local sigjmp_buf* current_exception_buffer;
 extern _Thread_local char* current_exception_message;
-#ifdef use_backtrace
+// #ifdef use_backtrace
 extern _Thread_local char** current_stacktrace_strings;
 extern _Thread_local size_t current_stacktrace_size;
-#endif
+// #endif
 
 void raiseException(int status, char* formatstr, ...);
 void printException();
@@ -52,11 +52,11 @@ void printException();
 
 #define CATCHALL CATCH(NULL)
 
-#if defined (use_backtrace)
+// #if defined (use_backtrace)
 #define freebacktrace free(current_stacktrace_strings); current_stacktrace_strings = NULL; current_stacktrace_size = 0;
-#else
-#define freebacktrace
-#endif
+// #else
+// #define freebacktrace
+// #endif
 
 #define END_TRY }} \
     current_exception_buffer = old_exception_buffer; \
