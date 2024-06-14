@@ -608,6 +608,7 @@ int init_jvm(JavaVM **p_vm, JNIEnv **p_env, size_t argc, char** argv){
     jni_init();
     *p_vm = &jvm;
     *p_env = &jni;
+    return 0;
 }
 
 void parseInitJNI(char* initJNICommand) {
