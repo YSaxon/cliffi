@@ -16,6 +16,7 @@
 
 #include "FalsoJNI_ImplBridge.h"
 
+#include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
 #include <pthread.h>
@@ -537,7 +538,7 @@ jboolean jda_free(JavaDynArray * jda) {
         jda_unlock();
         return JNI_TRUE;
     }
-  
+
     jda_unlock();
     return JNI_FALSE;
 }
