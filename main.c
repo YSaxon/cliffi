@@ -637,8 +637,8 @@ void parseInitJNI(char* initJNICommand) {
     printf(" [+] Found JNI_OnLoad, attempting to call\n");
     onLoadFunc(vm, NULL);
 
-    setVar(vmStr, (void*)*vm);
-    setVar(envStr, (void*)*env);
+    setVar(vmStr, getPVar(*vm));
+    setVar(envStr, getPVar(*env));
 }
 
 typedef bool (*SpecialSignalHandlerFn)(int, siginfo_t*, void*);

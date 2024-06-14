@@ -7,7 +7,7 @@
 #include "parse_address.h"
 #include "shims.h"
 
-ArgInfo* getPVar(void* address) {
+ArgInfo* getPVar(const void* address) {
     ArgInfo* var = (ArgInfo*)calloc(1, sizeof(ArgInfo));
     var->type = TYPE_VOIDPOINTER;
     var->explicitType = true;
