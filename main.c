@@ -601,6 +601,7 @@ typedef int (*JNI_OnLoadFunc)(void* vm, void* reserved);
 // }
 
 #include "FalsoJNI.h"
+#include "FalsoJNI_Impl.h"
 int init_jvm(JavaVM **p_vm, JNIEnv **p_env, size_t argc, char** argv){
     if (argc > 0) {
         printf(" [!] Warning: Arguments are not supported on this faker method\n");
