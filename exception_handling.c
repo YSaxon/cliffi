@@ -354,14 +354,14 @@ void install_segfault_handler() {
     sigaction(SIGBUS, &sa, NULL);
     sigaction(SIGILL, &sa, NULL);
     sigaction(SIGFPE, &sa, NULL);
-    sigaction(SIGABRT, &sa, NULL);
+    // signal(SIGABRT, segfault_handler);
 
     #else
     signal(SIGSEGV, segfault_handler);
     signal(SIGBUS, segfault_handler);
     signal(SIGILL, segfault_handler);
     signal(SIGFPE, segfault_handler);
-    signal(SIGABRT, segfault_handler);
+    // signal(SIGABRT, segfault_handler);
     #endif
 
 
