@@ -1188,7 +1188,7 @@ jstring NewString(JNIEnv* env, const jchar* chars, jsize char_count) {
     UTF16 * sourceEnd = &(((UTF16*)chars)[char_count]);
     UTF8 *  targetStart = &dst[0];
     UTF8 *  targetEnd = &dst[char_count];
-    ConversionResult res = ConvertUTF16toUTF8(&sourceStart, sourceEnd,
+    ConversionResult res = ConvertUTF16toUTF8((const UTF16**)&sourceStart, sourceEnd,
                                               &targetStart, targetEnd, 1);
     if (res != conversionOK) {
         fjni_logv_err("Fatal: utf16 => utf8 conversion failed (%i)", res);
@@ -1223,7 +1223,7 @@ const jchar * GetStringChars(JNIEnv* env, jstring string, jboolean *isCopy) {
     UTF8 * sourceEnd = &(((UTF8*)string)[size]);
     UTF16 *  targetStart = &dst[0];
     UTF16 *  targetEnd = &dst[size];
-    ConversionResult res = ConvertUTF8toUTF16(&sourceStart, sourceEnd,
+    ConversionResult res = ConvertUTF8toUTF16((const UTF8 **)&sourceStart, sourceEnd,
                                               &targetStart, targetEnd, 1);
     if (res != conversionOK) {
         fjni_logv_err("Fatal: utf8 => utf16 conversion failed (%i)", res);
