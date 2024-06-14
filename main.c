@@ -606,8 +606,8 @@ int init_jvm(JavaVM **p_vm, JNIEnv **p_env, size_t argc, char** argv){
         printf(" [!] Warning: Arguments are not supported on this faker method\n");
         jni_init();
     }
-    *p_vm = jvm;
-    *p_env = jni;
+    *p_vm = &jvm;
+    *p_env = &jni;
 }
 
 void parseInitJNI(char* initJNICommand) {
