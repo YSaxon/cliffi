@@ -714,6 +714,10 @@ int parseREPLCommand(char* command){
                        "Shell commands:\n"
                        "  !<command>: Run a shell command\n"
                        "  shell: Drop into an interactive shell\n"
+                       #ifdef __ANDROID__
+                       "JNI Management:\n"
+                          "  initjni <library> <vm_var> <env_var> [<args>...]: Initialize JNI with a library\n"
+                        #endif
                        "REPL Management:\n"
                        "  exit: Quit the REPL\n");
             } else if (strcmp(command, "docs") == 0) {
