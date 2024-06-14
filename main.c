@@ -604,8 +604,8 @@ typedef int (*JNI_OnLoadFunc)(void* vm, void* reserved);
 int init_jvm(JavaVM **p_vm, JNIEnv **p_env, size_t argc, char** argv){
     if (argc > 0) {
         printf(" [!] Warning: Arguments are not supported on this faker method\n");
-        jni_init();
     }
+    jni_init();
     *p_vm = &jvm;
     *p_env = &jni;
 }
