@@ -87,6 +87,11 @@ parse_address.c
 shims.c
 exception_handling.c
 )
+if (ANDROID)
+    list(APPEND SOURCES FalsoJNI/FalsoJni.c FalsoJNI/FalsoJni_ImplBridge.c FalsoJNI/FalsoJni_Logger.c)
+#add header files
+    include_directories(FalsoJNI)
+endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
