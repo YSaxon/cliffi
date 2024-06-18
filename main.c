@@ -141,13 +141,8 @@ void print_usage(char* argv0) {
     printf("      %s some_lib.so v func_taking_all_varargs ... -i 3 -s hello\n", argv0);
 }
 
-int invoke_and_print_return_value(FunctionCallInfo* call_info, void (*func)(void)) {
-    int invoke_result = invoke_dynamic_function(call_info, func);
-    if (invoke_result != 0) {
-        fprintf(stderr, "Error: Function invocation failed\n");
-    } else {
-
-        setCodeSectionForSegfaultHandler("invoke_and_print_return_value : while printing values");
+void print_function_return(FunctionCallInfo* call_info){
+     setCodeSectionForSegfaultHandler("invoke_and_print_return_value : while printing values");
 
         // Step 4: Print the return value and any modified arguments
 
@@ -168,9 +163,17 @@ int invoke_and_print_return_value(FunctionCallInfo* call_info, void (*func)(void
                 printf("\n");
             }
         }
-    }
     unsetCodeSectionForSegfaultHandler();
+    }
 
+
+int invoke_and_print_return_value(FunctionCallInfo* call_info, void (*func)(void)) {
+    int invoke_result = invoke_dynamic_function(call_info, func);
+    if (invoke_result != 0) {
+        fprintf(stderr, "Error: Function invocation failed\n");
+    } else {
+        print_function_return(call_info);
+    }
     return invoke_result;
 }
 
