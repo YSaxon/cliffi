@@ -29,6 +29,7 @@ bool isTestEnvExit1OnFail = false;
 sigjmp_buf rootJmpBuffer;
 
 _Thread_local sigjmp_buf* current_exception_buffer = &rootJmpBuffer;
+_Thread_local sigjmp_buf* old_exception_buffer;
 _Thread_local char* current_exception_message = NULL;
 _Thread_local char** current_stacktrace_strings = NULL;
 _Thread_local size_t current_stacktrace_size = 0;

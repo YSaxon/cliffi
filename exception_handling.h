@@ -27,19 +27,25 @@ extern _Thread_local char* current_exception_message;
 // #ifdef use_backtrace
 extern _Thread_local char** current_stacktrace_strings;
 extern _Thread_local size_t current_stacktrace_size;
+
+extern _Thread_local sigjmp_buf* old_exception_buffer;
 // #endif
 
 void raiseException(int status, char* formatstr, ...);
 void printException();
 
 #define TRY \
-    sigjmp_buf newjmpBuffer; \
-    sigjmp_buf* old_exception_buffer = current_exception_buffer; \
-    current_exception_buffer = &newjmpBuffer; \
-    if (sigsetjmp(newjmpBuffer, 1) == 0) {
+    sigjmp_buf* newjmpBufferPtr = (sigjmp_buf*)malloc(sizeof(sigjmp_buf)); /* sigjmp_buf newjmpBuffer;*/ \
+    old_exception_buffer = current_exception_buffer; \
+    current_exception_buffer = newjmpBufferPtr; \
+    /* printf("Old exception buffer: %p\n", old_exception_buffer); \
+    hexdump(old_exception_buffer, sizeof(sigjmp_buf)); \
+    printf("New exception buffer: %p\n", current_exception_buffer); \
+    hexdump(current_exception_buffer, sizeof(sigjmp_buf)); */ \
+    if (sigsetjmp(*newjmpBufferPtr, 1) == 0) {
 
 #define CATCH(messageSearchString) } else { \
-    current_exception_buffer = old_exception_buffer; \
+    /*current_exception_buffer = old_exception_buffer; */\
     if (messageSearchString != NULL && strstr(messageSearchString, current_exception_message) == NULL) { /* this means that the catch handler shouldn't catch it*/ \
         if (old_exception_buffer != NULL) { siglongjmp(*current_exception_buffer, 1); \
         } else { \
@@ -59,6 +65,7 @@ void printException();
 // #endif
 
 #define END_TRY }} \
+    free(newjmpBufferPtr); \
     current_exception_buffer = old_exception_buffer; \
     if (current_exception_message != NULL) { \
         free(current_exception_message); \
