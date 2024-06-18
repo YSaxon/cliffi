@@ -145,7 +145,7 @@ void raiseException(int status, char* formatstr, ...) {
             strcpy(new_formatstr, formatstr);
             new_formatstr[formatstr_len] = '\n';
             new_formatstr[formatstr_len + 1] = '\0';
-            free(formatstr);
+            // free(formatstr); can't free formatstr because it's a pointer to a string literal
             formatstr = new_formatstr;
         }
         va_list args;
