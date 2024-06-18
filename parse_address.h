@@ -5,6 +5,7 @@
 
 ArgInfo* getPVar(void* address);
 void* getAddressFromAddressStringOrNameOfCoercableVariable(const char* addressStr);
+void* tryGetAddressFromAddressStringOrNameOfCoercableVariable(const char* addressStr);
 void* getAddressFromStoredOffsetRelativeToLibLoadedAtAddress(void* libhandle, const char* addressStr);
 void storeOffsetForLibLoadedAtAddress(void* libhandle, void* address);
 

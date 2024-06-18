@@ -187,12 +187,12 @@ void* loadFunctionHandle(void* lib_handle, const char* function_name) {
         }
     }
 
-    TRY
-    void* addressDirectly = getAddressFromAddressStringOrNameOfCoercableVariable(function_name);
-    printf("Parsed func '%s' as an absolute address -> 0x%" PRIxPTR "\n", function_name, (uintptr_t)addressDirectly);
-    return addressDirectly;
-    CATCHALL
-    END_TRY
+    void* addressDirectly = tryGetAddressFromAddressStringOrNameOfCoercableVariable(function_name);
+    if (addressDirectly != NULL) {
+        printf("Parsed func '%s' as an absolute address -> 0x%" PRIxPTR "\n", function_name, (uintptr_t)addressDirectly);
+        return addressDirectly;
+    }
+
 
     void (*func)(void) = NULL;
 #ifdef _WIN32
