@@ -124,8 +124,8 @@ void printStackTrace(){
 
     }
     void printStackTrace() {
-        for (size_t i = 0; i < current_stacktrace_size; i++) {
-            fprintf(stderr, "While handling exception: %s\n", current_stacktrace_strings[i]);
+        for (size_t i = 1; i < current_stacktrace_size; i++) { // skip the first message, which is the current exception message
+            fprintf(stderr, "\tWhile handling exception: %s\n", current_stacktrace_strings[i]);
         }
     }
 
