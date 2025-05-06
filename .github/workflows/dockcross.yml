@@ -54,7 +54,7 @@ jobs:
           # - linux-armv5-musl
           # - linux-armv5-uclibc
           - linux-armv6
-           - linux-armv6-lts
+           #- linux-armv6-lts
           # - linux-armv6-musl
           - linux-armv7
           - linux-armv7-lts
