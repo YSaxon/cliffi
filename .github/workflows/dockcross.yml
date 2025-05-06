@@ -42,10 +42,10 @@ jobs:
       fail-fast: false
       matrix:
         dockcross_image:
-          - android-arm
-          - android-arm64
-          - android-x86
-          - android-x86_64
+          #- android-arm
+          #- android-arm64
+          #- android-x86
+          #- android-x86_64
           - linux-arm64
           - linux-arm64-lts
           # - linux-arm64-full
@@ -54,7 +54,7 @@ jobs:
           # - linux-armv5-musl
           # - linux-armv5-uclibc
           - linux-armv6
-          # - linux-armv6-lts
+           - linux-armv6-lts
           # - linux-armv6-musl
           - linux-armv7
           - linux-armv7-lts
@@ -64,11 +64,11 @@ jobs:
           # - linux-mips-uclibc
           - linux-mips-lts
           # - linux-mipsel-lts
-          - linux-s390x
-          - linux-ppc64le
+          #- linux-s390x
+          #- linux-ppc64le
           # - linux-ppc64le-lts
-          - linux-riscv32
-          - linux-riscv64
+          #- linux-riscv32
+          #- linux-riscv64
           # - linux-m68k-uclibc
           # - linux-xtensa-uclibc
           # - manylinux_2_28-x64
@@ -85,11 +85,11 @@ jobs:
           # - windows-shared-x86
           # - windows-shared-x64
           # - windows-shared-x64-posix
-          - windows-static-x86
-          - windows-static-x64
+          #- windows-static-x86
+          #- windows-static-x64
           # - windows-static-x64-posix
           # - windows-armv7 #no idea why this one doesn't work
-          - windows-arm64
+          #- windows-arm64
 
     steps:
       - uses: actions/checkout@v3
