@@ -62,7 +62,8 @@ if(ENABLE_SANITIZERS)
     endif()
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread") # bugfix for pthread on lts
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread") # bugfix for pthread on lts
+
 
 # Include directories
 include_directories(${LIBFFI_INCLUDE_DIRS})
@@ -145,6 +146,8 @@ set_target_properties(cliffitest PROPERTIES OUTPUT_NAME "cliffi_test")
 # Set the output directory for executables and libraries
 set_target_properties(cliffi PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 set_target_properties(cliffitest PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pthread")
 
 #set variable for testlib path
 set(TESTLIB ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX})
