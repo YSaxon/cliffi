@@ -62,6 +62,7 @@ if(ENABLE_SANITIZERS)
     endif()
 endif()
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread") # bugfix for pthread on lts
 
 # Include directories
 include_directories(${LIBFFI_INCLUDE_DIRS})
