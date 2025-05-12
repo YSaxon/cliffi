@@ -135,7 +135,9 @@ jobs:
             ./dockcross bash -c "echo hello world"
 
       - name: Setup tmate session detached
-        uses: mxschmitt/action-tmate/detached
+        uses: mxschmitt/action-tmate@v3
+        with:
+          detached: true
 
       - name: everything together
         #exclude android builds
