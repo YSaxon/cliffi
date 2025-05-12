@@ -134,10 +134,10 @@ jobs:
         run: |
             ./dockcross bash -c "echo hello world"
 
-      - name: Setup tmate session detached
-        uses: mxschmitt/action-tmate@v3
-        with:
-          detached: true
+      # - name: Setup tmate session detached
+      #   uses: mxschmitt/action-tmate@v3
+      #   with:
+      #     detached: true
 
       - name: everything together
         #exclude android builds
@@ -150,6 +150,12 @@ jobs:
         if: (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm') || contains(matrix.dockcross_image,'s390x')) == true
         run: |
           ./dockcross bash ./dockcross_buildonly.sh
+
+      - name: Setup tmate session if failed
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        # with:
+        #   detached: true
 
       # - name: conaninstall
       #   run: |
