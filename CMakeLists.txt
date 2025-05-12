@@ -668,7 +668,8 @@ should_reach_here = 1 \n
 )
 
 # the RISC-V dockcross toolchain
-if(CMAKE_TOOLCHAIN_FILE STREQUAL "/usr/lib/riscv32-unknown-linux-gnu/Toolchain.cmake")
+if(CMAKE_TOOLCHAIN_FILE STREQUAL "/usr/lib/riscv32-unknown-linux-gnu/Toolchain.cmake" OR
+   CMAKE_TOOLCHAIN_FILE STREQUAL "/usr/lib/riscv64-unknown-linux-gnu/Toolchain.cmake")
 message(STATUS "Skipping test: repl_metatest_tests_dont_fail_on_segfault_in_function_created_thread_with_nofail_option due to known issues with this RISC-V toolchain/environment")
 else()
 set_tests_properties(repl_metatest_tests_dont_fail_on_segfault_in_function_created_thread_with_nofail_option PROPERTIES PASS_REGULAR_EXPRESSION "should_reach_here = 1")
