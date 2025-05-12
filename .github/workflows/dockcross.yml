@@ -134,6 +134,9 @@ jobs:
         run: |
             ./dockcross bash -c "echo hello world"
 
+      - name: Setup tmate session detached
+        uses: mxschmitt/action-tmate/detached
+
       - name: everything together
         #exclude android builds
         if: (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm') || contains(matrix.dockcross_image,'s390x')) == false
