@@ -58,19 +58,14 @@ COMPILER_RAW=$(echo "${CC_BASENAME}" | rev | cut -d '-' -f 1 | rev)
 ARCH_CLEANED=$(clean_extracted_value "$ARCH_RAW"); OS_CLEANED=$(clean_extracted_value "$OS_RAW")
 COMPILER_CLEANED=$(clean_extracted_value "$COMPILER_RAW" | sed 's/[0-9.-]*$//')
 
-# Normalization
-#Possible values are ['x86', 'x86_64', 'ppc32be', 'ppc32', 'ppc64le', 'ppc64', 'armv4', 'armv4i', 'armv5el', 'armv5hf', 'armv6', 'armv7', 'armv7hf', 'armv7s', 'armv7k', 'armv8', 'armv8_32', 'armv8.3', 'arm64ec', 'sparc', 'sparcv9', 'mips', 'mips64', 'avr', 's390', 's390x', 'asm.js', 'wasm', 'sh4le', 'e2k-v2', 'e2k-v3', 'e2k-v4', 'e2k-v5', 'e2k-v6', 'e2k-v7', 'riscv64', 'riscv32', 'xtensalx6', 'xtensalx106', 'xtensalx7', 'tc131', 'tc16', 'tc161', 'tc162', 'tc18']
-ARCH=$(echo "${ARCH_CLEANED}" | tr '[:upper:]' '[:lower:]' | sed \
-    -e 's/powerpc/ppc/' \
-    -e 's/i[36]86/x86/' \
-    -e 's/arm64-v8a/armv8/' \   # Specific: Android's arm64-v8a to Conan's armv8
-    -e 's/aarch64/armv8/' \   # General aarch64 to armv8
-    -e 's/arm64/armv8/' \     # General arm64 to armv8
-    -e 's/armeabi-v7a/armv7/' \ # Specific: Android's armeabi-v7a to Conan's armv7
-    -e 's/armv7a/armv7/' \     # General armv7a to armv7
-    -e 's/xtensa$/xtensalx7/' \
-    -e 's/armv5$/armv5el/')
 
+# Goal is to map ARCH to Conan values for settings.arch:
+# Possible values are ['x86', 'x86_64', 'ppc32be', 'ppc32', 'ppc64le', 'ppc64', 'armv4', 'armv4i', 'armv5el', 'armv5hf', 'armv6', 'armv7', 'armv7hf', 'armv7s', 'armv7k', 'armv8', 'armv8_32', 'armv8.3', 'arm64ec', 'sparc', 'sparcv9', 'mips', 'mips64', 'avr', 's390', 's390x', 'asm.js', 'wasm', 'sh4le', 'e2k-v2', 'e2k-v3', 'e2k-v4', 'e2k-v5', 'e2k-v6', 'e2k-v7', 'riscv64', 'riscv32', 'xtensalx6', 'xtensalx106', 'xtensalx7', 'tc131', 'tc16', 'tc161', 'tc162', 'tc18']
+ARCH=$(echo "${ARCH_CLEANED}" | tr '[:upper:]' '[:lower:]' | sed \
+    -e 's/powerpc/ppc/' -e 's/i[36]86/x86/' -e 's/i386/x86/' \
+    -e 's/aarch64/armv8/' -e 's/arm64.*/armv8/' \
+    -e 's/armeabi-v7a/armv7/' -e 's/armv7a/armv7/' \
+    -e 's/xtensa$/xtensalx7/' -e 's/armv5$/armv5el/')
 OS_NORMALIZED=$(echo "${OS_CLEANED}" | sed -e 's/Darwin/Macos/' -e 's/W64/Windows/')
 OS="$OS_NORMALIZED"; COMPILER="$COMPILER_CLEANED"
 if [ -n "${ANDROID_API}" ]; then OS="Android"; fi
