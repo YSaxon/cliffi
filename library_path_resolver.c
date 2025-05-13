@@ -19,6 +19,10 @@ const char* library_extension = ".so";
 const char* ENV_DELIM = ":";
 #endif
 
+#if !defined(__WIN32) && !defined(__APPLE__) && !defined(__ANDROID__)
+#define use_ld_so_conf
+#endif
+
 #define MAX_PATH_LENGTH 4096
 
 // Function to check if a string ends with a specific substring
@@ -178,7 +182,7 @@ static bool FindInStandardPaths(const char* library_name, char* resolved_path) {
 }
 
 // Function to find library in /etc/ld.so.conf file (exclude windows and mac)
-#if !defined(_WIN32) //&& !defined(__APPLE__)
+#ifdef use_ld_so_conf
 #include <glob.h>                   // For glob(), globfree()
 #include <ctype.h>  // For isspace
 #include <stddef.h> // For size_t
@@ -389,7 +393,7 @@ static bool FindSharedLibrary(const char* library_name, char* resolved_path) {
     bool found = FindInEnvVar("PATH", library_name, resolved_path);
 #else
     bool found = FindInEnvVar("LD_LIBRARY_PATH", library_name, resolved_path)
-#ifndef __APPLE__
+#ifdef use_ld_so_conf
                  || FindInLdSoConfFile("/etc/ld.so.conf", library_name, resolved_path, 0)
 #endif
                  || FindInStandardPaths(library_name, resolved_path);
