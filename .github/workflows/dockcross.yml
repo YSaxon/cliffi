@@ -205,7 +205,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Download Release
-        uses: robinraju/release-downloader@v1.10
+        uses: robinraju/release-downloader@v1.12
         with:
           releaseId: ${{ needs.create_release.outputs.release_id }}
           fileName: cliffi-${{ matrix.os == 'windows-latest' && 'windows-static-x64.exe' || 'linux-x64' }}
