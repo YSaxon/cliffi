@@ -212,7 +212,7 @@ jobs:
 
       - name: Run Smoke Test
         run: |
-          ls -al
+          ls -l
           mv cliffi-* cliffi
           chmod +x cliffi
           ./cliffi libc i strlen test
