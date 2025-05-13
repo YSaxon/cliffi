@@ -390,7 +390,7 @@ static bool FindSharedLibrary(const char* library_name, char* resolved_path) {
 #else
     bool found = FindInEnvVar("LD_LIBRARY_PATH", library_name, resolved_path)
 #ifndef __APPLE__
-                 || FindInLdSoConfFile("/etc/ld.so.conf", library_name, resolved_path)
+                 || FindInLdSoConfFile("/etc/ld.so.conf", library_name, resolved_path, 0)
 #endif
                  || FindInStandardPaths(library_name, resolved_path);
 #endif
