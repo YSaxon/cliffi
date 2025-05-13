@@ -701,10 +701,12 @@ int main(int argc, char* argv[]) {
             argc--;
             argv++;
             isTestEnvExit1OnFail = false;
+            fprintf(stderr, "isTestEnvExit1OnFail -> false\n");
         } else {
+            fprintf(stderr, "isTestEnvExit1OnFail -> true\n");
             isTestEnvExit1OnFail = true; // in general we want to exit on fail in test mode so that mistakes in the test script are caught
         }
-        #if !defined(_WIN32) && !defined(_WIN64)
+#if false //!defined(_WIN32) && !defined(_WIN64)
         int pipefd[2];
         if (pipe(pipefd) == -1) {
             perror("pipe");
@@ -733,27 +735,75 @@ int main(int argc, char* argv[]) {
             waitpid(pid, &status, 0);
             exit(WEXITSTATUS(status));
         }
-#else // a simpler version for windows
+// In main() function, inside the --repltest block:
+
+#else // a simpler version for windows (inside the --repltest block)
+        fprintf(stderr, "[DEBUG] Cliffi: Windows --repltest path executing.\n"); // For clarity
         checkAndRunCliffiInits();
-        //just feed each line to the repl execute func directly, by concatenating inputs after arg[2] except splitting for newline chars
-        char* command = malloc(1024);
-        command[0] = '\0'; // initialize the command
+        char* command_buffer = (char*)malloc(1024);
+        if (!command_buffer) {
+            perror("Failed to allocate command_buffer for --repltest");
+            return 1;
+        }
+        command_buffer[0] = '\0';
+        int overall_test_exit_code = 0; // To track if any command would have caused an exit
+
         for (int i = 2; i < argc; i++) {
             bool isNewLine = strcmp(argv[i], "\n") == 0;
-            bool isFinalArg = argc - 1 == i;
-            if (!isNewLine || isFinalArg ) {
-                strcat(command, argv[i]);
-                strcat(command, " ");
+            bool isFinalArg = (i == argc - 1);
+
+            // Concatenate parts of the command, handling spaces correctly
+            if (!isNewLine) {
+                if (strlen(command_buffer) + strlen(argv[i]) + 1 < 1024) {
+                    strcat(command_buffer, argv[i]);
+                    // Add a space if not the last part of a multi-part command before a newline or end
+                    if (!isFinalArg && !(strcmp(argv[i+1], "\n") == 0) ) {
+                         strcat(command_buffer, " ");
+                    }
+                } else {
+                    fprintf(stderr, "Error: Command buffer overflow in --repltest for Windows.\n");
+                    overall_test_exit_code = 1;
+                    break;
+                }
             }
-            if (isNewLine || isFinalArg ){
-                command[strlen(command) - 1] = '\0'; // remove the trailing space
-                printf("Executing \"%s\"\n", command);
-                parseREPLCommand(command);
-                command[0] = '\0'; // reset the command
+
+            // Execute the command if it's complete (newline encountered or it's the very last argument)
+            if ((isNewLine || isFinalArg) && strlen(command_buffer) > 0) {
+                printf("Executing \"%s\"\n", command_buffer);
+                int repl_command_should_break = 0;
+                TRY // <--- Wrap the command execution
+                    repl_command_should_break = parseREPLCommand(command_buffer);
+                    if (repl_command_should_break) {
+                        // If parseREPLCommand signals an exit (e.g., "exit" command)
+                        // We should stop processing further test commands.
+                        // However, the test itself might want to verify this behavior.
+                        // For now, let's assume an exit command in tests means stop.
+                        fprintf(stderr, "[DEBUG] Cliffi: REPL command signaled exit.\n");
+                        goto end_windows_repltest_loop; // Break out of the outer for loop
+                    }
+                CATCHALL
+                    printException(); // Print the error as it happens
+                    // isTestEnvExit1OnFail is false in your Wine log's scenario
+                    if (isTestEnvExit1OnFail) {
+                        overall_test_exit_code = 1; // Mark that a failure occurred
+                        // If strict exit-on-fail for any command in test:
+                        // free(command_buffer);
+                        // return 1;
+                        // Or, to continue processing other test commands but report failure at end:
+                        fprintf(stderr, "Error in command (isTestEnvExit1OnFail=true), test would exit. Forcing continuation for --noexitonfail logic.\n");
+                        // If --noexitonfail is truly active, we continue, but overall_test_exit_code will be 1 if it was true
+                    }
+                    // This simulates the "Restarting REPL..." behavior by allowing the loop to continue to the next test command
+                    fprintf(stderr, "Error handled in test command, proceeding to next command...\n");
+                END_TRY
+
+                command_buffer[0] = '\0'; // Reset buffer for the next command
             }
         }
-        return(0);
-        #endif
+end_windows_repltest_loop: // Label for goto
+        free(command_buffer);
+        return overall_test_exit_code; // Return 0 if all commands that would have passed (given noexitonfail) did so
+#endif
     } else if (argc > 1 && strcmp(argv[1], "--repl") == 0)
     replmode: {
         checkAndRunCliffiInits();
