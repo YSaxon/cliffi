@@ -302,18 +302,13 @@ void segfault_handler(int sig, siginfo_t *info, void *ucontext) {
 void segfault_handler(int signal) {
     if (!is_main_thread()) {
         fprintf(stderr, "Caught segfault on non-main thread. Terminating thread.\n");
+        printStackTrace();
+        if (isTestEnvExit1OnFail) exit(1);
         terminateThread();
     }
     current_exception_message = malloc(strlen("Segmentation fault in section: ") + strlen(SEGFAULT_SECTION) + 1);
     strcpy(current_exception_message, "Segmentation fault in section: ");
     strcat(current_exception_message, SEGFAULT_SECTION);
-
-    if (!is_main_thread()) {
-        fprintf(stderr, "Caught segfault on non-main thread. Terminating thread.\n");
-        printStackTrace();
-        if (isTestEnvExit1OnFail) exit(1);
-        terminateThread();
-    }
 
     raiseException(1, "Segmentation fault in section: %s\n", SEGFAULT_SECTION);
     // siglongjmp(*current_exception_buffer, 1);
