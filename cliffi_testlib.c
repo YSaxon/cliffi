@@ -71,7 +71,23 @@ void do_segfault_in_another_thread() {
     pthread_join(thread, NULL);
     #else
     #include <windows.h>
-    CreateThread(NULL, 0, do_segfault, NULL, 0, NULL);
+    HANDLE hThread; // Variable to store the thread handle
+    DWORD threadId; // Variable to store the thread ID (optional, CreateThread can return it)
+    hThread = CreateThread(
+        NULL,        // Default security attributes
+        0,           // Default stack size
+        (LPTHREAD_START_ROUTINE)do_segfault, // Thread function
+        NULL,        // Argument to thread function
+        0,           // Default creation flags
+        &threadId);  // Pointer to receive thread ID (can be NULL if not needed)
+    if (hThread == NULL) {
+        fprintf(stderr, "Error creating thread: %lu\n", GetLastError());
+        return;
+    }
+    // Wait for the thread to finish
+    WaitForSingleObject(hThread, INFINITE);
+    // Close the thread handle
+    CloseHandle(hThread);
     #endif
 }
 
