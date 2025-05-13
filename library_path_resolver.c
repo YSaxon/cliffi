@@ -38,11 +38,101 @@ static bool file_exists(const char* path) {
     return (stat(path, &buffer) == 0);
 }
 
-// Function to find library in a given path
-static bool FindInPath(const char* base_path, const char* library_name, char* resolved_path) {
-    snprintf(resolved_path, MAX_PATH_LENGTH, "%s/%s", base_path, library_name);
-    return file_exists(resolved_path);
+
+#ifdef __linux__
+#include <dirent.h>     // For opendir, readdir, closedir
+#include <ctype.h>      // For isdigit
+// Assume MAX_PATH_LENGTH is defined
+// Assume file_exists(const char* path) is defined (uses stat)
+// Assume str_ends_with(const char* str, const char* suffix) is defined
+
+// Simplified version comparison: compares "X.Y.Z" strings.
+// Returns >0 if v1 is newer, <0 if v2 is newer, 0 if equal or incomparable.
+// A truly robust implementation (like strverscmp) is more complex.
+static int compare_versions(const char* version_str1, const char* version_str2) {
+    // Simple parsing for major.minor.patch
+    long major1 = 0, minor1 = 0, patch1 = 0;
+    long major2 = 0, minor2 = 0, patch2 = 0;
+
+    // sscanf will stop at the first non-matching char, which is fine.
+    sscanf(version_str1, "%ld.%ld.%ld", &major1, &minor1, &patch1);
+    sscanf(version_str2, "%ld.%ld.%ld", &major2, &minor2, &patch2);
+
+    if (major1 != major2) return (major1 > major2) ? 1 : -1;
+    if (minor1 != minor2) return (minor1 > minor2) ? 1 : -1;
+    if (patch1 != patch2) return (patch1 > patch2) ? 1 : -1;
+    return 0;
 }
+#endif
+
+static bool FindInPath(const char* base_path, const char* library_name_to_check, char* resolved_path) {
+    // Standard direct match:
+    // This is the default for non-Linux OS, or for Linux if the input isn't like "libname.so",
+    // or if the Linux-specific version scan above didn't yield a result.
+    snprintf(resolved_path, MAX_PATH_LENGTH, "%s/%s", base_path, library_name_to_check);
+    if (file_exists(resolved_path)) {
+        return true;
+    }
+
+    #if defined(__linux__)
+    // On Linux, if library_name_to_check looks like a base .so name (e.g., "libfoo.so"),
+    // we also try finding a versioned file (e.g., "libfoo.so.6") in the same directory,
+    if (str_ends_with(library_name_to_check, ".so")) {
+        DIR *dirp;
+        struct dirent *entry;
+        char best_match_found_path[MAX_PATH_LENGTH] = {0}; // Full path of the best match
+        char current_best_version_string[MAX_PATH_LENGTH] = {0}; // "X.Y.Z" part of the best match
+
+        size_t base_name_len = strlen(library_name_to_check);
+
+        dirp = opendir(base_path);
+        if (dirp != NULL) {
+            while ((entry = readdir(dirp)) != NULL) {
+                // Check if the entry starts with library_name_to_check,
+                // is followed by '.', and then a digit.
+                // e.g., library_name_to_check = "libc.so"
+                // entry->d_name could be "libc.so.6"
+                if (strncmp(entry->d_name, library_name_to_check, base_name_len) == 0 &&
+                    entry->d_name[base_name_len] == '.' && // Character after base_name must be '.'
+                    strlen(entry->d_name) > base_name_len + 1 && // Must have characters after the dot
+                    isdigit((unsigned char)entry->d_name[base_name_len + 1])) { // First char after dot must be a digit
+
+                    char candidate_full_path[MAX_PATH_LENGTH];
+                    snprintf(candidate_full_path, MAX_PATH_LENGTH, "%s/%s", base_path, entry->d_name);
+
+                    if (file_exists(candidate_full_path)) { // Ensure it's a valid file/symlink
+                        const char* version_part = entry->d_name + base_name_len + 1; // Points to "6" in "libc.so.6"
+
+                        if (best_match_found_path[0] == '\0' || // First match
+                            compare_versions(version_part, current_best_version_string) > 0) {
+
+                            strncpy(best_match_found_path, candidate_full_path, MAX_PATH_LENGTH -1);
+                            best_match_found_path[MAX_PATH_LENGTH-1] = '\0';
+
+                            strncpy(current_best_version_string, version_part, MAX_PATH_LENGTH -1);
+                            current_best_version_string[MAX_PATH_LENGTH-1] = '\0';
+                        }
+                    }
+                }
+            }
+            closedir(dirp);
+
+            if (best_match_found_path[0] != '\0') { // If a versioned match was found by scanning
+                strncpy(resolved_path, best_match_found_path, MAX_PATH_LENGTH -1);
+                resolved_path[MAX_PATH_LENGTH-1] = '\0';
+                return true;
+            }
+        }
+
+        return false;
+    }
+    #endif // __linux__
+
+
+
+    return false; // No match found
+}
+
 
 // Function to find library in an environment variable
 static bool FindInEnvVar(const char* env_var, const char* library_name, char* resolved_path) {
@@ -88,7 +178,7 @@ static bool FindInStandardPaths(const char* library_name, char* resolved_path) {
 }
 
 // Function to find library in /etc/ld.so.conf file (exclude windows and mac)
-#if !defined(_WIN32) && !defined(__APPLE__)
+#if !defined(_WIN32) //&& !defined(__APPLE__)
 #include <glob.h>                   // For glob(), globfree()
 #include <ctype.h>  // For isspace
 #include <stddef.h> // For size_t
