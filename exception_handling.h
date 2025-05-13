@@ -44,19 +44,22 @@ void printException();
     hexdump(current_exception_buffer, sizeof(sigjmp_buf)); */ \
     if (sigsetjmp(*newjmpBufferPtr, 1) == 0) {
 
-#define CATCH(messageSearchString) } else { \
-    /*current_exception_buffer = old_exception_buffer; */\
-    if (messageSearchString != NULL && strstr(messageSearchString, current_exception_message) == NULL) { /* this means that the catch handler shouldn't catch it*/ \
-        if (old_exception_buffer != NULL) { siglongjmp(*current_exception_buffer, 1); \
-        } else { \
-            fprintf(stderr, "Not able to rethrow exception.\n"); \
-            goto handleException; \
-        } \
-    } else { \
-        handleException: \
-        current_exception_buffer = old_exception_buffer;
+// #define CATCH(messageSearchString) } else { \
+//     /*current_exception_buffer = old_exception_buffer; */\
+//     if (messageSearchString != NULL && strstr(messageSearchString, current_exception_message) == NULL) { /* this means that the catch handler shouldn't catch it*/ \
+//         if (old_exception_buffer != NULL) { siglongjmp(*current_exception_buffer, 1); \ //<-- current_exception_buffer is probably wrong in that code. maybe we need to replace it with old_exception_buffer? \
+//         } else { \
+//             fprintf(stderr, "Not able to rethrow exception.\n"); \
+//             goto handleException; \
+//         } \
+//     } else { \
+//         handleException: \
+//         current_exception_buffer = old_exception_buffer;
 
-#define CATCHALL CATCH(NULL)
+// #define CATCHALL CATCH(NULL)
+
+#define CATCHALL } else { { handleException: \
+    current_exception_buffer = old_exception_buffer; \
 
 // #if defined (use_backtrace)
 #define freebacktrace free(current_stacktrace_strings); current_stacktrace_strings = NULL; current_stacktrace_size = 0;
