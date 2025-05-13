@@ -210,12 +210,40 @@ jobs:
           releaseId: ${{ needs.create_release.outputs.release_id }}
           fileName: cliffi-${{ matrix.os == 'windows-latest' && 'windows-static-x64.exe' || 'linux-x64' }}
 
-      - name: Run Smoke Test
+      - name: Run Smoke Test (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          dir
+          $cliffiFile = Get-ChildItem -Path . -Filter 'cliffi-*.exe' | Select-Object -First 1
+          if ($null -eq $cliffiFile) {
+            Write-Error "cliffi executable not found!"
+            exit 1
+          }
+          Write-Host "Found executable: $($cliffiFile.Name)"
+          Move-Item -Path $cliffiFile.FullName -Destination "cliffi.exe"
+          $OUTPUT = ./cliffi.exe msvcrt i strlen test
+          Write-Host "Output: $OUTPUT"
+          # Example: Check if output contains "Length:" followed by a number
+          if ($OUTPUT -match "Length:\s*\d+") { # \s* for whitespace, \d+ for one or more digits
+            Write-Host "Smoke test passed on Windows"
+          } else {
+            Write-Host "Smoke test failed on Windows"
+            exit 1
+          }
+      - name: Run Smoke Test (Linux)
+        if: runner.os == 'Linux'
         run: |
           ls -l
           mv cliffi-* cliffi
           chmod +x cliffi
-          ./cliffi libc i strlen test
+          ./cliffi libc i strlen test 2>&1 | tee output
+          # Example: Check if output contains "Length:" followed by a number
+          if grep -q "Length: [0-9]\+" output; then
+            echo "Smoke test passed on Linux"
+          else
+            echo "Smoke test failed on Linux"
+            exit 1
+          fi
 
       - name: Setup tmate session if failed
         if: ${{ failure() }}
