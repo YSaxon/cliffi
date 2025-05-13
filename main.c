@@ -748,7 +748,13 @@ int main(int argc, char* argv[]) {
             if (isNewLine || isFinalArg ){
                 command[strlen(command) - 1] = '\0'; // remove the trailing space
                 printf("Executing \"%s\"\n", command);
+                TRY
                 parseREPLCommand(command);
+                CATCHALL
+                    printException();
+                    if (isTestEnvExit1OnFail) exit(1);
+                    fprintf(stderr, "Restarting REPL...\n");
+                END_TRY
                 command[0] = '\0'; // reset the command
             }
         }
