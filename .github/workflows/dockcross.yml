@@ -217,6 +217,10 @@ jobs:
           chmod +x cliffi
           ./cliffi libc i strlen test
 
+      - name: Setup tmate session if failed
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+
   finalize_release:
     needs: [build, create_release]
     runs-on: ubuntu-latest
