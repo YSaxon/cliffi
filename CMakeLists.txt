@@ -126,11 +126,12 @@ message("attempting link readline::readline")
 endif()
 endif()
 
+if(NOT ANDROID) # on android this breaks things
 find_library(DL_LIBRARY NAMES dl)
 if(DL_LIBRARY)
   target_link_libraries(cliffi PRIVATE ${DL_LIBRARY})
 endif()
-
+endif()
 
 target_include_directories(cliffi PRIVATE
         ${LIBFFI_INCLUDE_DIRS}
