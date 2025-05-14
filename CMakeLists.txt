@@ -1251,23 +1251,18 @@ PASS_REGULAR_EXPRESSION "svar = \"?Hello, cliffi.\"?"
 FIXTURES_REQUIRED cliffi_init_fixture
 )
 
-if(NOT ANDROID)
-set_tests_properties(
-    repl_test_cliffi_init PROPERTIES
-    REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
-)
-endif()
+
 
 endif()
 
 if(ANDROID)
 add_test(NAME setup_cliffi_init
-  COMMAND adb shell sh -c "echo \"
-   set var 4\n
-   svar = -s placeholder\n
-   ${TESTLIB} svar get_message\n
-   ${TESTLIB} i increment_global\n
-    \" > ${ANDROID_TARGET_DIR}/.cliffi_init"
+COMMAND sh -c "echo \"
+set var 4\n
+svar = -s placeholder\n
+${TESTLIB} svar get_message\n
+${TESTLIB} i increment_global\n
+ \" > ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init && adb push ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init ${ANDROID_TARGET_DIR}/.cliffi_init"
 )
 else()
 add_test(NAME setup_cliffi_init
@@ -1302,7 +1297,7 @@ set_tests_properties(
 test_cliffi_init_without_repl PROPERTIES
 PASS_REGULAR_EXPRESSION "Function returned: 2" # because it was incremented once in the init
 FIXTURES_REQUIRED cliffi_init_fixture
-REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
+# REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
 )
 
 add_test(NAME test_cliffi_init_without_repl_using_var
@@ -1313,8 +1308,17 @@ set_tests_properties(
 test_cliffi_init_without_repl_using_var PROPERTIES
 PASS_REGULAR_EXPRESSION "Function returned: 8" # because it was incremented once in the init
 FIXTURES_REQUIRED cliffi_init_fixture
-REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
+# REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
 )
+if(NOT ANDROID)
+set_tests_properties(
+    repl_test_cliffi_init
+    test_cliffi_init_without_repl
+    test_cliffi_init_without_repl_using_var
+    PROPERTIES
+    REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
+)
+endif()
 
 # Define the test that requires the fixture
 # add_test(NAME TestAddFunctionWithSH
