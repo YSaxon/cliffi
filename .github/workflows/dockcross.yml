@@ -157,21 +157,27 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+          sudo apt install adb -y
+
+      - name: Setup tmate session to test android-emulator on x86_64
+        if: (startsWith(matrix.dockcross_image, 'android') && endsWith(matrix.dockcross_image,'x86_64') == true)
+        uses: mxschmitt/action-tmate@v3
+        with:
+          detached: true
 
       - name: test via android-emulator for now only on x86_64
         #only android builds
         if: (startsWith(matrix.dockcross_image, 'android') && endsWith(matrix.dockcross_image,'x86_64') == true)
         uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 23
+          script: sleep 1200
 
-      - name: Setup tmate session to test android-emulator on x86_64
-        if: (startsWith(matrix.dockcross_image, 'android') && endsWith(matrix.dockcross_image,'x86_64') == true)
-        uses: mxschmitt/action-tmate@v3
 
       - name: Setup tmate session if failed
         if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
-        # with:
-        #   detached: true
+
 
       # - name: conaninstall
       #   run: |
