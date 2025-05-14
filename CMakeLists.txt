@@ -1249,8 +1249,14 @@ repl_test_cliffi_init PROPERTIES
 PASS_REGULAR_EXPRESSION "int var = 4"
 PASS_REGULAR_EXPRESSION "svar = \"?Hello, cliffi.\"?"
 FIXTURES_REQUIRED cliffi_init_fixture
-REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
 )
+
+if(NOT ANDROID)
+set_tests_properties(
+    repl_test_cliffi_init PROPERTIES
+    REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
+)
+endif()
 
 endif()
 
