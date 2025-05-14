@@ -19,7 +19,7 @@ set -e # Exit immediately if a command exits with a non-zero status.
 # # Let's assume a persistent target directory for this model.
 TARGET_DIR_ON_DEVICE="/data/local/tmp/"
 
-# ADB_CMD="adb"
+ADB_CMD="adb"
 # # --- End Configuration ---
 
 # # --- Ensure flag directory exists ---
