@@ -167,7 +167,7 @@ static bool FindInEnvVar(const char* env_var, const char* library_name, char* re
 // Function to find library in standard paths
 static bool FindInStandardPaths(const char* library_name, char* resolved_path) {
 #if defined(__ANDROID__)
-    const char* standard_paths[] = {"/system/lib64", "/system/lib", "/system/vendor/lib64", "/system/vendor/lib",  NULL}; #put lib64 first bc otherwise fails sometimes on non64 systems
+    const char* standard_paths[] = {"/system/lib64", "/system/lib", "/system/vendor/lib64", "/system/vendor/lib",  NULL};
 #elif defined(__APPLE__)
     const char* standard_paths[] = {"/usr/lib", "/lib", "/usr/local/lib", "/opt/local/lib", "/opt/homebrew/lib", NULL};
 #else
