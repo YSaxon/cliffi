@@ -126,11 +126,12 @@ message("attempting link readline::readline")
 endif()
 endif()
 
+if(NOT ANDROID) # on android this breaks things
 find_library(DL_LIBRARY NAMES dl)
 if(DL_LIBRARY)
   target_link_libraries(cliffi PRIVATE ${DL_LIBRARY})
 endif()
-
+endif()
 
 target_include_directories(cliffi PRIVATE
         ${LIBFFI_INCLUDE_DIRS}
@@ -171,8 +172,8 @@ if(ANDROID)
 
 
     # # For Android, ensure linker flags are appropriate
-    # set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
-    # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--export-dynamic")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--export-dynamic")
 # endif()
 
 # if(ANDROID)
