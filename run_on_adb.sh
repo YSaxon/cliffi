@@ -34,11 +34,8 @@ for ARG in "${PROCESSED_ARGS_FOR_DEVICE[@]}"; do
     DEVICE_COMMAND_STR+=" \"${ESCAPED_ARG}\""
 done
 
-#&& export LD_LIBRARY_PATH=${TARGET_DIR_ON_DEVICE}:\${LD_LIBRARY_PATH}
 FULL_SHELL_COMMAND="cd ${TARGET_DIR_ON_DEVICE}  && ${DEVICE_COMMAND_STR}"
 
-echo "ADB_SCRIPT_LOG: Executing on device: ${FULL_SHELL_COMMAND}"
-${ADB_CMD} shell "${FULL_SHELL_COMMAND}"
-EXIT_CODE=$?
-
-exit ${EXIT_CODE}
+${ADB_CMD} shell "${FULL_SHELL_COMMAND}; echo \$? > /data/local/tmp/exit_code.txt"
+DEVICE_EXIT_CODE=$(${ADB_CMD} exec-out cat /data/local/tmp/exit_code.txt | tr -d '[:space:]')
+exit ${DEVICE_EXIT_CODE}
