@@ -166,14 +166,40 @@ jobs:
         with:
           detached: true
 
-      - name: test via android-emulator for now only on x86_64
-        #only android builds
+      - name: AVD cache
         if: (startsWith(matrix.dockcross_image, 'android') && endsWith(matrix.dockcross_image,'x86_64') == true)
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ matrix.dockcross_image }}
+
+      - name: create AVD and generate snapshots for caching
+        #only android builds
+        if: steps.avd-cache.outputs.cache-hit != 'true' && (startsWith(matrix.dockcross_image, 'android') && endsWith(matrix.dockcross_image,'x86_64') == true)
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 23
           arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+
+      - name: test via android-emulator for now only on x86_64
+      #only android builds
+        if: steps.avd-cache.outputs.cache-hit != 'true' && (startsWith(matrix.dockcross_image, 'android') && endsWith(matrix.dockcross_image,'x86_64') == true)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 23
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
           script: ./prepare_and_test_via_adb.sh || sleep 1200
+
 
       - name: Setup tmate session if failed
         if: ${{ failure() }}
