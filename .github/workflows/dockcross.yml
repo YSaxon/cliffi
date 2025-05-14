@@ -173,15 +173,7 @@ jobs:
         with:
           api-level: 23
           arch: x86_64
-          script: sleep 1200
-
-      - name: try push and test
-        if: (startsWith(matrix.dockcross_image, 'android') && endsWith(matrix.dockcross_image,'x86_64') == true)
-        run: |
-          adb push /work/cliffi /data/local/tmp
-          adb push /work/libcliffi_test.so /data/local/tmp/libcliffi_test.so
-          cd /work/cliffi/build; ctest
-
+          script: ./prepare_and_test_via_adb.sh || sleep 1200
 
       - name: Setup tmate session if failed
         if: ${{ failure() }}
