@@ -174,27 +174,29 @@ endif()
 
 if(ANDROID)
     # Custom command for the executable
-    add_custom_command(
-        TARGET cliffi
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E echo "Pushing cliffi to ${ANDROID_TARGET_DIR}/cliffi on device..."
-        COMMAND adb shell mkdir -p ${ANDROID_TARGET_DIR}
-        COMMAND adb push $<TARGET_FILE:cliffi> ${ANDROID_TARGET_DIR}/cliffi
-        COMMAND adb shell chmod +x ${ANDROID_TARGET_DIR}/cliffi
-        VERBATIM
-        COMMENT "Pushing cliffi executable to Android device and setting permissions."
-    )
+    # add_custom_command(
+    #     TARGET cliffi
+    #     POST_BUILD
+    #     COMMAND ${CMAKE_COMMAND} -E echo "Pushing cliffi to ${ANDROID_TARGET_DIR}/cliffi on device..."
+    #     COMMAND adb shell mkdir -p ${ANDROID_TARGET_DIR}
+    #     COMMAND adb push $<TARGET_FILE:cliffi> ${ANDROID_TARGET_DIR}/cliffi
+    #     COMMAND adb shell chmod +x ${ANDROID_TARGET_DIR}/cliffi
+    #     VERBATIM
+    #     COMMENT "Pushing cliffi executable to Android device and setting permissions."
+    # )
 
-    # Custom command for the shared library
-    add_custom_command(
-        TARGET cliffitest
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E echo "Pushing libcliffi_test to ${ANDROID_TARGET_DIR}/ on device..."
-        COMMAND adb shell mkdir -p ${ANDROID_TARGET_DIR} # Redundant if cliffi runs first, but safe
-        COMMAND adb push $<TARGET_FILE:cliffitest> ${ANDROID_TARGET_DIR}/$<TARGET_FILE_NAME:cliffitest>
-        VERBATIM
-        COMMENT "Pushing cliffitest library to Android device."
-    )
+    # # Custom command for the shared library
+    # add_custom_command(
+    #     TARGET cliffitest
+    #     POST_BUILD
+    #     COMMAND ${CMAKE_COMMAND} -E echo "Pushing libcliffi_test to ${ANDROID_TARGET_DIR}/ on device..."
+    #     COMMAND adb shell mkdir -p ${ANDROID_TARGET_DIR} # Redundant if cliffi runs first, but safe
+    #     COMMAND adb push $<TARGET_FILE:cliffitest> ${ANDROID_TARGET_DIR}/$<TARGET_FILE_NAME:cliffitest>
+    #     VERBATIM
+    #     COMMENT "Pushing cliffitest library to Android device."
+    # )
+
+    set (ANDROID_TARGET_DIR /data/local/tmp/)
 
     set(TESTLIB ${ANDROID_TARGET_DIR}/$<TARGET_FILE_NAME:cliffitest>)
     set(CLIFFI ${ANDROID_TARGET_DIR}/cliffi)
