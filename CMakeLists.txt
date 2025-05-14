@@ -1282,9 +1282,15 @@ endif()
 set_tests_properties(setup_cliffi_init PROPERTIES FIXTURES_SETUP cliffi_init_fixture)
 
 # Create cleanup fixture for the test
+if(ANDROID)
+add_test(NAME cleanup_cliffi_init
+  COMMAND adb shell rm ${ANDROID_TARGET_DIR}/.cliffi_init
+)
+else()
 add_test(NAME cleanup_cliffi_init
   COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
 )
+endif()
 set_tests_properties(cleanup_cliffi_init PROPERTIES FIXTURES_CLEANUP cliffi_init_fixture)
 
 
