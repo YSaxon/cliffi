@@ -380,14 +380,45 @@ static bool FindInLdSoConfFile(const char* conf_file, const char* library_name, 
 
 static bool FindSharedLibrary(const char* library_name, char* resolved_path) {
 
-    if (library_name[0] == '/') {
-        if (file_exists(library_name)) {
-            strncpy(resolved_path, library_name, MAX_PATH_LENGTH);
-            resolved_path[MAX_PATH_LENGTH - 1] = '\0';
-            return true;
+    if (!library_name || library_name[0] == '\0') {
+        return false; // Invalid input
+    }
+
+#if defined(_WIN32)
+    if (strchr(library_name, '/') != NULL || strchr(library_name, '\\') != NULL) {
+        char full_path_buffer[MAX_PATH_LENGTH];
+
+        // _fullpath converts a relative or partial path to an absolute path.
+        // It does not require the file to exist at the time of calling.
+        if (_fullpath(full_path_buffer, library_name, MAX_PATH_LENGTH) != NULL) {
+            // Now that we have a potential full path, check if the file actually exists.
+            if (file_exists(full_path_buffer)) {
+                strncpy(resolved_path, full_path_buffer, MAX_PATH_LENGTH);
+                resolved_path[MAX_PATH_LENGTH - 1] = '\0'; // Ensure null-termination
+                return true;
+            }
         }
+        // If _fullpath failed or the file doesn't exist at the resolved path,
+        // and a specific path was given, we consider it not found by this direct check.
         return false;
     }
+#else // POSIX-like systems (Linux, macOS, etc.)
+    if (strchr(library_name, '/') != NULL) {
+        char canonical_path[MAX_PATH_LENGTH];
+
+        // realpath resolves ".." , ".", symbolic links, and requires the path to exist.
+        // It returns the canonicalized absolute pathname.
+        if (realpath(library_name, canonical_path) != NULL) {
+            // realpath succeeded, so the file exists and canonical_path is the absolute path.
+            strncpy(resolved_path, canonical_path, MAX_PATH_LENGTH);
+            resolved_path[MAX_PATH_LENGTH - 1] = '\0'; // Ensure null-termination
+            return true;
+        }
+        // If realpath failed (e.g., file doesn't exist, path is invalid, or buffer too small),
+        // and a specific path was given, we consider it not found by this direct check.
+        return false;
+    }
+#endif
 
 #ifdef _WIN32
     bool found = FindInEnvVar("PATH", library_name, resolved_path);
