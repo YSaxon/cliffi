@@ -312,38 +312,15 @@ set_tests_properties(ModifyPoint PROPERTIES PASS_REGULAR_EXPRESSION "Arg 0 .* st
 
 add_test(NAME ComplexStruct #
             COMMAND cliffi ${TESTLIB} v test_complex_struct -S: -c a 4 1.1 0x33 -S: 8 2.2 :S -i 54 5.4 -pS: 7 9.9 :S :S )
-set_tests_properties(ComplexStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.c: a")
-set_tests_properties(ComplexStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.x: 4")
-set_tests_properties(ComplexStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.y: 1.10*")
-set_tests_properties(ComplexStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.c2: 3")
-set_tests_properties(ComplexStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.p->x: 8")
-set_tests_properties(ComplexStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.p->y: 2.20*")
-set_tests_properties(ComplexStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.x2: 54")
-set_tests_properties(ComplexStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.y2: 5.40*")
-set_tests_properties(ComplexStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.p2.x: 7")
-set_tests_properties(ComplexStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.p2.y: 9.90*")
+set_tests_properties(ComplexStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.c: a;s.x: 4;s.y: 1.10*;s.c2: 3;s.p->x: 8;s.p->y: 2.20*;s.x2: 54;s.y2: 5.40*;s.p2.x: 7;s.p2.y: 9.90*")
 
 add_test(NAME Complex_P_Struct #
             COMMAND cliffi ${TESTLIB} v test_p_complex_struct -pS: -c a 4 1.1 0x33 -S: 8 2.2 :S -i 54 5.4 -pS: 7 9.9 :S :S )
-set_tests_properties(Complex_P_Struct PROPERTIES PASS_REGULAR_EXPRESSION "s->c: a")
-set_tests_properties(Complex_P_Struct PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 4")
-set_tests_properties(Complex_P_Struct PROPERTIES PASS_REGULAR_EXPRESSION "s->y: 1.10*")
-set_tests_properties(Complex_P_Struct PROPERTIES PASS_REGULAR_EXPRESSION "s->c2: 3")
-set_tests_properties(Complex_P_Struct PROPERTIES PASS_REGULAR_EXPRESSION "s->p->x: 8")
-set_tests_properties(Complex_P_Struct PROPERTIES PASS_REGULAR_EXPRESSION "s->p->y: 2.20*")
-set_tests_properties(Complex_P_Struct PROPERTIES PASS_REGULAR_EXPRESSION "s->x2: 54")
-set_tests_properties(Complex_P_Struct PROPERTIES PASS_REGULAR_EXPRESSION "s->y2: 5.40*")
-set_tests_properties(Complex_P_Struct PROPERTIES PASS_REGULAR_EXPRESSION "s->p2.x: 7")
-set_tests_properties(Complex_P_Struct PROPERTIES PASS_REGULAR_EXPRESSION "s->p2.y: 9.90*")
+set_tests_properties(Complex_P_Struct PROPERTIES PASS_REGULAR_EXPRESSION "s->c: a;s->x: 4;s->y: 1.10*;s->c2: 3;s->p->x: 8;s->p->y: 2.20*;s->x2: 54;s->y2: 5.40*;s->p2.x: 7;s->p2.y: 9.90*")
 
 add_test(NAME NestedLargerStruct #
 COMMAND cliffi ${TESTLIB} v test_nested_large_struct -S: -c a -S: 5 3.3 -c b thisisastring :S 77 :S )
-set_tests_properties(NestedLargerStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.c: a")
-set_tests_properties(NestedLargerStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.s.x: 5")
-set_tests_properties(NestedLargerStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.s.y: 3.30*")
-set_tests_properties(NestedLargerStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.s.c: b")
-set_tests_properties(NestedLargerStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.s.s: thisisastring")
-set_tests_properties(NestedLargerStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.x: 77")
+set_tests_properties(NestedLargerStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.c: a;s.s.x: 5;s.s.y: 3.30*;s.s.c: b;s.s.s: thisisastring;s.x: 77")
 
 add_test(NAME return_struct #
 COMMAND cliffi ${TESTLIB} S: i d :S get_point 4 2.2 )
@@ -382,39 +359,19 @@ set_tests_properties(return_p_complex_struct PROPERTIES PASS_REGULAR_EXPRESSION 
 add_test(NAME test_struct_with_embedded_array #
     # COMMAND cliffi ${TESTLIB} v test_struct_with_embedded_array -S: 1 -ac10 h,e,l,l,o 1,2,3 4 )
 COMMAND cliffi ${TESTLIB} v test_struct_with_embedded_array -S: 1 -ac10 h,e,l,l,o 1,2,3 4 :S )
-set_tests_properties(test_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s.x: 1")
-set_tests_properties(test_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s.a[0]: 1")
-set_tests_properties(test_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s.a[1]: 2")
-set_tests_properties(test_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s.a[2]: 3")
-set_tests_properties(test_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s.y: 4")
-set_tests_properties(test_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s.s: hello")
+set_tests_properties(test_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s.x: 1;s.a[0]: 1;s.a[1]: 2;s.a[2]: 3;s.y: 4;s.s: hello")
 
 add_test(NAME test_p_struct_with_embedded_array #
     COMMAND cliffi ${TESTLIB} v test_p_struct_with_embedded_array -pS: 1 -ac10 h,e,l,l,o 1,2,3 4 :S )
-set_tests_properties(test_p_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1")
-set_tests_properties(test_p_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s->s: hello")
-set_tests_properties(test_p_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s->a[0]: 1")
-set_tests_properties(test_p_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s->a[1]: 2")
-set_tests_properties(test_p_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s->a[2]: 3")
-set_tests_properties(test_p_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s->y: 4")
+set_tests_properties(test_p_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1;s->s: hello;s->a[0]: 1;s->a[1]: 2;s->a[2]: 3;s->y: 4")
 
 add_test(NAME test_p_struct_with_embedded_array_intonly #
     COMMAND cliffi ${TESTLIB} v test_p_struct_with_embedded_array_intonly -pS: 1 1,2,3 4 :S )
-set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1")
-set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->s: hello")
-set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->a[0]: 1")
-set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->a[1]: 2")
-set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->a[2]: 3")
-set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->y: 4")
-set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "Arg 0 after function .*1, 2, 3")
+set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1;s->s: hello;s->a[0]: 1;s->a[1]: 2;s->a[2]: 3;s->y: 4;Arg 0 after function .*1, 2, 3")
 
 add_test(NAME test_p_struct_with_embedded_array_intonly_return_struct #
     COMMAND cliffi ${TESTLIB} S: i ai3 i :S test_p_struct_with_embedded_array_intonly_return_struct -pS: 1 1,2,3 4 :S )
-set_tests_properties(test_p_struct_with_embedded_array_intonly_return_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1")
-set_tests_properties(test_p_struct_with_embedded_array_intonly_return_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->a[0]: 1")
-set_tests_properties(test_p_struct_with_embedded_array_intonly_return_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->a[1]: 2")
-set_tests_properties(test_p_struct_with_embedded_array_intonly_return_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->a[2]: 3")
-set_tests_properties(test_p_struct_with_embedded_array_intonly_return_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->y: 4")
+set_tests_properties(test_p_struct_with_embedded_array_intonly_return_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1;s->a[0]: 1;s->a[1]: 2;s->a[2]: 3;s->y: 4")
 
 add_test(NAME return_struct_with_embedded_array_intonly #
     COMMAND cliffi ${TESTLIB} S: i ai3 i :S return_struct_with_embedded_array_intonly )
