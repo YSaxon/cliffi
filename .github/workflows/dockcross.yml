@@ -42,6 +42,7 @@ jobs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
       release_id: ${{ steps.create_release.outputs.id }}
       version: ${{ steps.version.outputs.version }}
+      tag_name: ${{ github.ref_name == 'master' && steps.version.outputs.version || format ('{0}-{1}', steps.version.outputs.version, steps.vars.outputs.COMMIT_SHORT_SHA) }}
 
 
   build:
@@ -203,6 +204,7 @@ jobs:
       - name: upload
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: needs.create_release.outputs.tag_name
           files: cliffi-${{ matrix.dockcross_image }}${{ (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm' || contains(matrix.dockcross_image,'s390x'))) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
 
 
