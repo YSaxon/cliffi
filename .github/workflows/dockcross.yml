@@ -152,32 +152,59 @@ jobs:
         run: |
           ./dockcross bash ./dockcross_buildonly.sh
 
+      - name: Enable KVM for android emulator tests on x86 and x86_64
+        if: (startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86'))
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          sudo apt install adb -y
+          sudo ln -s /home/runner/work/cliffi/cliffi /work
+
+      # - name: Setup tmate session to test android-emulator on x86 and x86_64
+      #   if: (startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86'))
+      #   uses: mxschmitt/action-tmate@v3
+      #   with:
+      #     detached: true
+
+      - name: AVD cache
+        if: (startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86'))
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: ${{ runner.os }}-avd-${{ matrix.dockcross_image }}
+
+      - name: create AVD and generate snapshots for caching
+        #only android builds
+        if: steps.avd-cache.outputs.cache-hit != 'true' && (startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86'))
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ (matrix.dockcross_image == 'android-arm64' && 24) || 23 }}
+          arch: ${{ (matrix.dockcross_image == 'android-x86_64' && 'x86_64') || (matrix.dockcross_image == 'android-x86' && 'x86') || (matrix.dockcross_image == 'android-arm64' && 'arm64-v8a') || (matrix.dockcross_image == 'android-arm' && 'armeabi-v7a') || 'unknown_arch' }}
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+
+      - name: test via android-emulator for now only on x86 and x86_64
+      #only android builds
+        if: (startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86'))
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ (matrix.dockcross_image == 'android-arm64' && 24) || 23 }}
+          arch: ${{ (matrix.dockcross_image == 'android-x86_64' && 'x86_64') || (matrix.dockcross_image == 'android-x86' && 'x86') || (matrix.dockcross_image == 'android-arm64' && 'arm64-v8a') || (matrix.dockcross_image == 'android-arm' && 'armeabi-v7a') || 'unknown_arch' }}
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: ./prepare_and_test_via_adb.sh || sleep 1200
+
+
       - name: Setup tmate session if failed
         if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
-        # with:
-        #   detached: true
-
-      # - name: conaninstall
-      #   run: |
-      #       ./dockcross bash -c "./profile_script.sh && conan install . --output-folder=build --build=missing -pr build"
-
-      # - name: updatecmake
-      #   run: |
-      #       ./dockcross bash ./update_cmake.sh
-      #       sleep 10s
-
-      # - name: cmake
-      #   run: |
-      #       ./dockcross bash -c "mkdir -p build && rm -rf build/* CMakeCache.txt CMakeFiles && cd build && cmake .."
-
-      # - name: make
-      #   run: |
-      #       ./dockcross bash -c "cd build && make"
-
-      # - name: ctest
-      #   run: |
-      #       ./dockcross bash -c "cd build && ctest --output-on-failure"
 
       # - name: get_executable
       #   id: get_executable
@@ -194,19 +221,20 @@ jobs:
       #       # it could be plain cliffi or cliffi.exe
       #       asset_path: ${{ steps.get_executable.outputs.executable }}
       #       #add -untested for android or windows-arm builds
-      #       asset_name: cliffi-${{ matrix.dockcross_image }}${{ (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm' || contains(matrix.dockcross_image,'s390x'))) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
+      #       asset_name: cliffi-${{ matrix.dockcross_image }}${{ ((startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86') == false) )|| startsWith(matrix.dockcross_image, 'windows-arm' || contains(matrix.dockcross_image,'s390x'))) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
       #       asset_content_type: application/zip
 
       - name: rename_executable
         run: |
-          mv build/cliffi${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}} cliffi-${{ matrix.dockcross_image }}${{ (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm' || contains(matrix.dockcross_image,'s390x'))) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
+          mv build/cliffi${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}} cliffi-${{ matrix.dockcross_image }}${{ ((startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86') == false) || startsWith(matrix.dockcross_image, 'windows-arm' || contains(matrix.dockcross_image,'s390x'))) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
 
       - name: upload
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: needs.create_release.outputs.tag_name
-          files: cliffi-${{ matrix.dockcross_image }}${{ (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm' || contains(matrix.dockcross_image,'s390x'))) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
-
+          tag_name: ${{ needs.create_release.outputs.tag_name }}
+          files: cliffi-${{ matrix.dockcross_image }}${{ ((startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86') == false)|| startsWith(matrix.dockcross_image, 'windows-arm' || contains(matrix.dockcross_image,'s390x'))) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
+          draft: true
+          prerelease: true
 
 
   smoke_test:

@@ -150,8 +150,68 @@ set_target_properties(cliffitest PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIB
 
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pthread")
 
+if(ANDROID)
+    # Path to your wrapper script. Adjust if it's not in CMAKE_SOURCE_DIR.
+    set(ADB_RUNNER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/run_on_adb.sh")
+
+    if(NOT EXISTS "${ADB_RUNNER_SCRIPT}")
+        message(FATAL_ERROR "ADB Runner script not found: ${ADB_RUNNER_SCRIPT}. Please create it or adjust the path.")
+    endif()
+    # Ensure the script is executable by CMake (and thus by CTest)
+    execute_process(COMMAND chmod +x "${ADB_RUNNER_SCRIPT}"
+        RESULT_VARIABLE chmod_result
+        ERROR_QUIET)
+    if(NOT chmod_result EQUAL 0)
+        message(WARNING "Could not make ADB runner script executable: ${ADB_RUNNER_SCRIPT}")
+    endif()
+
+    set(CMAKE_CROSSCOMPILING_EMULATOR "${ADB_RUNNER_SCRIPT}" CACHE STRING "Script to run tests via ADB")
+    message(STATUS "Cross-compiling emulator for Android tests set to: ${CMAKE_CROSSCOMPILING_EMULATOR}")
+
+    set_property(TARGET cliffi PROPERTY CROSSCOMPILING_EMULATOR "${ADB_RUNNER_SCRIPT}")
+
+
+    # # For Android, ensure linker flags are appropriate
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--export-dynamic")
+# endif()
+
+# if(ANDROID)
+    # Custom command for the executable
+    # add_custom_command(
+    #     TARGET cliffi
+    #     POST_BUILD
+    #     COMMAND ${CMAKE_COMMAND} -E echo "Pushing cliffi to ${ANDROID_TARGET_DIR}/cliffi on device..."
+    #     COMMAND adb shell mkdir -p ${ANDROID_TARGET_DIR}
+    #     COMMAND adb push $<TARGET_FILE:cliffi> ${ANDROID_TARGET_DIR}/cliffi
+    #     COMMAND adb shell chmod +x ${ANDROID_TARGET_DIR}/cliffi
+    #     VERBATIM
+    #     COMMENT "Pushing cliffi executable to Android device and setting permissions."
+    # )
+
+    # # Custom command for the shared library
+    # add_custom_command(
+    #     TARGET cliffitest
+    #     POST_BUILD
+    #     COMMAND ${CMAKE_COMMAND} -E echo "Pushing libcliffi_test to ${ANDROID_TARGET_DIR}/ on device..."
+    #     COMMAND adb shell mkdir -p ${ANDROID_TARGET_DIR} # Redundant if cliffi runs first, but safe
+    #     COMMAND adb push $<TARGET_FILE:cliffitest> ${ANDROID_TARGET_DIR}/$<TARGET_FILE_NAME:cliffitest>
+    #     VERBATIM
+    #     COMMENT "Pushing cliffitest library to Android device."
+    # )
+
+    set (ANDROID_TARGET_DIR /data/local/tmp)
+
+    set(TESTLIB ${ANDROID_TARGET_DIR}/$<TARGET_FILE_NAME:cliffitest>)
+    # set(CLIFFI ${ANDROID_TARGET_DIR}/cliffi)
+
+else()
 #set variable for testlib path
 set(TESTLIB ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}cliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX})
+# set(CLIFFI cliffi)
+
+endif()
+
 
 
 
@@ -615,7 +675,8 @@ set_tests_properties(test_setting_array_with_long_hex PROPERTIES PASS_REGULAR_EX
 
 
 add_test(NAME test_null_pointer_syntax
-COMMAND cliffi ${TESTLIB} i is_null Npi)
+COMMAND cliffi ${TESTLIB} C is_null Npi) # until we have a proper bool type, we technically need to declare a bool return as a uchar because on some archs (android x86) it only actually sets the single bit
+set_tests_properties(test_null_pointer_syntax PROPERTIES PASS_REGULAR_EXPRESSION "int\* = \(NULL pointer\)")
 set_tests_properties(test_null_pointer_syntax PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 1")
 
 if(USE_REPL_MODE)
@@ -640,6 +701,13 @@ null_pointer = -P 0 \n
 ${TESTLIB} i increment_at_pointer null_pointer \n
 )
 set_tests_properties(repl_metatest_tests_fail_on_segfault PROPERTIES WILL_FAIL TRUE) # this test is expected to fail
+
+add_test(NAME repl_metatest_tests_fail_on_segfault_function
+COMMAND cliffi --repltest
+${TESTLIB} v do_segfault \n
+)
+set_tests_properties(repl_metatest_tests_fail_on_segfault_function PROPERTIES WILL_FAIL TRUE) # this test is expected to fail
+
 
 add_test(NAME repl_metatest_tests_fail_on_segfault_in_function_created_thread
 COMMAND cliffi --repltest
@@ -1189,11 +1257,22 @@ repl_test_cliffi_init PROPERTIES
 PASS_REGULAR_EXPRESSION "int var = 4"
 PASS_REGULAR_EXPRESSION "svar = \"?Hello, cliffi.\"?"
 FIXTURES_REQUIRED cliffi_init_fixture
-REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
 )
+
+
 
 endif()
 
+if(ANDROID)
+add_test(NAME setup_cliffi_init
+COMMAND sh -c "echo \"
+set var 4\n
+svar = -s placeholder\n
+${TESTLIB} svar get_message\n
+${TESTLIB} i increment_global\n
+ \" > ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init && adb push ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init ${ANDROID_TARGET_DIR}/.cliffi_init"
+)
+else()
 add_test(NAME setup_cliffi_init
   COMMAND sh -c "echo \"
    set var 4\n
@@ -1202,12 +1281,19 @@ add_test(NAME setup_cliffi_init
    ${TESTLIB} i increment_global\n
     \" > ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init"
 )
+endif()
 set_tests_properties(setup_cliffi_init PROPERTIES FIXTURES_SETUP cliffi_init_fixture)
 
 # Create cleanup fixture for the test
+if(ANDROID)
+add_test(NAME cleanup_cliffi_init
+  COMMAND adb shell rm ${ANDROID_TARGET_DIR}/.cliffi_init
+)
+else()
 add_test(NAME cleanup_cliffi_init
   COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
 )
+endif()
 set_tests_properties(cleanup_cliffi_init PROPERTIES FIXTURES_CLEANUP cliffi_init_fixture)
 
 
@@ -1219,7 +1305,7 @@ set_tests_properties(
 test_cliffi_init_without_repl PROPERTIES
 PASS_REGULAR_EXPRESSION "Function returned: 2" # because it was incremented once in the init
 FIXTURES_REQUIRED cliffi_init_fixture
-REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
+# REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
 )
 
 add_test(NAME test_cliffi_init_without_repl_using_var
@@ -1230,8 +1316,17 @@ set_tests_properties(
 test_cliffi_init_without_repl_using_var PROPERTIES
 PASS_REGULAR_EXPRESSION "Function returned: 8" # because it was incremented once in the init
 FIXTURES_REQUIRED cliffi_init_fixture
-REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
+# REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
 )
+if(NOT ANDROID)
+set_tests_properties(
+    repl_test_cliffi_init
+    test_cliffi_init_without_repl
+    test_cliffi_init_without_repl_using_var
+    PROPERTIES
+    REQUIRED_FILES ${CMAKE_CURRENT_BINARY_DIR}/.cliffi_init
+)
+endif()
 
 # Define the test that requires the fixture
 # add_test(NAME TestAddFunctionWithSH
