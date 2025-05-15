@@ -933,6 +933,7 @@ void* dynamicCast(void* ptr, ArgType from, ArgType to) {
 
     // Allocate memory for the intermediate type
     switch (from) {
+        case TYPE_BOOL:
         case TYPE_CHAR:
         case TYPE_SHORT:
         case TYPE_INT:
@@ -956,6 +957,9 @@ void* dynamicCast(void* ptr, ArgType from, ArgType to) {
 
     // Copy the value to the intermediate type
     switch (from) {
+        case TYPE_BOOL:
+            *(long*)intermediate = *(bool*)ptr;
+            break;
         case TYPE_CHAR:
             *(long*)intermediate = *(char*)ptr;
             break;
@@ -1000,6 +1004,7 @@ void* dynamicCast(void* ptr, ArgType from, ArgType to) {
         case TYPE_FLOAT:
         case TYPE_DOUBLE:
             switch (to) {
+                case TYPE_BOOL:
                 case TYPE_CHAR:
                 case TYPE_SHORT:
                 case TYPE_INT:
@@ -1019,6 +1024,7 @@ void* dynamicCast(void* ptr, ArgType from, ArgType to) {
                     break;
             }
             break;
+        case TYPE_BOOL:
         case TYPE_UCHAR:
         case TYPE_USHORT:
         case TYPE_UINT:
@@ -1060,6 +1066,10 @@ void* dynamicCast(void* ptr, ArgType from, ArgType to) {
 
     // Allocate memory for the target type and copy the value
     switch (to) {
+        case TYPE_BOOL:
+            result = malloc(sizeof(bool));
+            *(bool*)result = (bool)*(long*)intermediate;
+            break;
         case TYPE_CHAR:
             result = malloc(sizeof(char));
             *(char*)result = (char)*(long*)intermediate;
