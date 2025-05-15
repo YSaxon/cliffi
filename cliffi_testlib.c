@@ -42,17 +42,18 @@ DWORD WINAPI do_segfault(LPVOID lpParam) {
 #else
 #include <pthread.h>
 void* do_segfault(void* arg) {
-    int* p = NULL;
-    *p = 42;
+    int* volatile p = NULL;
+    increment_at_pointer(p);
+    // *p = 42;
     return NULL;
 }
 #endif
 
-void do_double_free() {
-    int* p = malloc(sizeof(int));
-    free(p);
-    free(p);
-}
+// void do_double_free() { // unused
+//     int* p = malloc(sizeof(int));
+//     free(p);
+//     free(p);
+// }
 
 void do_buffer_overflow() {
     char buffer[10];
