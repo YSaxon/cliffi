@@ -675,7 +675,7 @@ set_tests_properties(test_setting_array_with_long_hex PROPERTIES PASS_REGULAR_EX
 
 
 add_test(NAME test_null_pointer_syntax
-COMMAND cliffi ${TESTLIB} i is_null Npi)
+COMMAND cliffi ${TESTLIB} C is_null Npi) # until we have a proper bool type, we technically need to declare a bool return as a uchar because on some archs (android x86) it only actually sets the single bit
 set_tests_properties(test_null_pointer_syntax PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 1")
 
 if(USE_REPL_MODE)
