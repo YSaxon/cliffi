@@ -178,23 +178,34 @@ jobs:
       #   run: |
       #       ./dockcross bash -c "cd build && ctest --output-on-failure"
 
-      - name: get_executable
-        id: get_executable
-        run: |
-          echo "executable=$(ls build/cliffi*)" >> $GITHUB_OUTPUT
+      # - name: get_executable
+      #   id: get_executable
+      #   run: |
+      #     echo "executable=$(ls build/cliffi*)" >> $GITHUB_OUTPUT
 
+
+      # - name: upload
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #       upload_url: ${{ needs.create_release.outputs.upload_url }}
+      #       # it could be plain cliffi or cliffi.exe
+      #       asset_path: ${{ steps.get_executable.outputs.executable }}
+      #       #add -untested for android or windows-arm builds
+      #       asset_name: cliffi-${{ matrix.dockcross_image }}${{ (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm' || contains(matrix.dockcross_image,'s390x'))) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
+      #       asset_content_type: application/zip
+
+      - name: rename_executable
+        run: |
+          mv build/cliffi${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}} cliffi-${{ matrix.dockcross_image }}${{ (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm' || contains(matrix.dockcross_image,'s390x'))) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
 
       - name: upload
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
-            upload_url: ${{ needs.create_release.outputs.upload_url }}
-            # it could be plain cliffi or cliffi.exe
-            asset_path: ${{ steps.get_executable.outputs.executable }}
-            #add -untested for android or windows-arm builds
-            asset_name: cliffi-${{ matrix.dockcross_image }}${{ (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm' || contains(matrix.dockcross_image,'s390x'))) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
-            asset_content_type: application/zip
+          files: cliffi-${{ matrix.dockcross_image }}${{ (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm' || contains(matrix.dockcross_image,'s390x'))) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
+
+
 
   smoke_test:
     needs: [ build, create_release ]
