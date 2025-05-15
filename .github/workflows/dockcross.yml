@@ -190,6 +190,7 @@ jobs:
 
       - name: test via android-emulator for now only on x86_64
       #only android builds
+        if: (startsWith(matrix.dockcross_image, 'android') && endsWith(matrix.dockcross_image,'x86_64') == true)
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 23
