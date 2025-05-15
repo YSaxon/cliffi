@@ -200,9 +200,9 @@ jobs:
           script: ./prepare_and_test_via_adb.sh || sleep 1200
 
 
-      - name: Setup tmate session if failed
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
+      # - name: Setup tmate session if failed
+      #   if: ${{ failure() }}
+      #   uses: mxschmitt/action-tmate@v3
 
 
       # - name: conaninstall
