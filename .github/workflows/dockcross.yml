@@ -160,11 +160,11 @@ jobs:
           sudo apt install adb -y
           sudo ln -s /home/runner/work/cliffi/cliffi /work
 
-      - name: Setup tmate session to test android-emulator on x86 and x86_64
-        if: (startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86') == false)
-        uses: mxschmitt/action-tmate@v3
-        with:
-          detached: true
+      # - name: Setup tmate session to test android-emulator on x86 and x86_64
+      #   if: (startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86') == false)
+      #   uses: mxschmitt/action-tmate@v3
+      #   with:
+      #     detached: true
 
       - name: AVD cache
         if: (startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86') == false)
@@ -201,9 +201,9 @@ jobs:
           script: ./prepare_and_test_via_adb.sh || sleep 1200
 
 
-      # - name: Setup tmate session if failed
-      #   if: ${{ failure() }}
-      #   uses: mxschmitt/action-tmate@v3
+      - name: Setup tmate session if failed
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
 
 
       # - name: conaninstall
