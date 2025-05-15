@@ -152,7 +152,7 @@ jobs:
           ./dockcross bash ./dockcross_buildonly.sh
 
       - name: Enable KVM for now only on x86_64
-        if: (startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86') == true)
+        if: (startsWith(matrix.dockcross_image, 'android') && endsWith(matrix.dockcross_image,'arm') == false)
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
@@ -161,13 +161,13 @@ jobs:
           sudo ln -s /home/runner/work/cliffi/cliffi /work
 
       - name: Setup tmate session to test android-emulator on x86_64
-        if: (startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86') == true)
+        if: (startsWith(matrix.dockcross_image, 'android') && endsWith(matrix.dockcross_image,'arm') == false)
         uses: mxschmitt/action-tmate@v3
         with:
           detached: true
 
       - name: AVD cache
-        if: (startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86') == true)
+        if: (startsWith(matrix.dockcross_image, 'android') && endsWith(matrix.dockcross_image,'arm') == false)
         uses: actions/cache@v4
         id: avd-cache
         with:
@@ -178,11 +178,11 @@ jobs:
 
       - name: create AVD and generate snapshots for caching
         #only android builds
-        if: steps.avd-cache.outputs.cache-hit != 'true' && (startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86') == true)
+        if: steps.avd-cache.outputs.cache-hit != 'true' && (startsWith(matrix.dockcross_image, 'android') && endsWith(matrix.dockcross_image,'arm') == false)
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 23
-          arch: ${{ matrix.dockcross_image == 'android-x86_64' && 'x86_64' || 'x86' }}
+          api-level: ${{ (matrix.dockcross_image == 'android-arm64' && 30) || 23 }}
+          arch: ${{ (matrix.dockcross_image == 'android-x86_64' && 'x86_64') || (matrix.dockcross_image == 'android-x86' && 'x86') || (matrix.dockcross_image == 'android-arm64' && 'arm64-v8a') || (matrix.dockcross_image == 'android-arm' && 'armeabi-v7a') || 'unknown_arch' }}
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
@@ -190,11 +190,11 @@ jobs:
 
       - name: test via android-emulator for now only on x86_64
       #only android builds
-        if: (startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86') == true)
+        if: (startsWith(matrix.dockcross_image, 'android') && endsWith(matrix.dockcross_image,'arm') == false)
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 23
-          arch: ${{ matrix.dockcross_image == 'android-x86_64' && 'x86_64' || 'x86' }}
+          api-level: ${{ (matrix.dockcross_image == 'android-arm64' && 30) || 23 }}
+          arch: ${{ (matrix.dockcross_image == 'android-x86_64' && 'x86_64') || (matrix.dockcross_image == 'android-x86' && 'x86') || (matrix.dockcross_image == 'android-arm64' && 'arm64-v8a') || (matrix.dockcross_image == 'android-arm' && 'armeabi-v7a') || 'unknown_arch' }}
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
