@@ -181,7 +181,7 @@ jobs:
         if: steps.avd-cache.outputs.cache-hit != 'true' && (startsWith(matrix.dockcross_image, 'android') && endsWith(matrix.dockcross_image,'arm') == false)
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: ${{ (matrix.dockcross_image == 'android-arm64' && 30) || 23 }}
+          api-level: ${{ (matrix.dockcross_image == 'android-arm64' && 24) || 23 }}
           arch: ${{ (matrix.dockcross_image == 'android-x86_64' && 'x86_64') || (matrix.dockcross_image == 'android-x86' && 'x86') || (matrix.dockcross_image == 'android-arm64' && 'arm64-v8a') || (matrix.dockcross_image == 'android-arm' && 'armeabi-v7a') || 'unknown_arch' }}
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
@@ -193,7 +193,7 @@ jobs:
         if: (startsWith(matrix.dockcross_image, 'android') && endsWith(matrix.dockcross_image,'arm') == false)
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: ${{ (matrix.dockcross_image == 'android-arm64' && 30) || 23 }}
+          api-level: ${{ (matrix.dockcross_image == 'android-arm64' && 24) || 23 }}
           arch: ${{ (matrix.dockcross_image == 'android-x86_64' && 'x86_64') || (matrix.dockcross_image == 'android-x86' && 'x86') || (matrix.dockcross_image == 'android-arm64' && 'arm64-v8a') || (matrix.dockcross_image == 'android-arm' && 'armeabi-v7a') || 'unknown_arch' }}
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
