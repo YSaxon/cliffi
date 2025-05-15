@@ -2,6 +2,7 @@
 #define ARG_TOOLS_H
 
 #include <stdbool.h>
+#include <stdbool.h>
 #include <stddef.h> // For size_t
 #include <stdint.h> // For fixed-width integer types
 
@@ -24,6 +25,7 @@ typedef enum {
     TYPE_VOID = 'v',        // For parsing return types only
     TYPE_UNKNOWN = -1,      // For representing unknown types when parsing
     TYPE_STRUCT = 'S',
+    TYPE_BOOL = 'b',        // For boolean values
 } ArgType;
 
 typedef enum {
@@ -50,6 +52,7 @@ typedef struct ArgInfo {
         double d_val;
         char* str_val; // For strings
         void* ptr_val; // For pointers or complex data
+        bool b_val;    // For boolean values
     }* value;
     int pointer_depth;             // For pointer types, indicates how many levels of indirection
     int array_value_pointer_depth; // For array types, indicates how many levels of indirection for the value pointers

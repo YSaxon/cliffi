@@ -30,6 +30,7 @@ This is only rarely necessary with basic primitive types, but becomes more helpf
 
 ### Primitive Types
 - v for void, only allowed as a return type, and does not accept prefixes
+- b for bool
 - c for char
 - h for short
 - i for int
@@ -98,7 +99,6 @@ Some examples:
 * Remember you can always add a type flag in your arguments to solve typing/escaping problems. Eg if you happen to have a parameter that takes a string that is literally `"-ai4"`, or `"..."`, or even just `"3.3"`, you can just prefix it with a `-s` and it will be interpreted as a string. If you need to pass a string with a space in it, just put it in quotes.
 * If you mark something as a char array, it will be formatted back to you as a string. If you mark it as a uchar array, it will be formatted as a hexdump.
 * Arrays of structs are not currently supported (as it's just a syntactical nightmare), but you can fake one with a struct of structs if you really want to.
-* Just use a 0/1 int for a bool
 * Don't get the order mixed up for struct start and end tags, it's S: :S. I mess this up sometimes myself, but it's still the best shell-inert delimitter syntax I could come up with.
 
 ## REPL mode

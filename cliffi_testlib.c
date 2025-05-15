@@ -5,6 +5,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <stdint.h>
+#include <math.h>
+#include <float.h>
+#include <limits.h>
+#include <stddef.h>
 
 // Simple function that adds two integers
 int add(int a, int b) {
@@ -915,6 +920,51 @@ bool is_null(void* ptr) {
 }
 bool is_pointer_to_null(void** ptr) {
     return *ptr == NULL;
+}
+
+bool return_bool(bool value) {
+    return value;
+}
+
+bool check_bool(bool a, bool b, bool c) {
+    printf("Got values: %s, %s, %s\n", 
+           a ? "true" : "false",
+           b ? "true" : "false",
+           c ? "true" : "false");
+    return a && b && c;
+}
+
+bool* return_bool_array(bool values[3]) {
+    bool* result = malloc(3 * sizeof(bool));
+    memcpy(result, values, 3 * sizeof(bool));
+    return result;
+}
+
+struct bool_struct {
+    bool flag;
+    int value;
+};
+
+struct bool_struct create_bool_struct(bool flag, int value) {
+    struct bool_struct result = {flag, value};
+    return result;
+}
+
+// Test functions for bool type
+bool test_bool_true(bool val) {
+    return val == true;
+}
+
+bool test_bool_false(bool val) {
+    return val == false;
+}
+
+bool test_bool_array(bool arr[3]) {
+    return arr[0] == true && arr[1] == false && arr[2] == true;
+}
+
+bool test_bool_return(void) {
+    return true;
 }
 
 // Entry point to prevent the compiler from complaining when compiling as a shared library

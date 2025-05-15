@@ -309,6 +309,52 @@ void* hex_string_to_bytes(const char* hexStr) {
     return output;
 }
 
+bool string_to_bool(const char* str) {
+    if (!str) {
+        raiseException(1, "Error: NULL string passed to boolean conversion\n");
+    }
+    
+    // Convert to lowercase for case-insensitive comparison
+    char* lower = strdup(str);
+    if (!lower) {
+        raiseException(1, "Error: Memory allocation failed in boolean conversion\n");
+    }
+    
+    for (char* p = lower; *p; p++) {
+        *p = tolower(*p);
+    }
+    
+    bool result;
+    if (strcmp(lower, "true") == 0 || 
+        strcmp(lower, "yes") == 0 || 
+        strcmp(lower, "1") == 0 ||
+        strcmp(str, "1") == 0) {
+        result = true;
+    } else if (strcmp(lower, "false") == 0 ||
+               strcmp(lower, "no") == 0 ||
+               strcmp(lower, "0") == 0 ||
+               strcmp(str, "0") == 0) {
+        result = false;
+    } else {
+        // Try to parse as number
+        char* endptr;
+        long num = strtol(str, &endptr, 0);
+        if (*endptr == '\0') {  // Valid number
+            if (num == 0) {
+                result = false;
+            } else {
+                result = true;
+            }
+        } else {
+            free(lower);
+            raiseException(1, "Error: Invalid boolean value '%s'. Expected true/false, yes/no, 1/0, or a number\n", str);
+        }
+    }
+    
+    free(lower);
+    return result;
+}
+
 void* convert_to_type(ArgType type, const char* argStr) {
     void* result = malloc(typeToSize(type, 0));
 
@@ -357,6 +403,9 @@ void* convert_to_type(ArgType type, const char* argStr) {
         break;
     case TYPE_STRING:
         *(char**)result = interpret_special_chars(argStr);
+        break;
+    case TYPE_BOOL:
+        *(bool*)result = string_to_bool(argStr);
         break;
     default:
         free(result);
@@ -533,6 +582,9 @@ void convert_arg_value(ArgInfo* arg, const char* argStr) {
         case TYPE_UCHAR:
             arg->value->uc_val = *(unsigned char*)convertedValue;
             break;
+        case TYPE_BOOL:
+            arg->value->b_val = *(bool*)convertedValue;
+            break;
         case TYPE_USHORT:
             arg->value->us_val = *(unsigned short*)convertedValue;
             break;
@@ -643,6 +695,8 @@ char* typeToString(ArgType type) {
         return "unknown";
     case TYPE_STRUCT:
         return "struct";
+    case TYPE_BOOL:
+        return "bool";
     default:
         return "other?";
     }
@@ -723,6 +777,8 @@ ArgType charToType(char c) {
         return TYPE_ARRAY;
     case 'S':
         return TYPE_STRUCT;
+    case 'b':
+        return TYPE_BOOL;
     default:
         return TYPE_UNKNOWN; // Default or error handling
     }
