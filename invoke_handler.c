@@ -136,8 +136,10 @@ ffi_type* primitive_argtype_to_ffi_type(const ArgType type) {
     case TYPE_VOID:
         return &ffi_type_void;
     case TYPE_BOOL:
-        return &ffi_type_uchar;  // Map bool to unsigned char for FFI
-    // Add mappings for other types
+        if (sizeof(bool) == sizeof(unsigned short)) return &ffi_type_ushort;
+        else if (sizeof(bool) == sizeof(unsigned int)) return &ffi_type_uint;
+        else if (sizeof(bool) == sizeof(unsigned long)) return &ffi_type_ulong;
+        return &ffi_type_uchar; // this is probably right 99% of the time anyway
     default:
         fprintf(stderr, "Unsupported argument type.\n");
         return NULL;
