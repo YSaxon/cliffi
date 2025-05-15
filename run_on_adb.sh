@@ -18,13 +18,7 @@ PROCESSED_ARGS_FOR_DEVICE+=("${ON_DEVICE_EXECUTABLE_PATH}") # First arg is now o
 ORIGINAL_COMMAND_ARGS_NO_EXE=("${@:2}") # All args except the executable itself
 
 for ARG in "${ORIGINAL_COMMAND_ARGS_NO_EXE[@]}"; do
-    if [[ -f "$ARG" && "$ARG" == *cliffi_test* ]]; then # Heuristic for test lib
-        # This argument was the host path to the test library
-        TARGET_TESTLIB_PATH_ON_DEVICE="${TARGET_DIR_ON_DEVICE}/$(basename "$ARG")"
-        PROCESSED_ARGS_FOR_DEVICE+=("${TARGET_TESTLIB_PATH_ON_DEVICE}")
-    else
         PROCESSED_ARGS_FOR_DEVICE+=("${ARG}") # Keep other args as is
-    fi
 done
 
 # --- Execute command on device ---
