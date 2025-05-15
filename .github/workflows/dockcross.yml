@@ -174,7 +174,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ matrix.dockcross_image }}
+          key: ${{ runner.os }}-avd-${{ matrix.dockcross_image }}
 
       - name: create AVD and generate snapshots for caching
         #only android builds
