@@ -205,28 +205,6 @@ jobs:
         if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
 
-
-      # - name: conaninstall
-      #   run: |
-      #       ./dockcross bash -c "./profile_script.sh && conan install . --output-folder=build --build=missing -pr build"
-
-      # - name: updatecmake
-      #   run: |
-      #       ./dockcross bash ./update_cmake.sh
-      #       sleep 10s
-
-      # - name: cmake
-      #   run: |
-      #       ./dockcross bash -c "mkdir -p build && rm -rf build/* CMakeCache.txt CMakeFiles && cd build && cmake .."
-
-      # - name: make
-      #   run: |
-      #       ./dockcross bash -c "cd build && make"
-
-      # - name: ctest
-      #   run: |
-      #       ./dockcross bash -c "cd build && ctest --output-on-failure"
-
       - name: get_executable
         id: get_executable
         run: |
