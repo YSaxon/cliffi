@@ -733,8 +733,7 @@ ${TESTLIB} strvoidpointer get_message \n
 print strvoidpointer \n
 ${TESTLIB} s concat strvoidpointer strvoidpointer \n
 )
-set_tests_properties(repl_test_voidpointer PROPERTIES PASS_REGULAR_EXPRESSION "strvoidpointer = 0?x?[0-9a-f]{4,}")
-set_tests_properties(repl_test_voidpointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?Hello, cliffi.Hello, cliffi.\"?")
+set_tests_properties(repl_test_voidpointer PROPERTIES PASS_REGULAR_EXPRESSION "strvoidpointer = 0?x?[0-9a-f]{4,};Function returned: \"?Hello, cliffi.Hello, cliffi.\"?")
 
 
 add_test(NAME repl_test_variable_simple_syntactic_sugar #
@@ -762,8 +761,7 @@ set var2 a\\ b\\ c \n
 ${TESTLIB} s concat var1 \" and bar and \\ slash\" \n
 print var2 \n
 )
-set_tests_properties(repl_test_tokenizer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?test string foo and bar and . slash")
-set_tests_properties(repl_test_tokenizer PROPERTIES PASS_REGULAR_EXPRESSION "var2 = \"?a b c")
+set_tests_properties(repl_test_tokenizer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?test string foo and bar and . slash;var2 = \"?a b c")
 
 add_test(NAME repl_test_store_embedded_struct
 COMMAND cliffi --repltest
@@ -828,9 +826,7 @@ load loadedstruct S: c S: i d c s :S i :S globalbuffer \n
 ${TESTLIB} v test_nested_large_struct loadedstruct \n
 )
 #TODO: add a test for the dump command
-set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.c: q;s.s.x: 1;s.s.y: 2.20*;s.s.c: a;s.s.s: hello;s.x: 5")
-set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION ".*0x[0-9a-f]*. = struct { char \'?q\'?, struct { int 1, double 2.20*, char \'?a\'?, cstring \"?hello\"? }, int 5 }")
-set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "loadedstruct.* { char \'?q\'?, struct { int 1, double 2.20*, char \'?a\'?, cstring \"?hello\"? }, int 5 }")
+set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.c: q;s.s.x: 1;s.s.y: 2.20*;s.s.c: a;s.s.s: hello;s.x: 5;.*0x[0-9a-f]*. = struct { char \'?q\'?, struct { int 1, double 2.20*, char \'?a\'?, cstring \"?hello\"? }, int 5 };loadedstruct.* { char \'?q\'?, struct { int 1, double 2.20*, char \'?a\'?, cstring \"?hello\"? }, int 5 }")
 
 
 # struct embedded_with_pointer {
@@ -909,8 +905,7 @@ set outer -S: a inner :S \n
 ${TESTLIB} v simple_test_parent_with_embedded_pointer outer \n
 outer
 )
-set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:")
-set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler PROPERTIES PASS_REGULAR_EXPRESSION "{ int\\* 2, cstring \"?HELLO\"? }")
+set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:;{ int\\* 2, cstring \"?HELLO\"? }")
 
 
 add_test(NAME repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer # inner = {int* char*}  outer = {char *inner})
@@ -920,8 +915,7 @@ set outer -S: a pinner :S \n
 ${TESTLIB} v simple_test_parent_with_pointer_struct_embedded_pointer outer \n
 outer
 )
-set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:")
-set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer PROPERTIES PASS_REGULAR_EXPRESSION "{ int\\* 2, cstring \"?HELLO\"? }")
+set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:;{ int\\* 2, cstring \"?HELLO\"? }")
 
 add_test(NAME repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer_fewerlines # inner = {int* char*}  outer = {char *inner})
 COMMAND cliffi --repltest
@@ -929,8 +923,7 @@ set outer -S: a -pS: -pi 1 -s hello :S :S \n
 ${TESTLIB} v simple_test_parent_with_pointer_struct_embedded_pointer outer \n
 outer
 )
-set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer_fewerlines PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:")
-set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer_fewerlines PROPERTIES PASS_REGULAR_EXPRESSION "{ int\\* 2, cstring \"?HELLO\"? }")
+set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer_fewerlines PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:;{ int\\* 2, cstring \"?HELLO\"? }")
 
 
 
