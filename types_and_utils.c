@@ -735,7 +735,8 @@ size_t typeToSize(ArgType type, int array_value_pointer_depth) {
         return 0;
     case TYPE_ARRAY:
         return sizeof(void*);
-    // case TYPE_UNKNOWN: return 0;
+    case TYPE_BOOL:
+        return sizeof(bool);
     default:
         raiseException(1,  "Error: Unsupported type %c\n", typeToChar(type));
         fprintf(stderr, "Error: we should never reach here");
