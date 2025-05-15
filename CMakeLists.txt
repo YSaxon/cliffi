@@ -225,14 +225,14 @@ add_test(NAME TestLibFinderRelativePath
 set_tests_properties(TestLibFinderRelativePath PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")
 
 if(NOT ANDROID) #this test won't work on android because cliffi isn't the first command
+add_test(NAME TestLibFinderEnvPathNoSuffix
+    COMMAND cliffi libcliffi_test i add 1 2)
+    set_tests_properties(TestLibFinderEnvPathNoSuffix PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")
 if(NOT WIN32) 
-    add_test(NAME TestLibFinderEnvPathNoSuffix
-        COMMAND sh -c "export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:${CMAKE_BINARY_DIR}; ${CMAKE_BINARY_DIR}/cliffi libcliffi_test i add 1 2")
+        set_tests_properties(TestLibFinderEnvPathNoSuffix PROPERTIES ENVIRONMENT_MODIFICATION  "LD_LIBRARY_PATH=path_list_prepend:${CMAKE_BINARY_DIR}")
 else()
-    add_test(NAME TestLibFinderEnvPathNoSuffix
-        COMMAND pwsh -Command "$env:Path += ';${CMAKE_BINARY_DIR}'; ${CMAKE_BINARY_DIR}\\cliffi libcliffi_test i add 1 2")
+        set_tests_properties(TestLibFinderEnvPathNoSuffix PROPERTIES ENVIRONMENT_MODIFICATION  "PATH=path_list_prepend:${CMAKE_BINARY_DIR}")
 endif()
-         set_tests_properties(TestLibFinderEnvPathNoSuffix PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")
 endif()
 
 add_test(NAME TestAddFunction
