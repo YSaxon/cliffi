@@ -233,7 +233,8 @@ jobs:
         with:
           tag_name: ${{ needs.create_release.outputs.tag_name }}
           files: cliffi-${{ matrix.dockcross_image }}${{ ((startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86') == false)|| startsWith(matrix.dockcross_image, 'windows-arm' || contains(matrix.dockcross_image,'s390x'))) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
-
+          draft: true
+          prerelease: true
 
 
   smoke_test:
