@@ -702,6 +702,13 @@ ${TESTLIB} i increment_at_pointer null_pointer \n
 )
 set_tests_properties(repl_metatest_tests_fail_on_segfault PROPERTIES WILL_FAIL TRUE) # this test is expected to fail
 
+add_test(NAME repl_metatest_tests_fail_on_segfault_function
+COMMAND cliffi --repltest
+${TESTLIB} v do_segfault \n
+)
+set_tests_properties(repl_metatest_tests_fail_on_segfault_function PROPERTIES WILL_FAIL TRUE) # this test is expected to fail
+
+
 add_test(NAME repl_metatest_tests_fail_on_segfault_in_function_created_thread
 COMMAND cliffi --repltest
 ${TESTLIB} v do_segfault_in_another_thread \n
