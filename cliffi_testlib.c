@@ -927,7 +927,7 @@ bool return_bool(bool value) {
 }
 
 bool check_bool(bool a, bool b, bool c) {
-    printf("Got values: %s, %s, %s\n", 
+    printf("Got values: %s, %s, %s\n",
            a ? "true" : "false",
            b ? "true" : "false",
            c ? "true" : "false");
@@ -965,6 +965,10 @@ bool test_bool_array(bool arr[3]) {
 
 bool test_bool_return(void) {
     return true;
+}
+
+bool is_equal(int a, int b){
+    return a==b;
 }
 
 // Entry point to prevent the compiler from complaining when compiling as a shared library

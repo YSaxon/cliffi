@@ -600,8 +600,8 @@ set_tests_properties(test_setting_array_with_long_hex PROPERTIES PASS_REGULAR_EX
 
 
 add_test(NAME test_null_pointer_syntax
-COMMAND cliffi ${TESTLIB} C is_null Npi) # until we have a proper bool type, we technically need to declare a bool return as a uchar because on some archs (android x86) it only actually sets the single bit
-set_tests_properties(test_null_pointer_syntax PROPERTIES PASS_REGULAR_EXPRESSION "int\* = \(NULL pointer\);Function returned: 1")
+COMMAND cliffi ${TESTLIB} b is_null Npi)
+set_tests_properties(test_null_pointer_syntax PROPERTIES PASS_REGULAR_EXPRESSION "int\* = \(NULL pointer\);Function returned: true")
 
 if(USE_REPL_MODE)
 
@@ -1274,3 +1274,10 @@ add_test(NAME TestBooleanImplicitFalse
 set_tests_properties(TestBooleanImplicitFalse PROPERTIES PASS_REGULAR_EXPRESSION "(inferred) bool = false")
 set_tests_properties(TestBooleanImplicitFalse PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: false")
 
+add_test(NAME is_equal_false_test
+        COMMAND cliffi ${TESTLIB} b is_equal 7 19)
+set_tests_properties(is_equal_false_test PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: false")
+
+add_test(NAME is_equal_true_test
+        COMMAND cliffi ${TESTLIB} b is_equal 8 8 )
+set_tests_properties(is_equal_true_test PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: true")
