@@ -251,6 +251,25 @@ ArgType infer_arg_type_single(const char* argval) {
         }
     }
 
+    // Convert to lowercase for case-insensitive comparison
+    char* lowercase = strdup(argval);
+    for(int i = 0; lowercase[i]; i++) {
+        lowercase[i] = tolower(lowercase[i]);
+    }
+
+    // Check for boolean strings
+    if (strcmp(lowercase, "true") == 0 || 
+        strcmp(lowercase, "false") == 0 )
+        // strcmp(lowercase, "yes") == 0 ||
+        // strcmp(lowercase, "no") == 0 ||
+        // strcmp(lowercase, "1") == 0 ||
+        // strcmp(lowercase, "0") == 0) 
+        {
+        free(lowercase);
+        return TYPE_BOOL;
+    }
+    free(lowercase);
+
     if (strlen(argval) == 1) return TYPE_CHAR;
     return TYPE_STRING; // Default fallback
 }
@@ -324,14 +343,18 @@ bool string_to_bool(const char* str) {
         *p = tolower(*p);
     }
     
-    bool result;
+    bool result; // any of these will be converted to true/false when flagged explicitly though only true/false will be automatically inferred as bool
     if (strcmp(lower, "true") == 0 || 
         strcmp(lower, "yes") == 0 || 
+        strcmp(lower, "t") == 0 ||
+        strcmp(lower, "y") == 0 ||
         strcmp(lower, "1") == 0 ||
         strcmp(str, "1") == 0) {
         result = true;
     } else if (strcmp(lower, "false") == 0 ||
                strcmp(lower, "no") == 0 ||
+               strcmp(lower, "f") == 0 ||
+               strcmp(lower, "n") == 0 ||
                strcmp(lower, "0") == 0 ||
                strcmp(str, "0") == 0) {
         result = false;
