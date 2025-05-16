@@ -142,13 +142,13 @@ jobs:
 
       - name: everything together
         #exclude android builds
-        if: (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm') || contains(matrix.dockcross_image,'s390x')) == false
+        if: (startsWith(matrix.dockcross_image, 'android')) == false
         run: |
           ./dockcross bash ./dockcross_buildtest.sh
 
       - name: build without testing (android)
         #only android builds
-        if: (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm') || contains(matrix.dockcross_image,'s390x')) == true
+        if: (startsWith(matrix.dockcross_image, 'android'))
         run: |
           ./dockcross bash ./dockcross_buildonly.sh
 
