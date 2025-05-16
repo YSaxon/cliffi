@@ -45,6 +45,45 @@ jobs:
       tag_name: ${{ github.ref_name == 'master' && steps.version.outputs.version || format ('{0}-{1}', steps.version.outputs.version, steps.vars.outputs.COMMIT_SHORT_SHA) }}
 
 
+  build_on_mac:
+    needs: create_release
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, macos-13]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Dependencies (macOS)
+        run: brew install libffi cmake readline
+
+      - name: Configure CMake (macOS)
+        if: runner.os == 'macOS'
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Run Tests
+        run: cd build && ctest --output-on-failure
+
+      - name: rename_executable
+        run: |
+          mv cliffi* cliffi-mac-${{ (matrix.os == 'macos-latest') && 'arm' || 'x64' }}
+
+      - name: upload
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.create_release.outputs.tag_name }}
+          files: cliffi-mac-${{ (matrix.os == 'macos-latest') && 'arm' || 'x64' }}
+          draft: true
+          prerelease: true
+          
+      - name: Setup tmate session if failed
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+
+
   build:
     runs-on: ubuntu-latest
     needs: create_release
@@ -238,7 +277,7 @@ jobs:
 
 
   smoke_test:
-    needs: [ build, create_release ]
+    needs: [ build, build_on_mac, create_release ]
     strategy:
       fail-fast: false
       matrix:
