@@ -228,11 +228,7 @@ if(NOT ANDROID) #this test won't work on android because cliffi isn't the first 
 add_test(NAME TestLibFinderEnvPathNoSuffix
     COMMAND cliffi libcliffi_test i add 1 2)
     set_tests_properties(TestLibFinderEnvPathNoSuffix PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")
-if(NOT WIN32) # we could prepend LD_LIBRARY_PATH, but if its using QEMU_SET_ENV its still going to overwrite anything that was already in LD_LIBRARY_PATH= so we might as well use set for consistency
-        set_tests_properties(TestLibFinderEnvPathNoSuffix PROPERTIES ENVIRONMENT  "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR};QEMU_SET_ENV=LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}")
-else()
-        set_tests_properties(TestLibFinderEnvPathNoSuffix PROPERTIES ENVIRONMENT  "PATH=${CMAKE_BINARY_DIR};QEMU_SET_ENV=PATH=${CMAKE_BINARY_DIR}")
-endif()
+    set_tests_properties(TestLibFinderEnvPathNoSuffix PROPERTIES ENVIRONMENT  "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR};QEMU_SET_ENV=LD_LIBRARY_PATH=${CMAKE_BINARY_DIR};PATH=${CMAKE_BINARY_DIR};WINE_PATH=${CMAKE_BINARY_DIR}")
 endif()
 
 add_test(NAME TestAddFunction
