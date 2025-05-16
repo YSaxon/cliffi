@@ -37,10 +37,10 @@ endif()
 
 #if in debug mode enable coverage
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
-    endif()
+    # if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage")
+    # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
+    # endif()
 endif()
 
 option(ENABLE_SANITIZERS "Build with sanitizers enabled" OFF)
@@ -613,8 +613,8 @@ set_tests_properties(test_setting_array_with_long_hex PROPERTIES PASS_REGULAR_EX
 
 
 add_test(NAME test_null_pointer_syntax
-COMMAND cliffi ${TESTLIB} C is_null Npi) # until we have a proper bool type, we technically need to declare a bool return as a uchar because on some archs (android x86) it only actually sets the single bit
-set_tests_properties(test_null_pointer_syntax PROPERTIES PASS_REGULAR_EXPRESSION "int\* = \(NULL pointer\);Function returned: 1")
+COMMAND cliffi ${TESTLIB} b is_null Npi)
+set_tests_properties(test_null_pointer_syntax PROPERTIES PASS_REGULAR_EXPRESSION "int\* = \(NULL pointer\);Function returned: true")
 
 if(USE_REPL_MODE)
 
@@ -1231,3 +1231,66 @@ endif()
 # add_test(NAME TestAddFunctionWithSH2
 # COMMAND env sh cliffi ${TESTLIB} i add 1 2)
 # set_tests_properties(TestAddFunctionWithSH2 PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")
+
+# Basic boolean functionality tests
+add_test(NAME TestBooleanReturnTrue
+         COMMAND cliffi ${TESTLIB} b return_bool -b true)
+set_tests_properties(TestBooleanReturnTrue PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: true")
+
+add_test(NAME TestBooleanReturnFalse
+         COMMAND cliffi ${TESTLIB} b return_bool -b false)
+set_tests_properties(TestBooleanReturnFalse PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: false")
+
+# Test various input formats for true
+add_test(NAME TestBooleanInputFormatsTrue
+         COMMAND cliffi ${TESTLIB} b check_bool -b true -b yes -b 1)
+set_tests_properties(TestBooleanInputFormatsTrue PROPERTIES PASS_REGULAR_EXPRESSION "Got values: true, true, true")
+set_tests_properties(TestBooleanInputFormatsTrue PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: true")
+
+# Test various input formats for false
+add_test(NAME TestBooleanInputFormatsFalse
+         COMMAND cliffi ${TESTLIB} b check_bool -b false -b no -b 0)
+set_tests_properties(TestBooleanInputFormatsFalse PROPERTIES PASS_REGULAR_EXPRESSION "Got values: false, false, false")
+set_tests_properties(TestBooleanInputFormatsFalse PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: false")
+
+# Test case insensitivity
+add_test(NAME TestBooleanCaseInsensitive
+         COMMAND cliffi ${TESTLIB} b check_bool -b TRUE -b Yes -b True)
+set_tests_properties(TestBooleanCaseInsensitive PROPERTIES PASS_REGULAR_EXPRESSION "Got values: true, true, true")
+set_tests_properties(TestBooleanCaseInsensitive PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: true")
+
+# Test boolean array
+add_test(NAME TestBooleanArray
+         COMMAND cliffi ${TESTLIB} ab3 return_bool_array -ab3 true,false,true)
+set_tests_properties(TestBooleanArray PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \\{ true, false, true \\}")
+
+# Test boolean in struct
+add_test(NAME TestBooleanInStruct
+         COMMAND cliffi ${TESTLIB} S: b i :S create_bool_struct -b true 42)
+set_tests_properties(TestBooleanInStruct PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \\{ bool true, int 42 \\}")
+
+# Test mixed true/false values
+add_test(NAME TestBooleanMixed
+         COMMAND cliffi ${TESTLIB} b check_bool -b true -b false -b true)
+set_tests_properties(TestBooleanMixed PROPERTIES PASS_REGULAR_EXPRESSION "Got values: true, false, true")
+set_tests_properties(TestBooleanMixed PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: false")
+
+# Test implicit conversion from non-zero number
+add_test(NAME TestBooleanImplicitTrue
+         COMMAND cliffi ${TESTLIB} b return_bool true)
+set_tests_properties(TestBooleanImplicitTrue PROPERTIES PASS_REGULAR_EXPRESSION "(inferred) bool = true")
+set_tests_properties(TestBooleanImplicitTrue PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: true")
+
+# Test implicit conversion from zero
+add_test(NAME TestBooleanImplicitFalse
+         COMMAND cliffi ${TESTLIB} b return_bool false)
+set_tests_properties(TestBooleanImplicitFalse PROPERTIES PASS_REGULAR_EXPRESSION "(inferred) bool = false")
+set_tests_properties(TestBooleanImplicitFalse PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: false")
+
+add_test(NAME is_equal_false_test
+        COMMAND cliffi ${TESTLIB} b is_equal 7 19)
+set_tests_properties(is_equal_false_test PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: false")
+
+add_test(NAME is_equal_true_test
+        COMMAND cliffi ${TESTLIB} b is_equal 8 8 )
+set_tests_properties(is_equal_true_test PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: true")

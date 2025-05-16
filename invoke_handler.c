@@ -135,7 +135,11 @@ ffi_type* primitive_argtype_to_ffi_type(const ArgType type) {
         return &ffi_type_pointer;
     case TYPE_VOID:
         return &ffi_type_void;
-    // Add mappings for other types
+    case TYPE_BOOL:
+        if (sizeof(bool) == sizeof(unsigned short)) return &ffi_type_ushort;
+        else if (sizeof(bool) == sizeof(unsigned int)) return &ffi_type_uint;
+        else if (sizeof(bool) == sizeof(unsigned long)) return &ffi_type_ulong;
+        return &ffi_type_uchar; // this is probably right 99% of the time anyway
     default:
         fprintf(stderr, "Unsupported argument type.\n");
         return NULL;
@@ -439,6 +443,8 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
             call_info->info.return_var->value->i_val = (int)call_info->info.return_var->value->l_val;
         } else if (call_info->info.return_var->type == TYPE_UINT) {
             call_info->info.return_var->value->ui_val = (unsigned int)call_info->info.return_var->value->ul_val;
+        } else if (call_info->info.return_var->type == TYPE_BOOL) {
+            call_info->info.return_var->value->b_val = (bool)call_info->info.return_var->value->l_val;
         }
     }
 #elif defined(__mips__)
@@ -451,6 +457,8 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
             call_info->info.return_var->value->uc_val = (unsigned char)call_info->info.return_var->value->ui_val;
         } else if (call_info->info.return_var->type == TYPE_USHORT) {
             call_info->info.return_var->value->us_val = (unsigned short)call_info->info.return_var->value->ui_val;
+        } else if (call_info->info.return_var->type == TYPE_BOOL) {
+            call_info->info.return_var->value->b_val = (bool)call_info->info.return_var->value->ui_val;
         }
     }
 #endif

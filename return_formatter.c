@@ -151,6 +151,9 @@ void hexdump(const void *data, size_t size) {
             break;
         case TYPE_STRUCT:
             raiseException(1,  "Should not be printing struct values directly");
+        case TYPE_BOOL:
+            printf("%s", ((bool*)value)[offset] ? "true" : "false");
+            break;
         default:
             printf("Unsupported type");
             break;
