@@ -63,6 +63,9 @@ jobs:
       - name: Configure CMake
         run: brew sh -c "mkdir build && cd build && cmake  .."
 
+      - name: Build
+        run: brew sh -c "cd build && make -j 4"
+
       - name: Run Tests
         run: cd build && ctest --output-on-failure
 
