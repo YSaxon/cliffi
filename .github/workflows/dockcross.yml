@@ -57,10 +57,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Homebrew cache paths
+        id: homebrew-paths
+        run: |
+          # echo "cache_dir=$(brew --cache)" >> $GITHUB_OUTPUT
+          echo "prefix_dir=$(brew --prefix)" >> $GITHUB_OUTPUT
+        shell: bash # Ensure bash is used if not default
+
       - name: Cache Homebrew
         uses: actions/cache@v4
         with:
-          path: /opt/homebrew
+          path: |
+              # ${{ steps.homebrew-paths.outputs.cache_dir }}
+              ${{ steps.homebrew-paths.outputs.prefix_dir }}
           key: ${{ runner.os }}-homebrew
 
       - name: Install Dependencies
