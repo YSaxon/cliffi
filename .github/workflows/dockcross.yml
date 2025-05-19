@@ -71,7 +71,7 @@ jobs:
 
       - name: rename_executable
         run: |
-          mv cliffi cliffi-mac-${{ (matrix.os == 'macos-latest') && 'arm' || 'x64' }}
+          mv build/cliffi cliffi-mac-${{ (matrix.os == 'macos-latest') && 'arm' || 'x64' }}
 
       - name: upload
         uses: softprops/action-gh-release@v2
