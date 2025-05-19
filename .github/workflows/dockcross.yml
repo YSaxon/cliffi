@@ -290,7 +290,7 @@ jobs:
         uses: robinraju/release-downloader@v1.12
         with:
           releaseId: ${{ needs.create_release.outputs.release_id }}
-          fileName: cliffi-${{ matrix.os == 'windows-latest' && 'windows-static-x64.exe' || 'linux-x64' }}
+          fileName: cliffi-${{ matrix.os == 'windows-latest' && 'windows-static-x64.exe' || matrix.os == 'ubuntu-latest' && 'linux-x64' || 'cliffi-mac-arm' }}
 
       - name: Run Smoke Test (Windows)
         if: runner.os == 'Windows'
