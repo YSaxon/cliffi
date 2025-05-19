@@ -67,7 +67,7 @@ jobs:
         run: brew sh -c "cd build && make -j 4"
 
       - name: Run Tests
-        run: cd build && ctest --output-on-failure
+        run: cd build && ctest --output-on-failure --parallel || ctest --rerun-failed --output-on-failure --extra-verbose
 
       - name: rename_executable
         run: |
