@@ -169,7 +169,7 @@ static bool FindInStandardPaths(const char* library_name, char* resolved_path) {
 #if defined(__ANDROID__)
     const char* standard_paths[] = {"/system/lib64", "/system/lib", "/system/vendor/lib64", "/system/vendor/lib",  NULL};
 #elif defined(__APPLE__)
-    const char* standard_paths[] = {"/usr/lib", "/lib", "/usr/local/lib", "/opt/local/lib", "/opt/homebrew/lib", NULL};
+    const char* standard_paths[] = {"/usr/lib", "/usr/lib/system", "/lib", "/usr/local/lib", "/opt/local/lib", "/opt/homebrew/lib", NULL};
 #else
     const char* standard_paths[] = {"/usr/lib", "/lib", "/usr/local/lib", NULL};
 #endif
@@ -378,6 +378,36 @@ static bool FindInLdSoConfFile(const char* conf_file, const char* library_name, 
 }
 #endif // !_WIN32
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
+
+static bool JustTryDlOpenOnBasename(const char* library_name, char* resolved_path) {
+    // In case our attempts to find the library fail, we can try to load it directly. Sometimes the OS might find it in cache.
+
+    // Attempt to load the library using dlopen
+#ifdef _WIN32
+    void* handle = LoadLibrary(library_name);
+#else
+    void* handle = dlopen(library_name, RTLD_LAZY);
+#endif
+    if (!handle) {
+        return false;
+    }
+    // If we successfully loaded the library, we can use the library_name directly since it was in fact found that way.
+    strncpy(resolved_path, library_name, MAX_PATH_LENGTH);
+    resolved_path[MAX_PATH_LENGTH - 1] = '\0'; // Ensure null-termination
+    // Close the library handle. There's a reference counting mechanism in place, so this is safe.
+#ifdef _WIN32
+    FreeLibrary(handle);
+#else
+    dlclose(handle);
+#endif
+    return true;
+}
+
 static bool FindSharedLibrary(const char* library_name, char* resolved_path) {
 
     if (!library_name || library_name[0] == '\0') {
@@ -419,19 +449,28 @@ static bool FindSharedLibrary(const char* library_name, char* resolved_path) {
         return false;
     }
 #endif
+    else {
 
-#ifdef _WIN32
-    bool found = FindInEnvVar("PATH", library_name, resolved_path);
-#else
-    bool found = FindInEnvVar("LD_LIBRARY_PATH", library_name, resolved_path)
-#ifdef use_ld_so_conf
-                 || FindInLdSoConfFile("/etc/ld.so.conf", library_name, resolved_path, 0)
-#endif
-                 || FindInStandardPaths(library_name, resolved_path);
-#endif
+        #ifdef _WIN32
+            bool found = FindInEnvVar("PATH", library_name, resolved_path);
+        #else
+            bool found = FindInEnvVar("LD_LIBRARY_PATH", library_name, resolved_path)
+        #ifdef use_ld_so_conf
+                         || FindInLdSoConfFile("/etc/ld.so.conf", library_name, resolved_path, 0)
+        #endif
+                         || FindInStandardPaths(library_name, resolved_path);
+        #endif
 
-    return found;
-}
+        if (!found) {
+              found = JustTryDlOpenOnBasename(library_name, resolved_path);
+        }
+            return found;
+        }
+    }
+
+
+
+
 
 // Function to attempt to resolve the library path
 char* resolve_library_path(const char* library_name) {

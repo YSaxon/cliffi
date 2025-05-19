@@ -45,6 +45,47 @@ jobs:
       tag_name: ${{ github.ref_name == 'master' && steps.version.outputs.version || format ('{0}-{1}', steps.version.outputs.version, steps.vars.outputs.COMMIT_SHORT_SHA) }}
 
 
+  build_on_mac:
+    needs: create_release
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, macos-13]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: brew install libffi readline llvm
+
+      - name: Configure CMake
+        run: brew sh -c "mkdir build && cd build && cmake  .."
+
+      - name: Build
+        run: brew sh -c "cd build && make -j 4"
+
+      - name: Run Tests
+        run: cd build && ctest --output-on-failure --parallel || ctest --rerun-failed --output-on-failure --extra-verbose
+
+      - name: rename_executable
+        run: |
+          mv build/cliffi cliffi-mac-${{ (matrix.os == 'macos-latest') && 'arm64' || 'x64' }}
+
+      - name: upload
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.create_release.outputs.tag_name }}
+          files: cliffi-mac-${{ (matrix.os == 'macos-latest') && 'arm64' || 'x64' }}
+          draft: true
+          prerelease: true
+
+      - name: Setup tmate session if failed
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+
+
   build:
     runs-on: ubuntu-latest
     needs: create_release
@@ -238,18 +279,18 @@ jobs:
 
 
   smoke_test:
-    needs: [ build, create_release ]
+    needs: [ build, build_on_mac, create_release ]
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest,macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Download Release
         uses: robinraju/release-downloader@v1.12
         with:
           releaseId: ${{ needs.create_release.outputs.release_id }}
-          fileName: cliffi-${{ matrix.os == 'windows-latest' && 'windows-static-x64.exe' || 'linux-x64' }}
+          fileName: cliffi-${{ matrix.os == 'windows-latest' && 'windows-static-x64.exe' || matrix.os == 'ubuntu-latest' && 'linux-x64' || 'mac-arm64' }}
 
       - name: Run Smoke Test (Windows)
         if: runner.os == 'Windows'
@@ -266,6 +307,15 @@ jobs:
           mv cliffi-* cliffi
           chmod +x cliffi
           ./cliffi libc i strlen test 2>&1 | tee output
+          grep -q "Function returned: 4" output || exit 1
+
+      - name: Run Smoke Test (Mac)
+        if: runner.os == 'macOS'
+        run: |
+          ls -l
+          mv cliffi-* cliffi
+          chmod +x cliffi
+          ./cliffi libSystem i strlen test 2>&1 | tee output
           grep -q "Function returned: 4" output || exit 1
 
       - name: Setup tmate session if failed

@@ -17,7 +17,7 @@
 #include <signal.h>
 #include <stdint.h>
  /*x86 or risc based systems*/
-#if (defined(__i386__) || defined(__x86_64__) || defined(__riscv)) && !defined(_WIN32)
+#if (defined(__i386__) || defined(__x86_64__) || defined(__riscv)) && !defined(_WIN32) && !defined(__APPLE__)
     #include <ucontext.h>
 #endif
 #include "shims.h"
