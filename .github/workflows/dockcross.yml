@@ -61,7 +61,7 @@ jobs:
         id: homebrew-paths
         run: |
           # echo "cache_dir=$(brew --cache)" >> $GITHUB_OUTPUT
-          echo "prefix_dir=$(brew --prefix)" >> $GITHUB_OUTPUT
+          echo "prefix_dir=$(brew --prefix libffi llvm readline)" >> $GITHUB_OUTPUT
         shell: bash # Ensure bash is used if not default
 
       - name: Cache Homebrew
