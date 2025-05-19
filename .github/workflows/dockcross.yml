@@ -57,21 +57,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Homebrew cache paths
-        id: homebrew-paths
-        run: |
-          echo "brew_prefix=$(brew --prefix)" >> $GITHUB_OUTPUT
-
-      - name: Cache Homebrew
-        uses: actions/cache@v4
-        with:
-          path: |
-              ${{ steps.homebrew-paths.outputs.brew_prefix }}/opt/llvm
-              ${{ steps.homebrew-paths.outputs.brew_prefix }}/opt/libffi
-              ${{ steps.homebrew-paths.outputs.brew_prefix }}/opt/readline
-              ${{ steps.homebrew-paths.outputs.brew_prefix }}/opt/z3
-          key: ${{ matrix.os }}-homebrew
-
       - name: Install Dependencies
         run: brew install libffi readline llvm
 
