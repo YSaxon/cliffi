@@ -62,7 +62,7 @@ jobs:
 
       - name: Configure CMake (macOS)
         if: runner.os == 'macOS'
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+        run: brew sh -c "cmake  .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-Werror""
 
       - name: Run Tests
         run: cd build && ctest --output-on-failure
@@ -78,7 +78,7 @@ jobs:
           files: cliffi-mac-${{ (matrix.os == 'macos-latest') && 'arm' || 'x64' }}
           draft: true
           prerelease: true
-          
+
       - name: Setup tmate session if failed
         if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
