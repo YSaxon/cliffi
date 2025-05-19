@@ -60,19 +60,16 @@ jobs:
       - name: Set up Homebrew cache paths
         id: homebrew-paths
         run: |
-          echo "llvm_prefix=$(brew --prefix llvm)" >> $GITHUB_OUTPUT
-          echo "readline_prefix=$(brew --prefix readline)" >> $GITHUB_OUTPUT
-          echo "libffi_prefix=$(brew --prefix libffi)" >> $GITHUB_OUTPUT
-          echo "z3_prefix=$(brew --prefix z3)" >> $GITHUB_OUTPUT
+          echo "brew_prefix=$(brew --prefix)" >> $GITHUB_OUTPUT
 
       - name: Cache Homebrew
         uses: actions/cache@v4
         with:
           path: |
-              ${{ steps.homebrew-paths.outputs.llvm_prefix }}
-              ${{ steps.homebrew-paths.outputs.readline_prefix }}
-              ${{ steps.homebrew-paths.outputs.libffi_prefix }}
-              ${{ steps.homebrew-paths.outputs.z3_prefix }}
+              ${{ steps.homebrew-paths.outputs.brew_prefix }}/llvm
+              ${{ steps.homebrew-paths.outputs.brew_prefix }}/libffi
+              ${{ steps.homebrew-paths.outputs.brew_prefix }}/readline
+              ${{ steps.homebrew-paths.outputs.brew_prefix }}/z3
           key: ${{ matrix.os }}-homebrew
 
       - name: Install Dependencies
