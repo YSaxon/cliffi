@@ -71,7 +71,7 @@ jobs:
               ${{ steps.homebrew-paths.outputs.llvm_prefix }}
               ${{ steps.homebrew-paths.outputs.readline_prefix }}
               ${{ steps.homebrew-paths.outputs.libffi_prefix }}
-          key: ${{ runner.os }}-homebrew
+          key: ${{ matrix.os }}-homebrew
 
       - name: Install Dependencies
         run: brew install libffi readline llvm
