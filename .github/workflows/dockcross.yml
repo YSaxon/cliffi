@@ -66,10 +66,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-              ${{ steps.homebrew-paths.outputs.brew_prefix }}/llvm
-              ${{ steps.homebrew-paths.outputs.brew_prefix }}/libffi
-              ${{ steps.homebrew-paths.outputs.brew_prefix }}/readline
-              ${{ steps.homebrew-paths.outputs.brew_prefix }}/z3
+              ${{ steps.homebrew-paths.outputs.brew_prefix }}/opt/llvm
+              ${{ steps.homebrew-paths.outputs.brew_prefix }}/opt/libffi
+              ${{ steps.homebrew-paths.outputs.brew_prefix }}/opt/readline
+              ${{ steps.homebrew-paths.outputs.brew_prefix }}/opt/z3
           key: ${{ matrix.os }}-homebrew
 
       - name: Install Dependencies
