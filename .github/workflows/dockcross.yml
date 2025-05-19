@@ -63,6 +63,7 @@ jobs:
           echo "llvm_prefix=$(brew --prefix llvm)" >> $GITHUB_OUTPUT
           echo "readline_prefix=$(brew --prefix readline)" >> $GITHUB_OUTPUT
           echo "libffi_prefix=$(brew --prefix libffi)" >> $GITHUB_OUTPUT
+          echo "z3_prefix=$(brew --prefix z3)" >> $GITHUB_OUTPUT
 
       - name: Cache Homebrew
         uses: actions/cache@v4
@@ -71,6 +72,7 @@ jobs:
               ${{ steps.homebrew-paths.outputs.llvm_prefix }}
               ${{ steps.homebrew-paths.outputs.readline_prefix }}
               ${{ steps.homebrew-paths.outputs.libffi_prefix }}
+              ${{ steps.homebrew-paths.outputs.z3_prefix }}
           key: ${{ matrix.os }}-homebrew
 
       - name: Install Dependencies
