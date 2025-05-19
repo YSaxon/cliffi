@@ -449,6 +449,7 @@ static bool FindSharedLibrary(const char* library_name, char* resolved_path) {
         return false;
     }
 #endif
+    else {
 
 #ifdef _WIN32
     bool found = FindInEnvVar("PATH", library_name, resolved_path);
@@ -465,6 +466,7 @@ static bool FindSharedLibrary(const char* library_name, char* resolved_path) {
         }
     return found;
 }
+    }
 
 // Function to attempt to resolve the library path
 char* resolve_library_path(const char* library_name) {
