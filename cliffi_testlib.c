@@ -826,7 +826,7 @@ float get_float() {
     return 1.5;
 }
 
-void return_some_numbers(int** numbers, size_t* count) {
+void return_some_numbers(int** numbers, int* count) {
     *count = 3;
     *numbers = malloc(3 * sizeof(int));
     (*numbers)[0] = 1;

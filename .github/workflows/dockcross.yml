@@ -183,13 +183,13 @@ jobs:
 
       - name: everything together
         #exclude android builds
-        if: (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm') || contains(matrix.dockcross_image,'s390x')) == false
+        if: (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm') ) == false
         run: |
           ./dockcross bash ./dockcross_buildtest.sh
 
       - name: build without testing (android)
         #only android builds
-        if: (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm') || contains(matrix.dockcross_image,'s390x')) == true
+        if: (startsWith(matrix.dockcross_image, 'android') || startsWith(matrix.dockcross_image, 'windows-arm') ) == true
         run: |
           ./dockcross bash ./dockcross_buildonly.sh
 
@@ -262,18 +262,18 @@ jobs:
       #       # it could be plain cliffi or cliffi.exe
       #       asset_path: ${{ steps.get_executable.outputs.executable }}
       #       #add -untested for android or windows-arm builds
-      #       asset_name: cliffi-${{ matrix.dockcross_image }}${{ ((startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86') == false) )|| startsWith(matrix.dockcross_image, 'windows-arm' || contains(matrix.dockcross_image,'s390x'))) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
+      #       asset_name: cliffi-${{ matrix.dockcross_image }}${{ ((startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86') == false) )|| startsWith(matrix.dockcross_image, 'windows-arm') && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
       #       asset_content_type: application/zip
 
       - name: rename_executable
         run: |
-          mv build/cliffi${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}} cliffi-${{ matrix.dockcross_image }}${{ ((startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86') == false) || startsWith(matrix.dockcross_image, 'windows-arm' || contains(matrix.dockcross_image,'s390x'))) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
+          mv build/cliffi${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}} cliffi-${{ matrix.dockcross_image }}${{ ((startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86') == false) || startsWith(matrix.dockcross_image, 'windows-arm' )) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
 
       - name: upload
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.create_release.outputs.tag_name }}
-          files: cliffi-${{ matrix.dockcross_image }}${{ ((startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86') == false)|| startsWith(matrix.dockcross_image, 'windows-arm' || contains(matrix.dockcross_image,'s390x'))) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
+          files: cliffi-${{ matrix.dockcross_image }}${{ ((startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86') == false)|| startsWith(matrix.dockcross_image, 'windows-arm' )) && '-untested' || '' }}${{ (startsWith(matrix.dockcross_image, 'windows') && '.exe') || ''}}
           draft: true
           prerelease: true
 
