@@ -451,22 +451,26 @@ static bool FindSharedLibrary(const char* library_name, char* resolved_path) {
 #endif
     else {
 
-#ifdef _WIN32
-    bool found = FindInEnvVar("PATH", library_name, resolved_path);
-#else
-    bool found = FindInEnvVar("LD_LIBRARY_PATH", library_name, resolved_path)
-#ifdef use_ld_so_conf
-                 || FindInLdSoConfFile("/etc/ld.so.conf", library_name, resolved_path, 0)
-#endif
-                 || FindInStandardPaths(library_name, resolved_path);
-#endif
+        #ifdef _WIN32
+            bool found = FindInEnvVar("PATH", library_name, resolved_path);
+        #else
+            bool found = FindInEnvVar("LD_LIBRARY_PATH", library_name, resolved_path)
+        #ifdef use_ld_so_conf
+                         || FindInLdSoConfFile("/etc/ld.so.conf", library_name, resolved_path, 0)
+        #endif
+                         || FindInStandardPaths(library_name, resolved_path);
+        #endif
 
         if (!found) {
               found = JustTryDlOpenOnBasename(library_name, resolved_path);
         }
-    return found;
-}
+            return found;
+        }
     }
+
+
+
+
 
 // Function to attempt to resolve the library path
 char* resolve_library_path(const char* library_name) {

@@ -298,7 +298,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest,macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Download Release
@@ -322,6 +322,15 @@ jobs:
           mv cliffi-* cliffi
           chmod +x cliffi
           ./cliffi libc i strlen test 2>&1 | tee output
+          grep -q "Function returned: 4" output || exit 1
+
+      - name: Run Smoke Test (Mac)
+        if: runner.os == 'macOS'
+        run: |
+          ls -l
+          mv cliffi-* cliffi
+          chmod +x cliffi
+          ./cliffi libSystem i strlen test 2>&1 | tee output
           grep -q "Function returned: 4" output || exit 1
 
       - name: Setup tmate session if failed
