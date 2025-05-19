@@ -73,7 +73,7 @@ jobs:
           key: ${{ runner.os }}-homebrew
 
       - name: Install Dependencies
-        run: brew install libffi cmake readline llvm
+        run: brew install libffi readline llvm
 
       - name: Configure CMake
         run: brew sh -c "mkdir build && cd build && cmake  .."
