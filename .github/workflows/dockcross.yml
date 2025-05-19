@@ -57,6 +57,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Cache Homebrew
+        uses: actions/cache@v4
+        with:
+          path: /opt/homebrew
+          key: ${{ runner.os }}-homebrew
+
       - name: Install Dependencies
         run: brew install libffi cmake readline llvm
 
