@@ -63,7 +63,6 @@ jobs:
           echo "llvm_prefix=$(brew --prefix llvm)" >> $GITHUB_OUTPUT
           echo "readline_prefix=$(brew --prefix readline)" >> $GITHUB_OUTPUT
           echo "libffi_prefix=$(brew --prefix libffi)" >> $GITHUB_OUTPUT
-          shell: bash # Ensure bash is used if not default
 
       - name: Cache Homebrew
         uses: actions/cache@v4
