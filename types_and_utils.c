@@ -251,6 +251,25 @@ ArgType infer_arg_type_single(const char* argval) {
         }
     }
 
+    // Convert to lowercase for case-insensitive comparison
+    char* lowercase = strdup(argval);
+    for(int i = 0; lowercase[i]; i++) {
+        lowercase[i] = tolower(lowercase[i]);
+    }
+
+    // Check for boolean strings
+    if (strcmp(lowercase, "true") == 0 || 
+        strcmp(lowercase, "false") == 0 )
+        // strcmp(lowercase, "yes") == 0 ||
+        // strcmp(lowercase, "no") == 0 ||
+        // strcmp(lowercase, "1") == 0 ||
+        // strcmp(lowercase, "0") == 0) 
+        {
+        free(lowercase);
+        return TYPE_BOOL;
+    }
+    free(lowercase);
+
     if (strlen(argval) == 1) return TYPE_CHAR;
     return TYPE_STRING; // Default fallback
 }
@@ -309,6 +328,56 @@ void* hex_string_to_bytes(const char* hexStr) {
     return output;
 }
 
+bool string_to_bool(const char* str) {
+    if (!str) {
+        raiseException(1, "Error: NULL string passed to boolean conversion\n");
+    }
+    
+    // Convert to lowercase for case-insensitive comparison
+    char* lower = strdup(str);
+    if (!lower) {
+        raiseException(1, "Error: Memory allocation failed in boolean conversion\n");
+    }
+    
+    for (char* p = lower; *p; p++) {
+        *p = tolower(*p);
+    }
+    
+    bool result; // any of these will be converted to true/false when flagged explicitly though only true/false will be automatically inferred as bool
+    if (strcmp(lower, "true") == 0 || 
+        strcmp(lower, "yes") == 0 || 
+        strcmp(lower, "t") == 0 ||
+        strcmp(lower, "y") == 0 ||
+        strcmp(lower, "1") == 0 ||
+        strcmp(str, "1") == 0) {
+        result = true;
+    } else if (strcmp(lower, "false") == 0 ||
+               strcmp(lower, "no") == 0 ||
+               strcmp(lower, "f") == 0 ||
+               strcmp(lower, "n") == 0 ||
+               strcmp(lower, "0") == 0 ||
+               strcmp(str, "0") == 0) {
+        result = false;
+    } else {
+        // Try to parse as number
+        char* endptr;
+        long num = strtol(str, &endptr, 0);
+        if (*endptr == '\0') {  // Valid number
+            if (num == 0) {
+                result = false;
+            } else {
+                result = true;
+            }
+        } else {
+            free(lower);
+            raiseException(1, "Error: Invalid boolean value '%s'. Expected true/false, yes/no, 1/0, or a number\n", str);
+        }
+    }
+    
+    free(lower);
+    return result;
+}
+
 void* convert_to_type(ArgType type, const char* argStr) {
     void* result = malloc(typeToSize(type, 0));
 
@@ -357,6 +426,9 @@ void* convert_to_type(ArgType type, const char* argStr) {
         break;
     case TYPE_STRING:
         *(char**)result = interpret_special_chars(argStr);
+        break;
+    case TYPE_BOOL:
+        *(bool*)result = string_to_bool(argStr);
         break;
     default:
         free(result);
@@ -533,6 +605,9 @@ void convert_arg_value(ArgInfo* arg, const char* argStr) {
         case TYPE_UCHAR:
             arg->value->uc_val = *(unsigned char*)convertedValue;
             break;
+        case TYPE_BOOL:
+            arg->value->b_val = *(bool*)convertedValue;
+            break;
         case TYPE_USHORT:
             arg->value->us_val = *(unsigned short*)convertedValue;
             break;
@@ -643,6 +718,8 @@ char* typeToString(ArgType type) {
         return "unknown";
     case TYPE_STRUCT:
         return "struct";
+    case TYPE_BOOL:
+        return "bool";
     default:
         return "other?";
     }
@@ -681,7 +758,8 @@ size_t typeToSize(ArgType type, int array_value_pointer_depth) {
         return 0;
     case TYPE_ARRAY:
         return sizeof(void*);
-    // case TYPE_UNKNOWN: return 0;
+    case TYPE_BOOL:
+        return sizeof(bool);
     default:
         raiseException(1,  "Error: Unsupported type %c\n", typeToChar(type));
         fprintf(stderr, "Error: we should never reach here");
@@ -723,6 +801,8 @@ ArgType charToType(char c) {
         return TYPE_ARRAY;
     case 'S':
         return TYPE_STRUCT;
+    case 'b':
+        return TYPE_BOOL;
     default:
         return TYPE_UNKNOWN; // Default or error handling
     }
@@ -853,6 +933,7 @@ void* dynamicCast(void* ptr, ArgType from, ArgType to) {
 
     // Allocate memory for the intermediate type
     switch (from) {
+        case TYPE_BOOL:
         case TYPE_CHAR:
         case TYPE_SHORT:
         case TYPE_INT:
@@ -876,6 +957,9 @@ void* dynamicCast(void* ptr, ArgType from, ArgType to) {
 
     // Copy the value to the intermediate type
     switch (from) {
+        case TYPE_BOOL:
+            *(long*)intermediate = *(bool*)ptr;
+            break;
         case TYPE_CHAR:
             *(long*)intermediate = *(char*)ptr;
             break;
@@ -920,6 +1004,7 @@ void* dynamicCast(void* ptr, ArgType from, ArgType to) {
         case TYPE_FLOAT:
         case TYPE_DOUBLE:
             switch (to) {
+                case TYPE_BOOL:
                 case TYPE_CHAR:
                 case TYPE_SHORT:
                 case TYPE_INT:
@@ -939,6 +1024,7 @@ void* dynamicCast(void* ptr, ArgType from, ArgType to) {
                     break;
             }
             break;
+        case TYPE_BOOL:
         case TYPE_UCHAR:
         case TYPE_USHORT:
         case TYPE_UINT:
@@ -980,6 +1066,10 @@ void* dynamicCast(void* ptr, ArgType from, ArgType to) {
 
     // Allocate memory for the target type and copy the value
     switch (to) {
+        case TYPE_BOOL:
+            result = malloc(sizeof(bool));
+            *(bool*)result = (bool)*(long*)intermediate;
+            break;
         case TYPE_CHAR:
             result = malloc(sizeof(char));
             *(char*)result = (char)*(long*)intermediate;

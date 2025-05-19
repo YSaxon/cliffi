@@ -199,7 +199,7 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: ./prepare_and_test_via_adb.sh || sleep 1200
+          script: ./prepare_and_test_via_adb.sh
 
 
       - name: Setup tmate session if failed
