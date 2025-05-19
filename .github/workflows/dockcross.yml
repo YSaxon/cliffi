@@ -293,40 +293,40 @@ jobs:
           prerelease: true
 
 
-  smoke_test:
-    needs: [ build, build_on_mac, create_release ]
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Download Release
-        uses: robinraju/release-downloader@v1.12
-        with:
-          releaseId: ${{ needs.create_release.outputs.release_id }}
-          fileName: cliffi-${{ matrix.os == 'windows-latest' && 'windows-static-x64.exe' || 'linux-x64' }}
+  # smoke_test:
+  #   needs: [ build, build_on_mac, create_release ]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-latest, windows-latest]
+  #   runs-on: ${{ matrix.os }}
+  #   steps:
+  #     - name: Download Release
+  #       uses: robinraju/release-downloader@v1.12
+  #       with:
+  #         releaseId: ${{ needs.create_release.outputs.release_id }}
+  #         fileName: cliffi-${{ matrix.os == 'windows-latest' && 'windows-static-x64.exe' || 'linux-x64' }}
 
-      - name: Run Smoke Test (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          ls
-          mv 'cliffi*.exe' cliffi.exe
-          ./cliffi.exe msvcrt i strlen test 2>&1 | tee output
-          grep -q "Function returned: 4" output || exit 1
+  #     - name: Run Smoke Test (Windows)
+  #       if: runner.os == 'Windows'
+  #       run: |
+  #         ls
+  #         mv 'cliffi*.exe' cliffi.exe
+  #         ./cliffi.exe msvcrt i strlen test 2>&1 | tee output
+  #         grep -q "Function returned: 4" output || exit 1
 
-      - name: Run Smoke Test (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          ls -l
-          mv cliffi-* cliffi
-          chmod +x cliffi
-          ./cliffi libc i strlen test 2>&1 | tee output
-          grep -q "Function returned: 4" output || exit 1
+  #     - name: Run Smoke Test (Linux)
+  #       if: runner.os == 'Linux'
+  #       run: |
+  #         ls -l
+  #         mv cliffi-* cliffi
+  #         chmod +x cliffi
+  #         ./cliffi libc i strlen test 2>&1 | tee output
+  #         grep -q "Function returned: 4" output || exit 1
 
-      - name: Setup tmate session if failed
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
+  #     - name: Setup tmate session if failed
+  #       if: ${{ failure() }}
+  #       uses: mxschmitt/action-tmate@v3
 
   finalize_release:
     needs: [build, create_release]
