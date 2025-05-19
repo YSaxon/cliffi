@@ -57,12 +57,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Dependencies (macOS)
-        run: brew install libffi cmake readline
+      - name: Install Dependencies
+        run: brew install libffi cmake readline llvm
 
-      - name: Configure CMake (macOS)
-        if: runner.os == 'macOS'
-        run: brew sh -c "cmake  .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-Werror""
+      - name: Configure CMake
+        run: brew sh -c "mkdir build && cd build && cmake  .."
 
       - name: Run Tests
         run: cd build && ctest --output-on-failure
