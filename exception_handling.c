@@ -320,16 +320,9 @@ void segfault_handler(int signal) {
 void install_root_exception_handler() {
     set_main_threadid();
     if (sigsetjmp(rootJmpBuffer, 1) != 0) {
-        if (is_main_thread()){
-            fprintf(stderr,"Root exception handler caught an exception on main thread\n");
-            printException();
-            exit(1);
-        } else {
-            fprintf(stderr,"Root exception handler caught an exception on non-main thread. Terminating thread.\n");
-            printException();
-            if (isTestEnvExit1OnFail) exit(1);
-            terminateThread();
-        }
+        fprintf(stderr, "Uncaught exception. This shouldn't generally ever happen. Please report.\n");
+        printException(); // Always print the error details
+        exit(1);
     }
 }
 void install_segfault_handler() {
