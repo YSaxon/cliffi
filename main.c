@@ -666,8 +666,13 @@ bool checkAndRunCliffiInitWithPath(char* path) {
             if (line[read - 1] == '\n') {
                 line[read - 1] = '\0';
             }
-            int breakRepl = parseREPLCommand(line);
-            if (breakRepl) break;
+            TRY
+                int breakRepl = parseREPLCommand(line);
+                if (breakRepl) break; //TODO: why is this needed?
+            CATCHALL
+                printException();
+                fprintf(stderr, "Error encountered in processing a line from .cliffi_init file: %s\n", line);
+            END_TRY
         }
         free(line);
         fclose(file);
@@ -788,13 +793,19 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
+    TRY
     // run .cliffi_init file if exists
     checkAndRunCliffiInits();
 
-
+    CATCHALL
+        fprintf(stderr, "Error encountered in processing .cliffi_init file. Ignoring and proceeding to command execution.\n");
+        printException();
+    END_TRY
+    
     // Step 1: Resolve the library path
     // For now we've delegated that call to parse_arguments
 
+    TRY
     // Step 2: Parse command-line arguments
     FunctionCallInfo* call_info = parse_arguments(argc - 1, argv + 1); // skip the program name
     // convert_all_arrays_to_arginfo_ptr_sized_after_parsing(call_info); <-- handled inside parse_arguments now
@@ -821,7 +832,12 @@ int main(int argc, char* argv[]) {
     FreeLibrary(lib_handle);
 #else
     dlclose(lib_handle);
-#endif
+    #endif
 
     return invoke_result;
+
+    CATCHALL
+        printException();
+        exit(1);
+    END_TRY
 }
