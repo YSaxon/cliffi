@@ -1298,3 +1298,25 @@ set_tests_properties(is_equal_true_test PROPERTIES PASS_REGULAR_EXPRESSION "Func
 add_test(NAME test_nonzero_exit_for_nonexistent_function
         COMMAND cliffi ${TESTLIB} i non_existent_function 1 2)
 set_tests_properties(test_nonzero_exit_for_nonexistent_function PROPERTIES WILL_FAIL TRUE) # this test is expected to fail
+
+# ===================== UNIT TESTS (Unity) =====================
+# Download Unity if not present (simple approach)
+include(FetchContent)
+FetchContent_Declare(
+  unity
+  GIT_REPOSITORY https://github.com/ThrowTheSwitch/Unity.git
+  GIT_TAG v2.5.2 # or latest stable
+)
+FetchContent_MakeAvailable(unity)
+
+# Add unit test source
+set(UNIT_TEST_SOURCES
+    tests/test_cliffi_unit.c
+    cliffi_testlib.c
+)
+
+add_executable(cliffi_unit_tests ${UNIT_TEST_SOURCES})
+target_include_directories(cliffi_unit_tests PRIVATE ${unity_SOURCE_DIR}/src)
+target_link_libraries(cliffi_unit_tests PRIVATE m)
+
+add_test(NAME cliffi_unit_tests COMMAND cliffi_unit_tests)
