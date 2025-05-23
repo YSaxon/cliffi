@@ -1244,20 +1244,17 @@ set_tests_properties(TestBooleanReturnFalse PROPERTIES PASS_REGULAR_EXPRESSION "
 # Test various input formats for true
 add_test(NAME TestBooleanInputFormatsTrue
          COMMAND cliffi ${TESTLIB} b check_bool -b true -b yes -b 1)
-set_tests_properties(TestBooleanInputFormatsTrue PROPERTIES PASS_REGULAR_EXPRESSION "Got values: true, true, true")
-set_tests_properties(TestBooleanInputFormatsTrue PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: true")
+set_tests_properties(TestBooleanInputFormatsTrue PROPERTIES PASS_REGULAR_EXPRESSION "Got values: true, true, true;Function returned: true")
 
 # Test various input formats for false
 add_test(NAME TestBooleanInputFormatsFalse
          COMMAND cliffi ${TESTLIB} b check_bool -b false -b no -b 0)
-set_tests_properties(TestBooleanInputFormatsFalse PROPERTIES PASS_REGULAR_EXPRESSION "Got values: false, false, false")
-set_tests_properties(TestBooleanInputFormatsFalse PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: false")
+set_tests_properties(TestBooleanInputFormatsFalse PROPERTIES PASS_REGULAR_EXPRESSION "Got values: false, false, false;Function returned: false")
 
 # Test case insensitivity
 add_test(NAME TestBooleanCaseInsensitive
          COMMAND cliffi ${TESTLIB} b check_bool -b TRUE -b Yes -b True)
-set_tests_properties(TestBooleanCaseInsensitive PROPERTIES PASS_REGULAR_EXPRESSION "Got values: true, true, true")
-set_tests_properties(TestBooleanCaseInsensitive PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: true")
+set_tests_properties(TestBooleanCaseInsensitive PROPERTIES PASS_REGULAR_EXPRESSION "Got values: true, true, true;Function returned: true")
 
 # Test boolean array
 add_test(NAME TestBooleanArray
@@ -1272,8 +1269,7 @@ set_tests_properties(TestBooleanInStruct PROPERTIES PASS_REGULAR_EXPRESSION "Fun
 # Test mixed true/false values
 add_test(NAME TestBooleanMixed
          COMMAND cliffi ${TESTLIB} b check_bool -b true -b false -b true)
-set_tests_properties(TestBooleanMixed PROPERTIES PASS_REGULAR_EXPRESSION "Got values: true, false, true")
-set_tests_properties(TestBooleanMixed PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: false")
+set_tests_properties(TestBooleanMixed PROPERTIES PASS_REGULAR_EXPRESSION "Got values: true, false, true;Function returned: false")
 
 # Test implicit conversion from non-zero number
 add_test(NAME TestBooleanImplicitTrue
