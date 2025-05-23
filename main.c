@@ -36,7 +36,7 @@
 #include "shims.h"
 
 const char* NAME = "cliffi";
-const char* VERSION = "v1.12.3";
+const char* VERSION = "v1.12.4";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 
@@ -801,7 +801,7 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "Error encountered in processing .cliffi_init file. Ignoring and proceeding to command execution.\n");
         printException();
     END_TRY
-    
+
     // Step 1: Resolve the library path
     // For now we've delegated that call to parse_arguments
 
