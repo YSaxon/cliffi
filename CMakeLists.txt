@@ -1294,3 +1294,7 @@ set_tests_properties(is_equal_false_test PROPERTIES PASS_REGULAR_EXPRESSION "Fun
 add_test(NAME is_equal_true_test
         COMMAND cliffi ${TESTLIB} b is_equal 8 8 )
 set_tests_properties(is_equal_true_test PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: true")
+
+add_test(NAME test_nonzero_exit_for_nonexistent_function
+        COMMAND cliffi ${TESTLIB} i non_existent_function 1 2)
+set_tests_properties(test_nonzero_exit_for_nonexistent_function PROPERTIES WILL_FAIL TRUE) # this test is expected to fail

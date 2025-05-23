@@ -35,6 +35,7 @@ void raiseException(int status, char* formatstr, ...);
 void printException();
 
 #define TRY \
+ do { \
     sigjmp_buf* newjmpBufferPtr = (sigjmp_buf*)malloc(sizeof(sigjmp_buf)); /* sigjmp_buf newjmpBuffer;*/ \
     old_exception_buffer = current_exception_buffer; \
     current_exception_buffer = newjmpBufferPtr; \
@@ -58,7 +59,7 @@ void printException();
 
 // #define CATCHALL CATCH(NULL)
 
-#define CATCHALL } else { { handleException: \
+#define CATCHALL } else { { /*handleException:*/ \
     current_exception_buffer = old_exception_buffer; \
 
 // #if defined (use_backtrace)
@@ -75,6 +76,8 @@ void printException();
         current_exception_message = NULL; \
     } \
     freebacktrace \
+} while (0);
+
 
 void raiseException(int status, char* formatstr, ...);
 void setCodeSectionForSegfaultHandler(const char* section);
