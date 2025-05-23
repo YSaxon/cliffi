@@ -101,6 +101,7 @@ pkg_search_module(READLINE readline REQUIRED)
 target_link_libraries(cliffi PRIVATE
 ${LIBFFI_LIBRARIES}
 ${READLINE_LIBRARIES}
+${CMAKE_DL_LIBS}
 )
 
 endif()
@@ -126,16 +127,11 @@ message("attempting link readline::readline")
 endif()
 endif()
 
-if(NOT ANDROID) # on android this breaks things
-find_library(DL_LIBRARY NAMES dl)
-if(DL_LIBRARY)
-  target_link_libraries(cliffi PRIVATE ${DL_LIBRARY})
-endif()
-endif()
 
 target_include_directories(cliffi PRIVATE
         ${LIBFFI_INCLUDE_DIRS}
         ${READLINE_INCLUDE_DIRS}
+        ${CMAKE_DL_LIBS}
         )
 
 # Compile cliffi_testlib.c into a shared library
