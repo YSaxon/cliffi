@@ -29,5 +29,5 @@ jobs:
         with:
           homebrew-tap: YSaxon/homebrew-cliffi
           formula-name: cliffi
-          tag-name: ${{ github.event.inputs.tag-name || env.LATEST_TAG || github.event.release.tag_name }}
-          download-url: https://github.com/YSaxon/cliffi/archive/refs/tags/${{ github.event.inputs.tag-name || env.LATEST_TAG || github.event.release.tag_name }}.tar.gz
+          tag-name: ${{ github.event.inputs.tag-name || github.event.release.tag_name }}
+          download-url: https://github.com/YSaxon/cliffi/archive/refs/tags/${{ github.event.inputs.tag-name || github.event.release.tag_name }}.tar.gz
