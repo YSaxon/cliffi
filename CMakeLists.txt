@@ -1311,8 +1311,9 @@ FetchContent_MakeAvailable(unity)
 
 # Add unit test source
 set(UNIT_TEST_SOURCES
-    tests/test_cliffi_unit.c
+    test_cliffi_unit.c
     cliffi_testlib.c
+    types_and_utils.c
 )
 
 add_executable(cliffi_unit_tests ${UNIT_TEST_SOURCES})
