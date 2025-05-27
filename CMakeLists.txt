@@ -154,6 +154,37 @@ set_target_properties(cliffitest PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIB
 
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pthread")
 
+
+# ===================== UNIT TESTS (Unity) =====================
+# Download Unity if not present (simple approach)
+include(FetchContent)
+FetchContent_Declare(
+  unity
+  GIT_REPOSITORY https://github.com/ThrowTheSwitch/Unity.git
+  GIT_TAG v2.5.2 # or latest stable
+)
+FetchContent_MakeAvailable(unity)
+
+# Add unit test source
+set(UNIT_TEST_SOURCES
+   ${SOURCES}
+    test_cliffi_unit.c
+    # cliffi_testlib.c
+)
+
+message(STATUS "unity test sources at ${UNIT_TEST_SOURCES},\n source dir at ${unity_SOURCE_DIR}/src)" )
+add_executable(cliffi_unit_tests ${UNIT_TEST_SOURCES})
+target_include_directories(cliffi_unit_tests PRIVATE ${unity_SOURCE_DIR}/src)
+target_link_libraries(cliffi_unit_tests PRIVATE
+    cliffi_common_deps  # This brings in libffi, readline, dl, and their includes
+    unity               # The Unity testing framework library
+)
+
+add_test(NAME cliffi_unit_tests COMMAND cliffi_unit_tests)
+
+
+
+
 if(ANDROID)
     # Path to your wrapper script. Adjust if it's not in CMAKE_SOURCE_DIR.
     set(ADB_RUNNER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/run_on_adb.sh")
@@ -1303,28 +1334,5 @@ add_test(NAME test_nonzero_exit_for_nonexistent_function
         COMMAND cliffi ${TESTLIB} i non_existent_function 1 2)
 set_tests_properties(test_nonzero_exit_for_nonexistent_function PROPERTIES WILL_FAIL TRUE) # this test is expected to fail
 
-===================== UNIT TESTS (Unity) =====================
-# Download Unity if not present (simple approach)
-include(FetchContent)
-FetchContent_Declare(
-  unity
-  GIT_REPOSITORY https://github.com/ThrowTheSwitch/Unity.git
-  GIT_TAG v2.5.2 # or latest stable
-)
-FetchContent_MakeAvailable(unity)
 
-# Add unit test source
-set(UNIT_TEST_SOURCES
-   ${SOURCES}
-    test_cliffi_unit.c
-    # cliffi_testlib.c
-)
 
-add_executable(cliffi_unit_tests ${UNIT_TEST_SOURCES})
-target_include_directories(cliffi_unit_tests PRIVATE ${unity_SOURCE_DIR}/src)
-target_link_libraries(cliffi_unit_tests PRIVATE
-    cliffi_common_deps  # This brings in libffi, readline, dl, and their includes
-    unity               # The Unity testing framework library
-)
-
-add_test(NAME cliffi_unit_tests COMMAND cliffi_unit_tests)
