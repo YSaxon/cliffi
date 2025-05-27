@@ -354,4 +354,5 @@ jobs:
             homebrew-tap: YSaxon/homebrew-cliffi
             formula-name: cliffi
             tag-name: ${{ needs.create_release.outputs.version }}
-            download-url: https://github.com/YSaxon/cliffi/archive/refs/tags/${{ github.event.inputs.tag-name }}.tar.gz
+            download-url: https://github.com/YSaxon/cliffi/archive/refs/tags/${{ needs.create_release.outputs.version }}.tar.gz
+
