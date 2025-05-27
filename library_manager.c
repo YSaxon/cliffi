@@ -57,7 +57,7 @@ LibraryEntry* getLibraryEntry(const char* libraryPath) {
     return NULL;
 }
 
-void setLibraryEntry(const char* libraryPath, void* handle) {
+void addLibraryEntry(const char* libraryPath, void* handle) {
     LibraryEntry* entry = getLibraryEntry(libraryPath);
     if (entry == NULL) {
         libraryMap.entries = realloc(libraryMap.entries, (libraryMap.count + 1) * sizeof(LibraryEntry));
@@ -72,12 +72,13 @@ void* getOrLoadLibrary(const char* libraryPath) {
 
     LibraryEntry* entry = getLibraryEntry(libraryPath);
     if (entry != NULL) {
-        return entry->handle;
+        if (entry->handle!=NULL) return entry->handle;
     }
 
     void* handle = loadLibraryDirectly(libraryPath);
     if (handle != NULL) {
-        setLibraryEntry(libraryPath, handle);
+        if (entry != NULL) entry->handle=handle; // if lib was loaded but then closed
+        else addLibraryEntry(libraryPath, handle); // if lib was never in list
     }
 
     return handle;
