@@ -1317,7 +1317,7 @@ FetchContent_MakeAvailable(unity)
 set(UNIT_TEST_SOURCES
    ${SOURCES}
     test_cliffi_unit.c
-    cliffi_testlib.c
+    # cliffi_testlib.c
 )
 
 add_executable(cliffi_unit_tests ${UNIT_TEST_SOURCES})
