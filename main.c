@@ -246,9 +246,9 @@ void parseStoreToMemoryWithAddressAndValue(char* addressStr, int varValueCount, 
 
     void* destAddress = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
 
-    int args_used = 0;
-    ArgInfo* arg = parse_one_arg(varValueCount, varValues, &args_used, false);
-    if (args_used + 1 != varValueCount) {
+    int extra_args_used = 0;
+    ArgInfo* arg = parse_one_arg(varValueCount, varValues, &extra_args_used, false);
+    if (extra_args_used + 1 != varValueCount) {
         free(arg);
         raiseException(1,  "Invalid variable value. Parser failed to consume entire line.\n");
         return;
@@ -287,9 +287,9 @@ ArgInfo* parseLoadMemoryToArgWithType(char* addressStr, int typeArgc, char** typ
         raiseException(1,  "Variable type cannot be empty.\n");
     }
 
-    int args_used = 0;
-    ArgInfo* arg = parse_one_arg(typeArgc, typeArgv, &args_used, true);
-    if (args_used + 1 != typeArgc) {
+    int extra_args_used = 0;
+    ArgInfo* arg = parse_one_arg(typeArgc, typeArgv, &extra_args_used, true);
+    if (extra_args_used + 1 != typeArgc) {
         free(arg);
         raiseException(1,  "Invalid type. Specify it as if it were a return type (ie types only, no dashes).\n");
         return NULL;
@@ -336,9 +336,9 @@ void parseSetVariableWithNameAndValue(char* varName, int varValueCount, char** v
         raiseException(1,  "Variable names cannot be a number.\n");
     }
 
-    int args_used = 0;
-    ArgInfo* arg = parse_one_arg(varValueCount, varValues, &args_used, false);
-    if (args_used + 1 != varValueCount) {
+    int extra_args_used = 0;
+    ArgInfo* arg = parse_one_arg(varValueCount, varValues, &extra_args_used, false);
+    if (extra_args_used + 1 != varValueCount) {
         free(arg);
         raiseException(1,  "Invalid variable value (parser failed to consume entire value line)\n");
         return;
@@ -694,6 +694,7 @@ void checkAndRunCliffiInits() {
     }
 }
 
+#ifndef CLIFFI_UNIT_TESTING // don't defined main() when compiling for unit tests to avoid a collision
 int main(int argc, char* argv[]) {
     setbuf(stdout, NULL); // disable buffering for stdout
     setbuf(stderr, NULL); // disable buffering for stderr
@@ -843,3 +844,4 @@ int main(int argc, char* argv[]) {
         exit(1);
     END_TRY
 }
+#endif
