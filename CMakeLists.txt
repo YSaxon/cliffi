@@ -1299,7 +1299,7 @@ add_test(NAME test_nonzero_exit_for_nonexistent_function
         COMMAND cliffi ${TESTLIB} i non_existent_function 1 2)
 set_tests_properties(test_nonzero_exit_for_nonexistent_function PROPERTIES WILL_FAIL TRUE) # this test is expected to fail
 
-# ===================== UNIT TESTS (Unity) =====================
+===================== UNIT TESTS (Unity) =====================
 # Download Unity if not present (simple approach)
 include(FetchContent)
 FetchContent_Declare(
@@ -1311,9 +1311,9 @@ FetchContent_MakeAvailable(unity)
 
 # Add unit test source
 set(UNIT_TEST_SOURCES
+   ${SOURCES}
     test_cliffi_unit.c
     cliffi_testlib.c
-    types_and_utils.c
 )
 
 add_executable(cliffi_unit_tests ${UNIT_TEST_SOURCES})
