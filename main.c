@@ -692,6 +692,7 @@ void checkAndRunCliffiInits() {
     }
 }
 
+#ifndef CLIFFI_UNIT_TESTING // don't defined main() when compiling for unit tests to avoid a collision
 int main(int argc, char* argv[]) {
     setbuf(stdout, NULL); // disable buffering for stdout
     setbuf(stderr, NULL); // disable buffering for stderr
@@ -841,3 +842,4 @@ int main(int argc, char* argv[]) {
         exit(1);
     END_TRY
 }
+#endif

@@ -70,7 +70,7 @@ include_directories(${LIBFFI_INCLUDE_DIRS})
 
 # Source files
 set(CLIFFI_COMMON_SOURCES
-# main.c
+main.c
 argparser.c
 types_and_utils.c
 invoke_handler.c
@@ -90,7 +90,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 add_library(cliffi_common_deps INTERFACE)
 
 # Target executable
-add_executable(cliffi main.c ${CLIFFI_COMMON_SOURCES})
+add_executable(cliffi ${CLIFFI_COMMON_SOURCES})
 
 if(NOT DEFINED USE_FIND_PACKAGE)
 
@@ -179,6 +179,8 @@ target_link_libraries(cliffi_unit_tests PRIVATE
     cliffi_common_deps  # This brings in libffi, readline, dl, and their includes
     unity               # The Unity testing framework library
 )
+target_compile_definitions(cliffi_unit_tests PRIVATE CLIFFI_UNIT_TESTING) # this prevents main() from main.c from being compiled
+
 
 add_test(NAME cliffi_unit_tests COMMAND cliffi_unit_tests)
 
