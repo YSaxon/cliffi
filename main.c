@@ -580,6 +580,7 @@ int parseREPLCommand(char* command){
                 while (*libraryName == ' ') {
                     libraryName++;
                 }
+                printf("Closing Library: %s\n",libraryName);
                 closeLibrary(libraryName);
             } else if (strcmp(command, "closeall") == 0) {
                 closeAllLibraries();
