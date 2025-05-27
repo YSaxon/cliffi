@@ -70,18 +70,18 @@ include_directories(${LIBFFI_INCLUDE_DIRS})
 
 # Source files
 set(CLIFFI_COMMON_SOURCES
-main.c
-argparser.c
-types_and_utils.c
-invoke_handler.c
-library_path_resolver.c
-return_formatter.c
-library_manager.c
-var_map.c
-tokenize.c
-parse_address.c
-shims.c
-exception_handling.c
+src/main.c
+src/argparser.c
+src/types_and_utils.c
+src/invoke_handler.c
+src/library_path_resolver.c
+src/return_formatter.c
+src/library_manager.c
+src/var_map.c
+src/tokenize.c
+src/parse_address.c
+src/shims.c
+src/exception_handling.c
 )
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -138,12 +138,13 @@ endif()
 target_include_directories(cliffi_common_deps INTERFACE
         ${LIBFFI_INCLUDE_DIRS}
         ${READLINE_INCLUDE_DIRS}
+        ${CMAKE_SOURCE_DIR}/src
         )
 
 target_link_libraries(cliffi PRIVATE cliffi_common_deps)
 
 # Compile cliffi_testlib.c into a shared library
-add_library(cliffitest SHARED cliffi_testlib.c)
+add_library(cliffitest SHARED test/lib/cliffi_testlib.c)
 
 # Set the output name of the library to match the platform conventions
 set_target_properties(cliffitest PROPERTIES OUTPUT_NAME "cliffi_test")
@@ -168,7 +169,7 @@ FetchContent_MakeAvailable(unity)
 # Add unit test source
 set(UNIT_TEST_SOURCES
    ${CLIFFI_COMMON_SOURCES}
-    test_cliffi_unit.c
+    test/unit/test_cliffi_unit.c
     # cliffi_testlib.c
 )
 
