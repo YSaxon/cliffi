@@ -18,7 +18,7 @@ jobs:
       - name: version
         id: version
         run: |
-          version=$(grep -oP 'VERSION = "\K[^"]+' main.c)
+          version=$(grep -oP 'VERSION = "\K[^"]+' src/main.c)
           echo "VERSION=$version" >> $GITHUB_OUTPUT
 
       - name: Set short git commit SHA
