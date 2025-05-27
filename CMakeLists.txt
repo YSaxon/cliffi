@@ -69,8 +69,8 @@ endif()
 include_directories(${LIBFFI_INCLUDE_DIRS})
 
 # Source files
-set(SOURCES
-main.c
+set(CLIFFI_COMMON_SOURCES
+# main.c
 argparser.c
 types_and_utils.c
 invoke_handler.c
@@ -90,7 +90,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 add_library(cliffi_common_deps INTERFACE)
 
 # Target executable
-add_executable(cliffi ${SOURCES})
+add_executable(cliffi main.c ${CLIFFI_COMMON_SOURCES})
 
 if(NOT DEFINED USE_FIND_PACKAGE)
 
@@ -167,7 +167,7 @@ FetchContent_MakeAvailable(unity)
 
 # Add unit test source
 set(UNIT_TEST_SOURCES
-   ${SOURCES}
+   ${CLIFFI_COMMON_SOURCES}
     test_cliffi_unit.c
     # cliffi_testlib.c
 )
