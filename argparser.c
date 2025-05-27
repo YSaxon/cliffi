@@ -122,9 +122,9 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
     arg->array_value_pointer_depth = array_value_pointer_depth;
 }
 
-void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *args_used, bool is_return, bool is_struct);
+void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *extra_args_used, bool is_return, bool is_struct);
 
-ArgInfo* parse_one_arg(int argc, char* argv[], int *args_used, bool is_return){
+ArgInfo* parse_one_arg(int argc, char* argv[], int *extra_args_used, bool is_return){
         char* argStr = argv[0];
 
         ArgInfo* storedVar = getVar(argStr);
@@ -191,11 +191,11 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *args_used, bool is_return){
             convert_arg_value(outArg, argStr);
         }
         set_args_used_and_return: // this is a goto label
-        *args_used += i;
+        *extra_args_used += i;
         return outArg;
 }
 
-void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *args_used, bool is_return, bool is_struct) {
+void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *extra_args_used, bool is_return, bool is_struct) {
     // ArgInfoContainer* arginfo = info->type == FUNCTION_INFO ? &info->function_info->info : &info->struct_info->info;
     #ifdef DEBUG
     printf("Beginning to parse args (%d remaining)\n", argc);
@@ -235,7 +235,7 @@ void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *a
         raiseException(1,  "Error: Struct flag not closed with :S\n");
     }
 
-    *args_used = i;
+    *extra_args_used = i;
 
     convert_all_arrays_to_arginfo_ptr_sized_after_parsing(info);
 
