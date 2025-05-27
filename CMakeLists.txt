@@ -9,22 +9,22 @@ set(CMAKE_C_STANDARD 99)
 
 set(USE_REPL_MODE ON)
 
-if(APPLE)
-    # Find Homebrew's LLVM installation directory
-    execute_process(COMMAND brew --prefix llvm OUTPUT_VARIABLE HOMEBREW_LLVM_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+# if(APPLE)
+#     # Find Homebrew's LLVM installation directory
+#     execute_process(COMMAND brew --prefix llvm OUTPUT_VARIABLE HOMEBREW_LLVM_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-    # Check if the directory exists
-    find_program(LLVM_CLANG_FOUND clang++ PATHS ${HOMEBREW_LLVM_DIR}/bin NO_DEFAULT_PATH)
+#     # Check if the directory exists
+#     find_program(LLVM_CLANG_FOUND clang++ PATHS ${HOMEBREW_LLVM_DIR}/bin NO_DEFAULT_PATH)
 
-    if(LLVM_CLANG_FOUND)
-        # Set C and C++ compilers
-        set(CMAKE_C_COMPILER "${HOMEBREW_LLVM_DIR}/bin/clang")
-        set(CMAKE_CXX_COMPILER "${HOMEBREW_LLVM_DIR}/bin/clang++")
-        message(STATUS "Using Homebrew's LLVM Clang: ${CMAKE_C_COMPILER}")
-    else()
-        message(STATUS "Homebrew's LLVM is not installed, using default compiler")
-    endif()
-endif()
+#     if(LLVM_CLANG_FOUND)
+#         # Set C and C++ compilers
+#         set(CMAKE_C_COMPILER "${HOMEBREW_LLVM_DIR}/bin/clang")
+#         set(CMAKE_CXX_COMPILER "${HOMEBREW_LLVM_DIR}/bin/clang++")
+#         message(STATUS "Using Homebrew's LLVM Clang: ${CMAKE_C_COMPILER}")
+#     else()
+#         message(STATUS "Homebrew's LLVM is not installed, using default compiler")
+#     endif()
+# endif()
 
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
