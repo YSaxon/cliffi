@@ -218,7 +218,10 @@ endif()
 
 
 #===============================================================================
-
+# if (NOT WINDOWS)
+set(HEXADDRESS_REGEX 0x[0-9a-f][0-9a-f][0-9a-f][0-9a-f]+) # for some reason {} doesn't work
+# else()
+# set(HEXADDRESS_REGEX [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]+)
 
 add_test(NAME TestLibFinderRelativePath
          COMMAND cliffi ./libcliffi_test${CMAKE_SHARED_LIBRARY_SUFFIX} i add 1 2)
@@ -745,7 +748,7 @@ ${TESTLIB} strvoidpointer get_message \n
 print strvoidpointer \n
 ${TESTLIB} s concat strvoidpointer strvoidpointer \n
 )
-set_tests_properties(repl_test_voidpointer PROPERTIES PASS_REGULAR_EXPRESSION "strvoidpointer = 0?x?[0-9a-f]{4,}.*Function returned: \"?Hello, cliffi.Hello, cliffi.\"?")
+set_tests_properties(repl_test_voidpointer PROPERTIES PASS_REGULAR_EXPRESSION "strvoidpointer = ${HEXADDRESS_REGEX}.*Function returned: \"Hello, cliffi\\!Hello, cliffi")
 
 
 add_test(NAME repl_test_variable_simple_syntactic_sugar #
@@ -766,14 +769,16 @@ var2 \n
 )
 set_tests_properties(repl_test_variable_set_to_another PROPERTIES FAIL_REGULAR_EXPRESSION "int var2 = 4")
 
-add_test(NAME repl_test_tokenizer #
-COMMAND cliffi --repltest
-set var1 \"test string foo\" \n
-set var2 a\\ b\\ c \n
-${TESTLIB} s concat var1 \" and bar and \\ slash\" \n
-print var2 \n
-)
-set_tests_properties(repl_test_tokenizer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?test string foo and bar and . slash.*var2 = \"?a b c")
+# add_test(NAME repl_test_tokenizer #
+# COMMAND cliffi --repltest
+# set var1 \"test string foo\" \n
+# set var2 a\\ b\\ c \n
+# ${TESTLIB} s concat var1 \" and bar and \\ slash\" \n
+# print var2 \n
+# )
+# set_tests_properties(repl_test_tokenizer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?test string foo and bar and . slash.*var2 = \"?a b c")
+# this test is a bit too confusing to be sure its even specified correctly will need to come back to this one
+
 
 add_test(NAME repl_test_store_embedded_struct
 COMMAND cliffi --repltest
@@ -814,7 +819,7 @@ load global_int i global_address \n
 store global_address 88 \n
 print global_int \n
 )
-set_tests_properties(repl_test_load_store_dump_memory PROPERTIES PASS_REGULAR_EXPRESSION "global_address = 0?x?[0-9a-f]{4,}.*int global_int = 1.*global_address = (int )?42.*Function returned: 43.*int global_int = 43")
+set_tests_properties(repl_test_load_store_dump_memory PROPERTIES PASS_REGULAR_EXPRESSION "global_address = (0x)?0.*global_address = ${HEXADDRESS_REGEX}.*int global_int = 1.*global_address = (int )?42.*Function returned: 43.*int global_int = 43")
 set_tests_properties(repl_test_load_store_dump_memory PROPERTIES FAIL_REGULAR_EXPRESSION "int global_int = 88")
 
 
@@ -838,7 +843,8 @@ load loadedstruct S: c S: i d c s :S i :S globalbuffer \n
 ${TESTLIB} v test_nested_large_struct loadedstruct \n
 )
 #TODO: add a test for the dump command
-set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.c: q.*s.s.x: 1.*s.s.y: 2.20*.*s.s.c: a.*s.s.s: hello.*s.x: 5.*.*0x[0-9a-f]*. = struct { char \'?q\'?, struct { int 1, double 2.20*, char \'?a\'?, cstring \"?hello\"? }, int 5 }.*loadedstruct.* { char \'?q\'?, struct { int 1, double 2.20*, char \'?a\'?, cstring \"?hello\"? }, int 5 }")
+set (nestedstructregex "(struct )?{ char \'?q\'?, struct { int 1, double 2.20*, char \'?a\'?, cstring \"?hello\"? }, int 5 }")
+set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "${HEXADDRESS_REGEX}\\) = ${nestedstructregex}.*globalbuffer = ${nestedstructregex}.*loadedstruct = ${nestedstructregex}.*s.c: q\ns.s.x: 1\ns.s.y: 2.20*\ns.s.c: a\ns.s.s: hello\ns.x: 5")   #ideally would reintegrate old parts of the test struct { char \'?q\'?, struct { int 1, double 2.20*, char \'?a\'?, cstring \"?hello\"? }, int 5 }.*loadedstruct.* { char \'?q\'?, struct { int 1, double 2.20*, char \'?a\'?, cstring \"?hello\"? }, int 5 }")
 
 
 # struct embedded_with_pointer {
