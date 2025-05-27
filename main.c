@@ -580,8 +580,9 @@ int parseREPLCommand(char* command){
                 while (*libraryName == ' ') {
                     libraryName++;
                 }
-                printf("Closing Library: %s\n",libraryName);
-                closeLibrary(libraryName);
+                char* resolvedPath = resolve_library_path(libraryName);
+                printf("Closing Library: %s\n",resolvedPath);
+                closeLibrary(resolvedPath);
             } else if (strcmp(command, "closeall") == 0) {
                 closeAllLibraries();
             } else if (strncmp(command, "set ", 4) == 0) {
