@@ -9,22 +9,22 @@ set(CMAKE_C_STANDARD 99)
 
 set(USE_REPL_MODE ON)
 
-if(APPLE)
-    # Find Homebrew's LLVM installation directory
-    execute_process(COMMAND brew --prefix llvm OUTPUT_VARIABLE HOMEBREW_LLVM_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+# if(APPLE)
+#     # Find Homebrew's LLVM installation directory
+#     execute_process(COMMAND brew --prefix llvm OUTPUT_VARIABLE HOMEBREW_LLVM_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-    # Check if the directory exists
-    find_program(LLVM_CLANG_FOUND clang++ PATHS ${HOMEBREW_LLVM_DIR}/bin NO_DEFAULT_PATH)
+#     # Check if the directory exists
+#     find_program(LLVM_CLANG_FOUND clang++ PATHS ${HOMEBREW_LLVM_DIR}/bin NO_DEFAULT_PATH)
 
-    if(LLVM_CLANG_FOUND)
-        # Set C and C++ compilers
-        set(CMAKE_C_COMPILER "${HOMEBREW_LLVM_DIR}/bin/clang")
-        set(CMAKE_CXX_COMPILER "${HOMEBREW_LLVM_DIR}/bin/clang++")
-        message(STATUS "Using Homebrew's LLVM Clang: ${CMAKE_C_COMPILER}")
-    else()
-        message(STATUS "Homebrew's LLVM is not installed, using default compiler")
-    endif()
-endif()
+#     if(LLVM_CLANG_FOUND)
+#         # Set C and C++ compilers
+#         set(CMAKE_C_COMPILER "${HOMEBREW_LLVM_DIR}/bin/clang")
+#         set(CMAKE_CXX_COMPILER "${HOMEBREW_LLVM_DIR}/bin/clang++")
+#         message(STATUS "Using Homebrew's LLVM Clang: ${CMAKE_C_COMPILER}")
+#     else()
+#         message(STATUS "Homebrew's LLVM is not installed, using default compiler")
+#     endif()
+# endif()
 
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -69,26 +69,28 @@ endif()
 include_directories(${LIBFFI_INCLUDE_DIRS})
 
 # Source files
-set(SOURCES
-main.c
-argparser.c
-types_and_utils.c
-invoke_handler.c
-library_path_resolver.c
-return_formatter.c
-library_manager.c
-var_map.c
-tokenize.c
-parse_address.c
-shims.c
-exception_handling.c
+set(CLIFFI_COMMON_SOURCES
+src/main.c
+src/argparser.c
+src/types_and_utils.c
+src/invoke_handler.c
+src/library_path_resolver.c
+src/return_formatter.c
+src/library_manager.c
+src/var_map.c
+src/tokenize.c
+src/parse_address.c
+src/shims.c
+src/exception_handling.c
 )
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
+add_library(cliffi_common_deps INTERFACE)
+
 # Target executable
-add_executable(cliffi ${SOURCES})
+add_executable(cliffi ${CLIFFI_COMMON_SOURCES})
 
 if(NOT DEFINED USE_FIND_PACKAGE)
 
@@ -98,7 +100,7 @@ pkg_search_module(LIBFFI libffi REQUIRED)
 pkg_search_module(READLINE readline REQUIRED)
 
 
-target_link_libraries(cliffi PRIVATE
+target_link_libraries(cliffi_common_deps INTERFACE
 ${LIBFFI_LIBRARIES}
 ${READLINE_LIBRARIES}
 )
@@ -112,7 +114,7 @@ if(DEFINED USE_FIND_PACKAGE)
 set(libffi_DIR ${CMAKE_SOURCE_DIR}/build)
 set(ENV{libffi_DIR} ${CMAKE_SOURCE_DIR}/build)
 find_package(libffi REQUIRED)
-target_link_libraries(cliffi PRIVATE libffi::libffi)
+target_link_libraries(cliffi_common_deps INTERFACE libffi::libffi)
 message(STATUS "libffi include dirs: ${libffi_INCLUDE_DIRS}")
 
 
@@ -120,7 +122,7 @@ if (NOT WIN32)
 set(readline_DIR ${CMAKE_SOURCE_DIR}/build)
 set(ENV{readline_DIR} ${CMAKE_SOURCE_DIR}/build)
 find_package(readline REQUIRED)
-target_link_libraries(cliffi PRIVATE readline::readline)
+target_link_libraries(cliffi_common_deps INTERFACE readline::readline)
 message(STATUS "readline include dirs: ${readline_INCLUDE_DIRS}")
 message("attempting link readline::readline")
 endif()
@@ -129,17 +131,20 @@ endif()
 if(NOT ANDROID) # on android this breaks things
 find_library(DL_LIBRARY NAMES dl)
 if(DL_LIBRARY)
-  target_link_libraries(cliffi PRIVATE ${DL_LIBRARY})
+  target_link_libraries(cliffi_common_deps INTERFACE ${DL_LIBRARY})
 endif()
 endif()
 
-target_include_directories(cliffi PRIVATE
+target_include_directories(cliffi_common_deps INTERFACE
         ${LIBFFI_INCLUDE_DIRS}
         ${READLINE_INCLUDE_DIRS}
+        ${CMAKE_SOURCE_DIR}/src
         )
 
+target_link_libraries(cliffi PRIVATE cliffi_common_deps)
+
 # Compile cliffi_testlib.c into a shared library
-add_library(cliffitest SHARED cliffi_testlib.c)
+add_library(cliffitest SHARED test/lib/cliffi_testlib.c)
 
 # Set the output name of the library to match the platform conventions
 set_target_properties(cliffitest PROPERTIES OUTPUT_NAME "cliffi_test")
@@ -149,6 +154,39 @@ set_target_properties(cliffi PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME
 set_target_properties(cliffitest PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pthread")
+
+
+# ===================== UNIT TESTS (Unity) =====================
+# Download Unity if not present (simple approach)
+include(FetchContent)
+FetchContent_Declare(
+  unity
+  GIT_REPOSITORY https://github.com/ThrowTheSwitch/Unity.git
+  GIT_TAG v2.5.2 # or latest stable
+)
+FetchContent_MakeAvailable(unity)
+
+# Add unit test source
+set(UNIT_TEST_SOURCES
+   ${CLIFFI_COMMON_SOURCES}
+    test/unit/test_cliffi_unit.c
+    # cliffi_testlib.c
+)
+
+message(STATUS "unity test sources at ${UNIT_TEST_SOURCES},\n source dir at ${unity_SOURCE_DIR}/src)" )
+add_executable(cliffi_unit_tests ${UNIT_TEST_SOURCES})
+target_include_directories(cliffi_unit_tests PRIVATE ${unity_SOURCE_DIR}/src)
+target_link_libraries(cliffi_unit_tests PRIVATE
+    cliffi_common_deps  # This brings in libffi, readline, dl, and their includes
+    unity               # The Unity testing framework library
+)
+target_compile_definitions(cliffi_unit_tests PRIVATE CLIFFI_UNIT_TESTING) # this prevents main() from main.c from being compiled
+
+
+add_test(NAME cliffi_unit_tests COMMAND cliffi_unit_tests)
+
+
+
 
 if(ANDROID)
     # Path to your wrapper script. Adjust if it's not in CMAKE_SOURCE_DIR.
@@ -169,6 +207,7 @@ if(ANDROID)
     message(STATUS "Cross-compiling emulator for Android tests set to: ${CMAKE_CROSSCOMPILING_EMULATOR}")
 
     set_property(TARGET cliffi PROPERTY CROSSCOMPILING_EMULATOR "${ADB_RUNNER_SCRIPT}")
+    set_property(TARGET cliffi_unit_tests PROPERTY CROSSCOMPILING_EMULATOR "${ADB_RUNNER_SCRIPT}")
 
 
     # # For Android, ensure linker flags are appropriate
@@ -1299,3 +1338,6 @@ set_tests_properties(is_equal_true_test PROPERTIES PASS_REGULAR_EXPRESSION "Func
 add_test(NAME test_nonzero_exit_for_nonexistent_function
         COMMAND cliffi ${TESTLIB} i non_existent_function 1 2)
 set_tests_properties(test_nonzero_exit_for_nonexistent_function PROPERTIES WILL_FAIL TRUE) # this test is expected to fail
+
+
+
