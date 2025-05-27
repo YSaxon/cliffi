@@ -325,15 +325,15 @@ set_tests_properties(ModifyPoint PROPERTIES PASS_REGULAR_EXPRESSION "Arg 0 .* st
 
 add_test(NAME ComplexStruct #
             COMMAND cliffi ${TESTLIB} v test_complex_struct -S: -c a 4 1.1 0x33 -S: 8 2.2 :S -i 54 5.4 -pS: 7 9.9 :S :S )
-set_tests_properties(ComplexStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.c: a;s.x: 4;s.y: 1.10*;s.c2: 3;s.p->x: 8;s.p->y: 2.20*;s.x2: 54;s.y2: 5.40*;s.p2.x: 7;s.p2.y: 9.90*")
+set_tests_properties(ComplexStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.c: a.*s.x: 4.*s.y: 1.10*.*s.c2: 3.*s.p->x: 8.*s.p->y: 2.20*.*s.x2: 54.*s.y2: 5.40*.*s.p2.x: 7.*s.p2.y: 9.90*")
 
 add_test(NAME Complex_P_Struct #
             COMMAND cliffi ${TESTLIB} v test_p_complex_struct -pS: -c a 4 1.1 0x33 -S: 8 2.2 :S -i 54 5.4 -pS: 7 9.9 :S :S )
-set_tests_properties(Complex_P_Struct PROPERTIES PASS_REGULAR_EXPRESSION "s->c: a;s->x: 4;s->y: 1.10*;s->c2: 3;s->p->x: 8;s->p->y: 2.20*;s->x2: 54;s->y2: 5.40*;s->p2.x: 7;s->p2.y: 9.90*")
+set_tests_properties(Complex_P_Struct PROPERTIES PASS_REGULAR_EXPRESSION "s->c: a.*s->x: 4.*s->y: 1.10*.*s->c2: 3.*s->p->x: 8.*s->p->y: 2.20*.*s->x2: 54.*s->y2: 5.40*.*s->p2.x: 7.*s->p2.y: 9.90*")
 
 add_test(NAME NestedLargerStruct #
 COMMAND cliffi ${TESTLIB} v test_nested_large_struct -S: -c a -S: 5 3.3 -c b thisisastring :S 77 :S )
-set_tests_properties(NestedLargerStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.c: a;s.s.x: 5;s.s.y: 3.30*;s.s.c: b;s.s.s: thisisastring;s.x: 77")
+set_tests_properties(NestedLargerStruct PROPERTIES PASS_REGULAR_EXPRESSION "s.c: a.*s.s.x: 5.*s.s.y: 3.30*.*s.s.c: b.*s.s.s: thisisastring.*s.x: 77")
 
 add_test(NAME return_struct #
 COMMAND cliffi ${TESTLIB} S: i d :S get_point 4 2.2 )
@@ -372,19 +372,19 @@ set_tests_properties(return_p_complex_struct PROPERTIES PASS_REGULAR_EXPRESSION 
 add_test(NAME test_struct_with_embedded_array #
     # COMMAND cliffi ${TESTLIB} v test_struct_with_embedded_array -S: 1 -ac10 h,e,l,l,o 1,2,3 4 )
 COMMAND cliffi ${TESTLIB} v test_struct_with_embedded_array -S: 1 -ac10 h,e,l,l,o 1,2,3 4 :S )
-set_tests_properties(test_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s.x: 1;s.a\\[0\\]: 1;s.a\\[1\\]: 2;s.a\\[2\\]: 3;s.y: 4;s.s: hello")
+set_tests_properties(test_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s.x: 1.*s.a\\[0\\]: 1.*s.a\\[1\\]: 2.*s.a\\[2\\]: 3.*s.y: 4.*s.s: hello")
 
 add_test(NAME test_p_struct_with_embedded_array #
     COMMAND cliffi ${TESTLIB} v test_p_struct_with_embedded_array -pS: 1 -ac10 h,e,l,l,o 1,2,3 4 :S )
-set_tests_properties(test_p_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1;s->s: hello;s->a\\[0\\]: 1;s->a\\[1\\]: 2;s->a\\[2\\]: 3;s->y: 4")
+set_tests_properties(test_p_struct_with_embedded_array PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1.*s->s: hello.*s->a\\[0\\]: 1.*s->a\\[1\\]: 2.*s->a\\[2\\]: 3.*s->y: 4")
 
 add_test(NAME test_p_struct_with_embedded_array_intonly #
     COMMAND cliffi ${TESTLIB} v test_p_struct_with_embedded_array_intonly -pS: 1 1,2,3 4 :S )
-set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1;s->s: hello;s->a\\[0\\]: 1;s->a\\[1\\]: 2;s->a\\[2\\]: 3;s->y: 4;Arg 0 after function .*1, 2, 3")
+set_tests_properties(test_p_struct_with_embedded_array_intonly PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1.*s->s: hello.*s->a\\[0\\]: 1.*s->a\\[1\\]: 2.*s->a\\[2\\]: 3.*s->y: 4.*Arg 0 after function .*1, 2, 3")
 
 add_test(NAME test_p_struct_with_embedded_array_intonly_return_struct #
     COMMAND cliffi ${TESTLIB} S: i ai3 i :S test_p_struct_with_embedded_array_intonly_return_struct -pS: 1 1,2,3 4 :S )
-set_tests_properties(test_p_struct_with_embedded_array_intonly_return_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1;s->a\\[0\\]: 1;s->a\\[1\\]: 2;s->a\\[2\\]: 3;s->y: 4")
+set_tests_properties(test_p_struct_with_embedded_array_intonly_return_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1.*s->a\\[0\\]: 1.*s->a\\[1\\]: 2.*s->a\\[2\\]: 3.*s->y: 4")
 
 add_test(NAME return_struct_with_embedded_array_intonly #
     COMMAND cliffi ${TESTLIB} S: i ai3 i :S return_struct_with_embedded_array_intonly )
@@ -393,7 +393,7 @@ set_tests_properties(return_struct_with_embedded_array_intonly PROPERTIES PASS_R
 
 add_test(NAME test_p_struct_with_embedded_array_charonly #
     COMMAND cliffi ${TESTLIB} v test_p_struct_with_embedded_array_charonly -pS: 1 -ac10 h,e,l,l,o 4 :S )
-set_tests_properties(test_p_struct_with_embedded_array_charonly PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1;s->s: hello;s->y: 4")
+set_tests_properties(test_p_struct_with_embedded_array_charonly PROPERTIES PASS_REGULAR_EXPRESSION "s->x: 1.*s->s: hello.*s->y: 4")
 
 add_test(NAME return_simple_struct_embedded_array #
     COMMAND cliffi ${TESTLIB} S: ai3 :S return_simple_struct_embedded_array )
@@ -408,19 +408,19 @@ set_tests_properties(test_p_struct_with_embedded_array_changed PROPERTIES PASS_R
 
 add_test(NAME test_fixed_char_array_10_with_incomplete_values #
     COMMAND cliffi ${TESTLIB} v test_fixed_buffer_10_chars_arg_then_double_arg -ac10 h,e,l,l,o 4.4 )
-set_tests_properties(test_fixed_char_array_10_with_incomplete_values PROPERTIES PASS_REGULAR_EXPRESSION "s: hello;d: 4.40*")
+set_tests_properties(test_fixed_char_array_10_with_incomplete_values PROPERTIES PASS_REGULAR_EXPRESSION "s: hello.*d: 4.40*")
 
 add_test(NAME test_fixed_char_array_10_with_full_values_then_double #
     COMMAND cliffi ${TESTLIB} v test_fixed_buffer_10_chars_arg_then_double_arg -ac10 h,e,l,l,o,a,b,c,d,0x00 4.4 )
-set_tests_properties(test_fixed_char_array_10_with_full_values_then_double PROPERTIES PASS_REGULAR_EXPRESSION "s: helloabcd;d: 4.40*")
+set_tests_properties(test_fixed_char_array_10_with_full_values_then_double PROPERTIES PASS_REGULAR_EXPRESSION "s: helloabcd.*d: 4.40*")
 
 add_test(NAME test_simple_struct_embedded_array_10_chars_filled_then_double #
     COMMAND cliffi ${TESTLIB} v test_simple_struct_embedded_array_10_chars_then_double -S: -ac10 h,e,l,l,o,a,b,c,d,0x00 4.4 :S )
-set_tests_properties(test_simple_struct_embedded_array_10_chars_filled_then_double PROPERTIES PASS_REGULAR_EXPRESSION "s: helloabcd;d: 4.40*")
+set_tests_properties(test_simple_struct_embedded_array_10_chars_filled_then_double PROPERTIES PASS_REGULAR_EXPRESSION "s: helloabcd.*d: 4.40*")
 
 add_test(NAME test_simple_struct_embedded_array_10_chars_then_double #
     COMMAND cliffi ${TESTLIB} v test_simple_struct_embedded_array_10_chars_then_double -S: -ac10 h,e,l,l,o,0x00,q 4.4 :S )
-set_tests_properties(test_simple_struct_embedded_array_10_chars_then_double PROPERTIES PASS_REGULAR_EXPRESSION "s: hello;d: 4.40*")
+set_tests_properties(test_simple_struct_embedded_array_10_chars_then_double PROPERTIES PASS_REGULAR_EXPRESSION "s: hello.*d: 4.40*")
 
 add_test(NAME test_even_simpler_struct_embedded_array_10_chars_unfilled
     COMMAND cliffi ${TESTLIB} v test_even_simpler_struct_embedded_array_10_chars -S: -ac10 h,e,l,l,o,0x00,q :S )
@@ -437,22 +437,22 @@ set_tests_properties(test_struct_with_embedded_array_pointer PROPERTIES PASS_REG
 
 add_test(NAME test_p_struct_with_embedded_array_pointer #
     COMMAND cliffi ${TESTLIB} v test_p_struct_with_char_pointer -pS: -pac10 h,e,l,l,o,0x00,q :S )
-set_tests_properties(test_p_struct_with_embedded_array_pointer PROPERTIES PASS_REGULAR_EXPRESSION "s: hello;after function return:.*hello")
+set_tests_properties(test_p_struct_with_embedded_array_pointer PROPERTIES PASS_REGULAR_EXPRESSION "s: hello.*after function return:.*hello")
 
 
 
 
 add_test(NAME func_with_int_varargs #
     COMMAND cliffi ${TESTLIB} i sum_func_with_int_varargs 10 ... 1 2 3 4 5 6 7 8 9 10)
-set_tests_properties(func_with_int_varargs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 0: 1;Function returned: 55")
+set_tests_properties(func_with_int_varargs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 0: 1.*Function returned: 55")
 
 add_test(NAME varargs_structs #
     COMMAND cliffi ${TESTLIB} v varargs_structs 3 ... -S: 1 2.2 :S -S: 3 4.4 :S -S: 5 6.6 :S )
-set_tests_properties(varargs_structs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 0: 1, 2.2.*;got vararg 1: 3, 4.4.*;got vararg 2: 5, 6.6.*")
+set_tests_properties(varargs_structs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 0: 1, 2.2.*.*got vararg 1: 3, 4.4.*.*got vararg 2: 5, 6.6.*")
 
 add_test(NAME varargs_p_structs #
     COMMAND cliffi ${TESTLIB} v varargs_p_structs 3 ... -pS: 1 2.2 :S -pS: 3 4.4 :S -pS: 5 6.6 :S )
-set_tests_properties(varargs_p_structs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 0: 1, 2.2.*;got vararg 1: 3, 4.4.*;got vararg 2: 5, 6.6.*")
+set_tests_properties(varargs_p_structs PROPERTIES PASS_REGULAR_EXPRESSION "got vararg 0: 1, 2.2.*.*got vararg 1: 3, 4.4.*.*got vararg 2: 5, 6.6.*")
 
 add_test(NAME my_printf_novarargs #
     COMMAND cliffi ${TESTLIB} v my_printf -s "Hello" ...)
@@ -579,7 +579,7 @@ set_tests_properties(return_p_struct_with_embedded_array_pointer PROPERTIES PASS
 
 add_test(NAME grand_test_of_arrays_of_int_pointers
     COMMAND cliffi ${TESTLIB} api12 grand_test_of_arrays_of_int_pointers -S: -api3 1,2,3 :S -pS: -api3 4,5,6 :S -api3 7,8,9 -papi3 10,11,12)
-set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "s.arr\\[0\\]: 1;s.arr\\[1\\]: 2;s.arr\\[2\\]: 3;s2->arr\\[0\\]: 4;s2->arr\\[1\\]: 5;s2->arr\\[2\\]: 6;arr\\[0\\]: 7;arr\\[1\\]: 8;arr\\[2\\]: 9;arr2\\[0\\]: 10;arr2\\[1\\]: 11;arr2\\[2\\]: 12;Function returned:.*1, 2, 3.*4, 5, 6.*7, 8, 9.*10, 11, 12")
+set_tests_properties(grand_test_of_arrays_of_int_pointers PROPERTIES PASS_REGULAR_EXPRESSION "s.arr\\[0\\]: 1.*s.arr\\[1\\]: 2.*s.arr\\[2\\]: 3.*s2->arr\\[0\\]: 4.*s2->arr\\[1\\]: 5.*s2->arr\\[2\\]: 6.*arr\\[0\\]: 7.*arr\\[1\\]: 8.*arr\\[2\\]: 9.*arr2\\[0\\]: 10.*arr2\\[1\\]: 11.*arr2\\[2\\]: 12.*Function returned:.*1, 2, 3.*4, 5, 6.*7, 8, 9.*10, 11, 12")
 
 add_test(NAME test_array_of_int_pointers_simple
     COMMAND cliffi ${TESTLIB} i test_array_of_int_pointers_simple -api3 1,2,3)
@@ -599,13 +599,13 @@ add_test(NAME get_p_packed_struct #
 
 add_test(NAME test_packed_struct #
     COMMAND cliffi ${TESTLIB} v test_packed_struct -SK: -c a 0 a,b 4.5 1,2,3 -c q :S)
-set_tests_properties(test_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s.c: a;s.i: 0;s.s\\[0\\]: a;s.s\\[1\\]: b;s.d: 4.50*")
+set_tests_properties(test_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s.c: a.*s.i: 0.*s.s\\[0\\]: a.*s.s\\[1\\]: b.*s.d: 4.50*")
 
 
 
 add_test(NAME test_p_packed_struct #
     COMMAND cliffi ${TESTLIB} v test_p_packed_struct -pSK: -c a 0 a,b 4.5 1,2,3 -c q :S)
-set_tests_properties(test_p_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->c: a;s->i: 0;s->s\\[0\\]: a;s->s\\[1\\]: b;s->d: 4.50*")
+set_tests_properties(test_p_packed_struct PROPERTIES PASS_REGULAR_EXPRESSION "s->c: a.*s->i: 0.*s->s\\[0\\]: a.*s->s\\[1\\]: b.*s->d: 4.50*")
 
 add_test(NAME test_setting_array_with_long_hex
 COMMAND cliffi ${TESTLIB} s concat -s "test" -ac 0x3031323334 )
@@ -614,7 +614,7 @@ set_tests_properties(test_setting_array_with_long_hex PROPERTIES PASS_REGULAR_EX
 
 add_test(NAME test_null_pointer_syntax
 COMMAND cliffi ${TESTLIB} b is_null Npi)
-set_tests_properties(test_null_pointer_syntax PROPERTIES PASS_REGULAR_EXPRESSION "int\* = \(NULL pointer\);Function returned: true")
+set_tests_properties(test_null_pointer_syntax PROPERTIES PASS_REGULAR_EXPRESSION "int\* = \(NULL pointer\).*Function returned: true")
 
 if(USE_REPL_MODE)
 
@@ -623,7 +623,7 @@ COMMAND cliffi --repltest
 ${TESTLIB} i add 1 2 \n
 ${TESTLIB} i add 3 4 \n
 )
-set_tests_properties(repl_smoketest PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3;Function returned: 7")
+set_tests_properties(repl_smoketest PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3.*Function returned: 7")
 
 add_test(NAME repl_metatest_tests_fail_on_bad_input
 COMMAND cliffi --repltest
@@ -686,7 +686,7 @@ ${TESTLIB} i increment_global \n
 ${TESTLIB} i increment_global \n
 ${TESTLIB} i increment_global \n
 )
-set_tests_properties(repl_test_globals PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 1;Function returned: 2;Function returned: 3")
+set_tests_properties(repl_test_globals PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 1.*Function returned: 2.*Function returned: 3")
 
 add_test(NAME repl_test_globals_after_libclose #
 COMMAND cliffi --repltest
@@ -695,7 +695,7 @@ ${TESTLIB} i increment_global \n
 close ${TESTLIB}
 ${TESTLIB} i increment_global \n
 )
-set_tests_properties(repl_test_globals_after_libclose PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 1;Function returned: 2;Function returned: 1")
+set_tests_properties(repl_test_globals_after_libclose PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 1.*Function returned: 2.*Function returned: 1")
 
 add_test(NAME repl_test_var_ac_with_0x0
 COMMAND cliffi --repltest
@@ -729,7 +729,7 @@ COMMAND cliffi --repltest
 set foo -S: 1 -ac10 h,e,l,l,o 1,2,3 4 :S \n
 ${TESTLIB} v test_struct_with_embedded_array foo \n
 )
-set_tests_properties(repl_test_variable_complex PROPERTIES PASS_REGULAR_EXPRESSION "s.x: 1;s.a\\[0\\]: 1;s.a\\[1\\]: 2;s.a\\[2\\]: 3;s.y: 4;s.s: hello")
+set_tests_properties(repl_test_variable_complex PROPERTIES PASS_REGULAR_EXPRESSION "s.x: 1.*s.a\\[0\\]: 1.*s.a\\[1\\]: 2.*s.a\\[2\\]: 3.*s.y: 4.*s.s: hello")
 
 add_test(NAME repl_test_var_pointer #
 COMMAND cliffi --repltest
@@ -737,7 +737,7 @@ set num -pi 1 \n
 ${TESTLIB} i increment_at_pointer num \n
 print num \n
 )
-set_tests_properties(repl_test_var_pointer PROPERTIES PASS_REGULAR_EXPRESSION "int. num = 1;Function returned: 2;Arg 0 after.*2;int. num = 2")
+set_tests_properties(repl_test_var_pointer PROPERTIES PASS_REGULAR_EXPRESSION "int. num = 1.*Function returned: 2.*Arg 0 after.*2.*int. num = 2")
 
 add_test(NAME repl_test_voidpointer #)
 COMMAND cliffi --repltest
@@ -746,7 +746,7 @@ ${TESTLIB} strvoidpointer get_message \n
 print strvoidpointer \n
 ${TESTLIB} s concat strvoidpointer strvoidpointer \n
 )
-set_tests_properties(repl_test_voidpointer PROPERTIES PASS_REGULAR_EXPRESSION "strvoidpointer = 0?x?[0-9a-f]{4,};Function returned: \"?Hello, cliffi.Hello, cliffi.\"?")
+set_tests_properties(repl_test_voidpointer PROPERTIES PASS_REGULAR_EXPRESSION "strvoidpointer = 0?x?[0-9a-f]{4,}.*Function returned: \"?Hello, cliffi.Hello, cliffi.\"?")
 
 
 add_test(NAME repl_test_variable_simple_syntactic_sugar #
@@ -756,7 +756,7 @@ var2  =  7 \n
 ${TESTLIB} var2 add var1 var2 \n
 var2 \n
 )
-set_tests_properties(repl_test_variable_simple_syntactic_sugar PROPERTIES PASS_REGULAR_EXPRESSION "int var2 = 7;Function returned: 10;int var2 = 10")
+set_tests_properties(repl_test_variable_simple_syntactic_sugar PROPERTIES PASS_REGULAR_EXPRESSION "int var2 = 7.*Function returned: 10.*int var2 = 10")
 
 add_test(NAME repl_test_variable_set_to_another #)
 COMMAND cliffi --repltest
@@ -774,7 +774,7 @@ set var2 a\\ b\\ c \n
 ${TESTLIB} s concat var1 \" and bar and \\ slash\" \n
 print var2 \n
 )
-set_tests_properties(repl_test_tokenizer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?test string foo and bar and . slash;var2 = \"?a b c")
+set_tests_properties(repl_test_tokenizer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?test string foo and bar and . slash.*var2 = \"?a b c")
 
 add_test(NAME repl_test_store_embedded_struct
 COMMAND cliffi --repltest
@@ -795,7 +795,7 @@ store globalbuffer foo \n
 store globalbuffer foo \n
 bar = foo \n
 )
-set_tests_properties(repl_test_store_embedded_struct_three_times PROPERTIES PASS_REGULAR_EXPRESSION "globalbuffer.*qwerty;bar.*qwerty")
+set_tests_properties(repl_test_store_embedded_struct_three_times PROPERTIES PASS_REGULAR_EXPRESSION "globalbuffer.*qwerty.*bar.*qwerty")
 
 
 add_test(NAME repl_test_load_store_dump_memory
@@ -815,7 +815,7 @@ load global_int i global_address \n
 store global_address 88 \n
 print global_int \n
 )
-set_tests_properties(repl_test_load_store_dump_memory PROPERTIES PASS_REGULAR_EXPRESSION "global_address = 0?x?[0-9a-f]{4,};int global_int = 1;global_address = (int )?42;Function returned: 43;int global_int = 43")
+set_tests_properties(repl_test_load_store_dump_memory PROPERTIES PASS_REGULAR_EXPRESSION "global_address = 0?x?[0-9a-f]{4,}.*int global_int = 1.*global_address = (int )?42.*Function returned: 43.*int global_int = 43")
 set_tests_properties(repl_test_load_store_dump_memory PROPERTIES FAIL_REGULAR_EXPRESSION "int global_int = 88")
 
 
@@ -825,7 +825,7 @@ set foo -S: 1 2.2 a hello :S \n
 set containing -S: q foo 5 :S \n
 ${TESTLIB} v test_nested_large_struct containing \n
 )
-set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.c: q;s.s.x: 1;s.s.y: 2.20*;s.s.c: a;s.s.s: hello;s.x: 5")
+set_tests_properties(repl_test_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.c: q.*s.s.x: 1.*s.s.y: 2.20*.*s.s.c: a.*s.s.s: hello.*s.x: 5")
 
 add_test(NAME repl_test_store_load_struct_variables_nested_structs # larger = {int double char char*}  containing = {char larger int}
 COMMAND cliffi --repltest
@@ -839,7 +839,7 @@ load loadedstruct S: c S: i d c s :S i :S globalbuffer \n
 ${TESTLIB} v test_nested_large_struct loadedstruct \n
 )
 #TODO: add a test for the dump command
-set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.c: q;s.s.x: 1;s.s.y: 2.20*;s.s.c: a;s.s.s: hello;s.x: 5;.*0x[0-9a-f]*. = struct { char \'?q\'?, struct { int 1, double 2.20*, char \'?a\'?, cstring \"?hello\"? }, int 5 };loadedstruct.* { char \'?q\'?, struct { int 1, double 2.20*, char \'?a\'?, cstring \"?hello\"? }, int 5 }")
+set_tests_properties(repl_test_store_load_struct_variables_nested_structs PROPERTIES PASS_REGULAR_EXPRESSION "s.c: q.*s.s.x: 1.*s.s.y: 2.20*.*s.s.c: a.*s.s.s: hello.*s.x: 5.*.*0x[0-9a-f]*. = struct { char \'?q\'?, struct { int 1, double 2.20*, char \'?a\'?, cstring \"?hello\"? }, int 5 }.*loadedstruct.* { char \'?q\'?, struct { int 1, double 2.20*, char \'?a\'?, cstring \"?hello\"? }, int 5 }")
 
 
 # struct embedded_with_pointer {
@@ -889,7 +889,7 @@ set var -pi 1 \n
 ${TESTLIB} v simple_test_int_pointer var \n
 var \n
 )
-set_tests_properties(repl_simple_test_int_pointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:;int\\* var = 2")
+set_tests_properties(repl_simple_test_int_pointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:.*int\\* var = 2")
 
 # void test_struct_with_int_pointer(struct with_int_pointer s) {
 #     hexdump(&s, sizeof(struct with_int_pointer));
@@ -903,7 +903,7 @@ set var -S: -pi 1 :S \n
 ${TESTLIB} v test_struct_with_int_pointer var \n
 var \n
 )
-set_tests_properties(repl_test_struct_with_int_pointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:;{ int\\* 2 }")
+set_tests_properties(repl_test_struct_with_int_pointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:.*{ int\\* 2 }")
 
 add_test(NAME nonrepl_test_struct_with_int_pointer
 COMMAND cliffi ${TESTLIB} v test_struct_with_int_pointer -S: -pi 1 :S \n
@@ -918,7 +918,7 @@ set outer -S: a inner :S \n
 ${TESTLIB} v simple_test_parent_with_embedded_pointer outer \n
 outer
 )
-set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:;{ int\\* 2, cstring \"?HELLO\"? }")
+set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:.*{ int\\* 2, cstring \"?HELLO\"? }")
 
 
 add_test(NAME repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer # inner = {int* char*}  outer = {char *inner})
@@ -928,7 +928,7 @@ set outer -S: a pinner :S \n
 ${TESTLIB} v simple_test_parent_with_pointer_struct_embedded_pointer outer \n
 outer
 )
-set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:;{ int\\* 2, cstring \"?HELLO\"? }")
+set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:.*{ int\\* 2, cstring \"?HELLO\"? }")
 
 add_test(NAME repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer_fewerlines # inner = {int* char*}  outer = {char *inner})
 COMMAND cliffi --repltest
@@ -936,7 +936,7 @@ set outer -S: a -pS: -pi 1 -s hello :S :S \n
 ${TESTLIB} v simple_test_parent_with_pointer_struct_embedded_pointer outer \n
 outer
 )
-set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer_fewerlines PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:;{ int\\* 2, cstring \"?HELLO\"? }")
+set_tests_properties(repl_test_struct_variables_nested_structs_with_pointers_simpler_pointer_fewerlines PROPERTIES PASS_REGULAR_EXPRESSION "Function returned:.*{ int\\* 2, cstring \"?HELLO\"? }")
 
 
 
@@ -983,7 +983,7 @@ foo = -pS: 5 2.2 :S \n
 ${TESTLIB} v modify_point foo 1 .1 \n
 foo
 )
-set_tests_properties(repl_test_modifypoint_var_after_function PROPERTIES PASS_REGULAR_EXPRESSION "Arg 0 .* struct. \{ int 6, double 2.3.* \};Function returned:;foo.*\{ int 6, double 2.3.* \}")
+set_tests_properties(repl_test_modifypoint_var_after_function PROPERTIES PASS_REGULAR_EXPRESSION "Arg 0 .* struct. \{ int 6, double 2.3.* \}.*Function returned:.*foo.*\{ int 6, double 2.3.* \}")
 
 
 add_test(NAME callFunctionByAddress
@@ -1134,7 +1134,7 @@ calculate_offset testlib_offset2 ${TESTLIB} add 0x10001 \n
 testlib_offset \n
 testlib_offset2 \n
 )
-set_tests_properties(repl_test_calculate_returns_even PROPERTIES PASS_REGULAR_EXPRESSION "testlib_offset = [0-9a-fA-FxX]+[02468ace];testlib_offset2 = [0-9a-fA-FxX]+[02468ace]")
+set_tests_properties(repl_test_calculate_returns_even PROPERTIES PASS_REGULAR_EXPRESSION "testlib_offset = [0-9a-fA-FxX]+[02468ace].*testlib_offset2 = [0-9a-fA-FxX]+[02468ace]")
 endif()
 
 
@@ -1244,17 +1244,17 @@ set_tests_properties(TestBooleanReturnFalse PROPERTIES PASS_REGULAR_EXPRESSION "
 # Test various input formats for true
 add_test(NAME TestBooleanInputFormatsTrue
          COMMAND cliffi ${TESTLIB} b check_bool -b true -b yes -b 1)
-set_tests_properties(TestBooleanInputFormatsTrue PROPERTIES PASS_REGULAR_EXPRESSION "Got values: true, true, true;Function returned: true")
+set_tests_properties(TestBooleanInputFormatsTrue PROPERTIES PASS_REGULAR_EXPRESSION "Got values: true, true, true.*Function returned: true")
 
 # Test various input formats for false
 add_test(NAME TestBooleanInputFormatsFalse
          COMMAND cliffi ${TESTLIB} b check_bool -b false -b no -b 0)
-set_tests_properties(TestBooleanInputFormatsFalse PROPERTIES PASS_REGULAR_EXPRESSION "Got values: false, false, false;Function returned: false")
+set_tests_properties(TestBooleanInputFormatsFalse PROPERTIES PASS_REGULAR_EXPRESSION "Got values: false, false, false.*Function returned: false")
 
 # Test case insensitivity
 add_test(NAME TestBooleanCaseInsensitive
          COMMAND cliffi ${TESTLIB} b check_bool -b TRUE -b Yes -b True)
-set_tests_properties(TestBooleanCaseInsensitive PROPERTIES PASS_REGULAR_EXPRESSION "Got values: true, true, true;Function returned: true")
+set_tests_properties(TestBooleanCaseInsensitive PROPERTIES PASS_REGULAR_EXPRESSION "Got values: true, true, true.*Function returned: true")
 
 # Test boolean array
 add_test(NAME TestBooleanArray
@@ -1269,7 +1269,7 @@ set_tests_properties(TestBooleanInStruct PROPERTIES PASS_REGULAR_EXPRESSION "Fun
 # Test mixed true/false values
 add_test(NAME TestBooleanMixed
          COMMAND cliffi ${TESTLIB} b check_bool -b true -b false -b true)
-set_tests_properties(TestBooleanMixed PROPERTIES PASS_REGULAR_EXPRESSION "Got values: true, false, true;Function returned: false")
+set_tests_properties(TestBooleanMixed PROPERTIES PASS_REGULAR_EXPRESSION "Got values: true, false, true.*Function returned: false")
 
 # Test implicit conversion from non-zero number
 add_test(NAME TestBooleanImplicitTrue
