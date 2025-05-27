@@ -206,6 +206,7 @@ if(ANDROID)
     message(STATUS "Cross-compiling emulator for Android tests set to: ${CMAKE_CROSSCOMPILING_EMULATOR}")
 
     set_property(TARGET cliffi PROPERTY CROSSCOMPILING_EMULATOR "${ADB_RUNNER_SCRIPT}")
+    set_property(TARGET cliffi_unit_tests PROPERTY CROSSCOMPILING_EMULATOR "${ADB_RUNNER_SCRIPT}")
 
 
     # # For Android, ensure linker flags are appropriate
