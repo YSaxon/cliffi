@@ -39,9 +39,9 @@ void printException();
     sigjmp_buf* newjmpBufferPtr = (sigjmp_buf*)malloc(sizeof(sigjmp_buf)); /* sigjmp_buf newjmpBuffer;*/ \
     old_exception_buffer = current_exception_buffer; \
     current_exception_buffer = newjmpBufferPtr; \
-    /* printf("Old exception buffer: %p\n", old_exception_buffer); \
+    /* fprintf(stdout, "Old exception buffer: %p\n", old_exception_buffer); \
     hexdump(old_exception_buffer, sizeof(sigjmp_buf)); \
-    printf("New exception buffer: %p\n", current_exception_buffer); \
+    fprintf(stdout, "New exception buffer: %p\n", current_exception_buffer); \
     hexdump(current_exception_buffer, sizeof(sigjmp_buf)); */ \
     if (sigsetjmp(*newjmpBufferPtr, 1) == 0) {
 

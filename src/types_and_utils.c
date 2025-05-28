@@ -258,12 +258,12 @@ ArgType infer_arg_type_single(const char* argval) {
     }
 
     // Check for boolean strings
-    if (strcmp(lowercase, "true") == 0 || 
+    if (strcmp(lowercase, "true") == 0 ||
         strcmp(lowercase, "false") == 0 )
         // strcmp(lowercase, "yes") == 0 ||
         // strcmp(lowercase, "no") == 0 ||
         // strcmp(lowercase, "1") == 0 ||
-        // strcmp(lowercase, "0") == 0) 
+        // strcmp(lowercase, "0") == 0)
         {
         free(lowercase);
         return TYPE_BOOL;
@@ -332,20 +332,20 @@ bool string_to_bool(const char* str) {
     if (!str) {
         raiseException(1, "Error: NULL string passed to boolean conversion\n");
     }
-    
+
     // Convert to lowercase for case-insensitive comparison
     char* lower = strdup(str);
     if (!lower) {
         raiseException(1, "Error: Memory allocation failed in boolean conversion\n");
     }
-    
+
     for (char* p = lower; *p; p++) {
         *p = tolower(*p);
     }
-    
+
     bool result; // any of these will be converted to true/false when flagged explicitly though only true/false will be automatically inferred as bool
-    if (strcmp(lower, "true") == 0 || 
-        strcmp(lower, "yes") == 0 || 
+    if (strcmp(lower, "true") == 0 ||
+        strcmp(lower, "yes") == 0 ||
         strcmp(lower, "t") == 0 ||
         strcmp(lower, "y") == 0 ||
         strcmp(lower, "1") == 0 ||
@@ -373,7 +373,7 @@ bool string_to_bool(const char* str) {
             raiseException(1, "Error: Invalid boolean value '%s'. Expected true/false, yes/no, 1/0, or a number\n", str);
         }
     }
-    
+
     free(lower);
     return result;
 }
@@ -881,39 +881,39 @@ size_t get_size_for_arginfo_sized_array(const ArgInfo* arg) {
 void log_function_call_info(FunctionCallInfo* info) {
     // this should all be fprintf(stderr, ...)
     if (!info) {
-        printf("No function call info to display.\n");
+        fprintf(stdout, "No function call info to display.\n");
         return;
     }
-    printf("FunctionCallInfo:\n");
-    printf("\tLibrary Path: %s\n", info->library_path);
-    printf("\tFunction Name: %s\n", info->function_name);
-    printf("\tReturn type: ");
+    fprintf(stdout, "FunctionCallInfo:\n");
+    fprintf(stdout, "\tLibrary Path: %s\n", info->library_path);
+    fprintf(stdout, "\tFunction Name: %s\n", info->function_name);
+    fprintf(stdout, "\tReturn type: ");
     format_and_print_arg_type(info->info.return_var);
-    printf("\n");
-    printf("\tArg Count: %d\n", info->info.arg_count);
+    fprintf(stdout, "\n");
+    fprintf(stdout, "\tArg Count: %d\n", info->info.arg_count);
     for (int i = 0; i < info->info.arg_count; i++) {
-        if (info->info.vararg_start == i) printf("\tVarargs start here\n");
-        printf("\tArg %d: %s ", i, info->info.args[i]->explicitType ? "(explicit)" : "(inferred)");
+        if (info->info.vararg_start == i) fprintf(stdout, "\tVarargs start here\n");
+        fprintf(stdout, "\tArg %d: %s ", i, info->info.args[i]->explicitType ? "(explicit)" : "(inferred)");
         format_and_print_arg_type(info->info.args[i]); //, format_buffer, buffer_size);
-        printf(" = ");
+        fprintf(stdout, " = ");
         format_and_print_arg_value(info->info.args[i]); //, format_buffer, buffer_size);
-        printf("\n");
+        fprintf(stdout, "\n");
     }
 
     // print as function signature
     format_and_print_arg_type(info->info.return_var);
-    printf(" %s(", info->function_name);
+    fprintf(stdout, " %s(", info->function_name);
     for (int i = 0; i < info->info.arg_count; i++) {
         format_and_print_arg_type(info->info.args[i]);
-        printf(" ");
+        fprintf(stdout, " ");
         if (info->info.args[i]->is_array) {
-            printf("{...}");
+            fprintf(stdout, "{...}");
         } else {
             format_and_print_arg_value(info->info.args[i]);
         }
-        if (i < info->info.arg_count - 1) printf(", ");
+        if (i < info->info.arg_count - 1) fprintf(stdout, ", ");
     }
-    printf(")\n");
+    fprintf(stdout, ")\n");
 }
 
 

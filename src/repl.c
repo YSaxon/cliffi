@@ -37,9 +37,9 @@ void print_usage(char* argv0);
 
 void printVariableWithArgInfo(char* varName, ArgInfo* arg) {
     format_and_print_arg_type(arg);
-    printf(" %s = ", varName);
+    fprintf(stdout, " %s = ", varName);
     format_and_print_arg_value(arg);
-    printf("\n");
+    fprintf(stdout, "\n");
 }
 
 void parsePrintVariable(char* varName) {
@@ -87,12 +87,12 @@ void parseStoreToMemoryWithAddressAndValue(char* addressStr, int varValueCount, 
         memcpy(destAddress, arg->value, typeToSize(arg->type, arg->array_value_pointer_depth));
     }
     // #define HEX_DIGITS (int)(2 * sizeof(void*))
-    // printf("*( (void*) 0x%0*" PRIxPTR ") = ",HEX_DIGITS,(uintptr_t)destAddress);
-    printf("*( (void*) 0x%" PRIxPTR ") = ", (uintptr_t)destAddress);
+    // fprintf(stdout, "*( (void*) 0x%0*" PRIxPTR ") = ",HEX_DIGITS,(uintptr_t)destAddress);
+    fprintf(stdout, "*( (void*) 0x%" PRIxPTR ") = ", (uintptr_t)destAddress);
     format_and_print_arg_type(arg);
-    printf(" ");
+    fprintf(stdout, " ");
     format_and_print_arg_value(arg);
-    printf("\n");
+    fprintf(stdout, "\n");
 }
 
 ArgInfo* parseLoadMemoryToArgWithType(char* addressStr, int typeArgc, char** typeArgv) {
@@ -126,13 +126,13 @@ ArgInfo* parseLoadMemoryToArgWithType(char* addressStr, int typeArgc, char** typ
 
 void parseDumpMemoryWithAddressAndType(char* addressStr, int varValueCount, char** varValues) {
     ArgInfo* arg = parseLoadMemoryToArgWithType(addressStr, varValueCount, varValues);
-    printf("(");
+    fprintf(stdout, "(");
     format_and_print_arg_type(arg);
-    printf("*) %s = ", addressStr);
+    fprintf(stdout, "*) %s = ", addressStr);
     format_and_print_arg_type(arg);
-    printf(" ");
+    fprintf(stdout, " ");
     format_and_print_arg_value(arg);
-    printf("\n");
+    fprintf(stdout, "\n");
     free(arg);
 }
 
@@ -323,7 +323,7 @@ void parseCalculateOffset(char* calculateCommand) {
         raiseException(1,  "Error: Calculated offset is negative. This is likely an error and the variable probably won't work.\n");
     }
     ptrdiff_t offset = symbol_address - (uintptr_t)address; // maybe technically we should use ptrdiff_t instead but it's unlikely that the offset would be negative
-    printf("Calculation: dlsym(%s,%s)=%p; %p - %p = %p\n", libraryName, symbolName, symbol_handle, symbol_handle, address, (void*)offset);
+    fprintf(stdout, "Calculation: dlsym(%s,%s)=%p; %p - %p = %p\n", libraryName, symbolName, symbol_handle, symbol_handle, address, (void*)offset);
 
     if (hasVar) {
         ArgInfo* offsetArg = getPVar((void*)offset);
@@ -363,9 +363,9 @@ int parseREPLCommand(char* command){
                 closeAllLibraries();
                 return 1;
             } else if (strcmp(command, "help") == 0) {
-                printf("Running a command:\n");
-                printf("  %s\n", BASIC_USAGE_STRING);
-                printf("Documentation:\n"
+                fprintf(stdout, "Running a command:\n");
+                fprintf(stdout, "  %s\n", BASIC_USAGE_STRING);
+                fprintf(stdout, "Documentation:\n"
                        "  help: Print this help message\n"
                        "  docs: Print the cliffi docs\n"
                        "Variables:\n"
@@ -397,7 +397,7 @@ int parseREPLCommand(char* command){
                     libraryName++;
                 }
                 char* resolvedPath = resolve_library_path(libraryName);
-                printf("Closing Library: %s\n",resolvedPath);
+                fprintf(stdout, "Closing Library: %s\n",resolvedPath);
                 closeLibrary(resolvedPath);
             } else if (strcmp(command, "closeall") == 0) {
                 closeAllLibraries();

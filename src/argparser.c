@@ -175,11 +175,11 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *extra_args_used, bool is_ret
             // if the value is a variable, we should cast it to the type specified in the flag and return
             ArgInfo* storedVar = getVar(argStr);
             if (storedVar != NULL) {
-                printf("Attempting cast from variable %s of type ", argStr);
+                fprintf(stdout, "Attempting cast from variable %s of type ", argStr);
                 format_and_print_arg_type(storedVar);
-                printf(" to type ");
+                fprintf(stdout, " to type ");
                 format_and_print_arg_type(outArg);
-                printf("\n");
+                fprintf(stdout, "\n");
                 castArgValueToType(outArg, storedVar);
                 goto set_args_used_and_return;
             }
@@ -198,7 +198,7 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *extra_args_used, bool is_ret
 void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *extra_args_used, bool is_return, bool is_struct) {
     // ArgInfoContainer* arginfo = info->type == FUNCTION_INFO ? &info->function_info->info : &info->struct_info->info;
     #ifdef DEBUG
-    printf("Beginning to parse args (%d remaining)\n", argc);
+    fprintf(stdout, "Beginning to parse args (%d remaining)\n", argc);
     #endif
     bool hit_struct_close = false;
     info->vararg_start = -1;

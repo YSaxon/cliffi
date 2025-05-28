@@ -12,25 +12,25 @@
 void print_char_with_escape(char c) {
     switch (c) {
         case '\0':
-            printf("\\0");
+            fprintf(stdout, "\\0");
             break;
         case '\n':
-            printf("\\n");
+            fprintf(stdout, "\\n");
             break;
         case '\r':
-            printf("\\r");
+            fprintf(stdout, "\\r");
             break;
         case '\t':
-            printf("\\t");
+            fprintf(stdout, "\\t");
             break;
         case '\\':
-            printf("\\\\");
+            fprintf(stdout, "\\\\");
             break;
         default:
             if (isprint(c)) {
-                printf("%c", c);
+                fprintf(stdout, "%c", c);
             } else {
-                printf("\\x%02x", c);
+                fprintf(stdout, "\\x%02x", c);
             }
             break;
     }
@@ -47,32 +47,32 @@ void hexdump(const void *data, size_t size) {
     const unsigned char *byte = (const unsigned char *)data;
     size_t i, j;
     bool multiline = size > 16;
-    if (multiline) printf("(Hexvalue)\nOffset\n");
+    if (multiline) fprintf(stdout, "(Hexvalue)\nOffset\n");
 
     for (i = 0; i < size; i += 16) {
-        if (multiline) printf("%08zx  ", i); // Offset
+        if (multiline) fprintf(stdout, "%08zx  ", i); // Offset
 
         // Hex bytes
         for (j = 0; j < 16; j++) {
-            if (j==8) printf(" "); // Add space between the two halves of the hexdump
+            if (j==8) fprintf(stdout, " "); // Add space between the two halves of the hexdump
             if (i + j < size) {
-                printf("%02x ", byte[i + j]);
+                fprintf(stdout, "%02x ", byte[i + j]);
             } else {
-                 if (multiline) printf("   "); // Fill space if less than 16 bytes in the line
+                 if (multiline) fprintf(stdout, "   "); // Fill space if less than 16 bytes in the line
             }
         }
 
-        if (multiline) printf(" ");
-        if (!multiline) printf("= ");
+        if (multiline) fprintf(stdout, " ");
+        if (!multiline) fprintf(stdout, "= ");
 
         // ASCII characters
         for (j = 0; j < 16; j++) {
             if (i + j < size) {
-                printf("%c", isprint(byte[i + j]) ? byte[i + j] : '.');
+                fprintf(stdout, "%c", isprint(byte[i + j]) ? byte[i + j] : '.');
             }
         }
 
-        printf("\n");
+        fprintf(stdout, "\n");
     }
 }
 
@@ -83,7 +83,7 @@ void hexdump(const void *data, size_t size) {
         for (int j = 0; j < pointer_depth; j++) {
             value = *(void**)value;
             if (value == NULL) {
-                printf("(NULL pointer)");
+                fprintf(stdout, "(NULL pointer)");
                 return;
             }
         }
@@ -108,54 +108,54 @@ void hexdump(const void *data, size_t size) {
             print_char_with_escape(((char*)value)[offset]);
             break;
         case TYPE_SHORT:
-            printf("%hd", ((short*)value)[offset]);
+            fprintf(stdout, "%hd", ((short*)value)[offset]);
             break;
         case TYPE_INT:
-            printf("%d", ((int*)value)[offset]);
+            fprintf(stdout, "%d", ((int*)value)[offset]);
             break;
         case TYPE_LONG:
-            printf("%ld", ((long*)value)[offset]);
+            fprintf(stdout, "%ld", ((long*)value)[offset]);
             break;
         case TYPE_UCHAR:
-            printf("%u",  ((unsigned char*)value)[offset]);
+            fprintf(stdout, "%u",  ((unsigned char*)value)[offset]);
             break;
         case TYPE_USHORT:
-            printf("%hu", ((unsigned short*)value)[offset]);
+            fprintf(stdout, "%hu", ((unsigned short*)value)[offset]);
             break;
         case TYPE_UINT:
-            printf("%u", ((unsigned int*)value)[offset]);
+            fprintf(stdout, "%u", ((unsigned int*)value)[offset]);
             break;
         case TYPE_ULONG:
-            printf("%lu", ((unsigned long*)value)[offset]);
+            fprintf(stdout, "%lu", ((unsigned long*)value)[offset]);
             break;
         case TYPE_FLOAT:
-            printf("%f", ((float*)value)[offset]);
+            fprintf(stdout, "%f", ((float*)value)[offset]);
             break;
         case TYPE_DOUBLE:
-            printf("%lf", ((double*)value)[offset]);
+            fprintf(stdout, "%lf", ((double*)value)[offset]);
             break;
         case TYPE_STRING:
-            printf("\"");
+            fprintf(stdout, "\"");
             print_char_buffer(((char**)value)[offset], strlen(((char**)value)[offset]));
-            printf("\"");
+            fprintf(stdout, "\"");
             break;
         case TYPE_VOIDPOINTER:
             // #define HEX_DIGITS (int)(2 * sizeof(void*))
-            // printf("0x%0*" PRIxPTR, HEX_DIGITS,(uintptr_t)((void**)value)[offset]);
-            printf("0x%" PRIxPTR, (uintptr_t)((void**)value)[offset]);
+            // fprintf(stdout, "0x%0*" PRIxPTR, HEX_DIGITS,(uintptr_t)((void**)value)[offset]);
+            fprintf(stdout, "0x%" PRIxPTR, (uintptr_t)((void**)value)[offset]);
             break;
         case TYPE_POINTER:
             raiseException(1,  "Should not be printing pointer values directly");
         case TYPE_VOID:
-            printf("(void)");
+            fprintf(stdout, "(void)");
             break;
         case TYPE_STRUCT:
             raiseException(1,  "Should not be printing struct values directly");
         case TYPE_BOOL:
-            printf("%s", ((bool*)value)[offset] ? "true" : "false");
+            fprintf(stdout, "%s", ((bool*)value)[offset] ? "true" : "false");
             break;
         default:
-            printf("Unsupported type");
+            fprintf(stdout, "Unsupported type");
             break;
     }
     if (alligned_copy != NULL) {
@@ -165,22 +165,22 @@ void hexdump(const void *data, size_t size) {
 
     void format_and_print_arg_type(const ArgInfo* arg) {
         if (!arg->is_array) {
-        printf("%s", typeToString(arg->type));
+        fprintf(stdout, "%s", typeToString(arg->type));
         for (int i = 0; i < arg->pointer_depth; i++) {
-            printf("*");
+            fprintf(stdout, "*");
         }} else { // is an array
-            printf("%s ", typeToString(arg->type));
+            fprintf(stdout, "%s ", typeToString(arg->type));
             for (int i = 0; i < arg->array_value_pointer_depth; i++) {
-                printf("*");
+                fprintf(stdout, "*");
             }
             if (arg->pointer_depth > 0) {
-                printf("(");
+                fprintf(stdout, "(");
                 for (int i = 0; i < arg->pointer_depth; i++) {
-                    printf("*");
+                    fprintf(stdout, "*");
                 }
-                printf(")");
+                fprintf(stdout, ")");
             }
-            printf("[%zu]", get_size_for_arginfo_sized_array(arg));
+            fprintf(stdout, "[%zu]", get_size_for_arginfo_sized_array(arg));
         }
     }
 
@@ -195,24 +195,24 @@ void hexdump(const void *data, size_t size) {
             for (int j = 0; j < arg->pointer_depth; j++) {
                 value = *(void**)value;
                 if (arg->type!=TYPE_STRUCT && value == NULL) {
-                    printf("(NULL pointer)");
+                    fprintf(stdout, "(NULL pointer)");
                     return;
                 }
             }
         }
         if (arg->type==TYPE_STRUCT){
-            printf("{ ");
+            fprintf(stdout, "{ ");
             StructInfo* struct_info = arg->struct_info;
             for (int i = 0; i < struct_info->info.arg_count; i++) {
                 format_and_print_arg_type(struct_info->info.args[i]);
-                printf(" ");
+                fprintf(stdout, " ");
                 // void* override = struct_info->value_ptrs==NULL ? NULL : struct_info->value_ptrs[i];
                 format_and_print_arg_value(struct_info->info.args[i]);
                 if (i < struct_info->info.arg_count - 1) {
-                    printf(", ");
+                    fprintf(stdout, ", ");
                 }
             }
-            printf(" }");
+            fprintf(stdout, " }");
         }
         else if (!arg->is_array) {
             print_arg_value(value, arg->type, 0, 0);
@@ -228,14 +228,14 @@ void hexdump(const void *data, size_t size) {
                     hexdump(value, array_size);
             } else goto print_regular;
             } else print_regular: {
-                printf("{ ");
+                fprintf(stdout, "{ ");
                 for (size_t i = 0; i < array_size; i++) {
                     print_arg_value(value, arg->type,i, arg->array_value_pointer_depth);
                     if (i < array_size - 1) {
-                        printf(", ");
+                        fprintf(stdout, ", ");
                     }
                 }
-                printf(" }");
+                fprintf(stdout, " }");
             }
         }
     }

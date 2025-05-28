@@ -52,7 +52,7 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 }
 
 char* readline(const char* prompt) {
-    printf("%s", prompt);  // Display the prompt
+    fprintf(stdout, "%s", prompt);  // Display the prompt
 
     char* line = NULL;
     size_t bufferSize = 0;

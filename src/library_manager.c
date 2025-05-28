@@ -116,10 +116,10 @@ void closeAllLibraries() {
 }
 
 void listOpenedLibraries() {
-    printf("Opened libraries:\n");
+    fprintf(stdout, "Opened libraries:\n");
     for (size_t i = 0; i < libraryMap.count; i++) {
         if (libraryMap.entries[i].handle != NULL) {
-            printf("- %s\n", libraryMap.entries[i].libraryPath);
+            fprintf(stdout, "- %s\n", libraryMap.entries[i].libraryPath);
         }
     }
 }

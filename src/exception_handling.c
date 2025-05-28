@@ -54,7 +54,7 @@ void saveStackTrace() {
     } else {
 
         if (current_exception_message == NULL) {
-            printf("While handling exception, current_stacktrace exists but current_exception_message does not. We may have called saveStackTrace twice by mistake\n");
+            fprintf(stdout, "While handling exception, current_stacktrace exists but current_exception_message does not. We may have called saveStackTrace twice by mistake\n");
             current_exception_message = strdup("(null message)");
             }
 
@@ -289,7 +289,7 @@ void segfault_handler(int sig, siginfo_t *info, void *ucontext) {
 
     if(!is_main_thread()){
         fprintf(stderr, "Caught segfault on non-main thread. Terminating thread.\n");
-        printf("%s\n", segfault_message);
+        fprintf(stdout, "%s\n", segfault_message);
         saveStackTrace();
         printStackTrace();
         if (isTestEnvExit1OnFail) exit(1);

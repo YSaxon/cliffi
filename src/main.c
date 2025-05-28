@@ -39,9 +39,9 @@ const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[
 
 
 void print_usage(char* argv0) {
-    printf("%s %s\n", NAME, VERSION);
-    printf("Usage: %s %s\n", argv0, BASIC_USAGE_STRING);
-    printf("  [--help]         Print this help message\n"
+    fprintf(stdout, "%s %s\n", NAME, VERSION);
+    fprintf(stdout, "Usage: %s %s\n", argv0, BASIC_USAGE_STRING);
+    fprintf(stdout, "  [--help]         Print this help message\n"
            "  [--repl]         Start the REPL\n"
            "  <library>        The path to the shared library containing the function to invoke\n"
            "                   or the name of the library if it is in the system path\n"
@@ -52,32 +52,32 @@ void print_usage(char* argv0) {
            "                   Types will be inferred if not prefixed with flags\n"
            "                   Flags look like -i for int, -s for string, etc\n"
            "  ...              Mark the position of varargs in the function signature if applicable\n");
-    printf("\n"
+    fprintf(stdout, "\n"
            "  BASIC EXAMPLES:\n");
-    printf("         %s libexample.so i addints 3 4\n", argv0);
-    printf("         %s path/to/libexample.so v dofoo\n", argv0);
-    printf("         %s ./libexample.so s concatstrings -s hello -s world\n", argv0);
-    printf("         %s libexample.so s concatstrings hello world\n", argv0);
-    printf("         %s libexample.so d multdoubles -d 1.5 1.5d\n", argv0);
-    printf("         %s %s%s i printf 'Here is a number: %%.3f' ... 4.5", argv0, DEFAULT_LIBC_NAME, DEFAULT_LIBRARY_EXTENSION);
-    printf("\n");
-    printf("  TYPES:\n"
+    fprintf(stdout, "         %s libexample.so i addints 3 4\n", argv0);
+    fprintf(stdout, "         %s path/to/libexample.so v dofoo\n", argv0);
+    fprintf(stdout, "         %s ./libexample.so s concatstrings -s hello -s world\n", argv0);
+    fprintf(stdout, "         %s libexample.so s concatstrings hello world\n", argv0);
+    fprintf(stdout, "         %s libexample.so d multdoubles -d 1.5 1.5d\n", argv0);
+    fprintf(stdout, "         %s %s%s i printf 'Here is a number: %%.3f' ... 4.5", argv0, DEFAULT_LIBC_NAME, DEFAULT_LIBRARY_EXTENSION);
+    fprintf(stdout, "\n");
+    fprintf(stdout, "  TYPES:\n"
            "     The primitive typeflags are:\n");
-    printf("       %c for void, only allowed as a return type, and does not accept prefixes\n", TYPE_VOID);
-    printf("       %c for char\n", TYPE_CHAR);
-    printf("       %c for short\n", TYPE_SHORT);
-    printf("       %c for int\n", TYPE_INT);
-    printf("       %c for long\n", TYPE_LONG);
-    printf("       %c for unsigned char\n", TYPE_UCHAR);
-    printf("       %c for unsigned short\n", TYPE_USHORT);
-    printf("       %c for unsigned int\n", TYPE_UINT);
-    printf("       %c for unsigned long\n", TYPE_ULONG);
-    printf("       %c for float, can also be specified by suffixing the value with f\n", TYPE_FLOAT);
-    printf("       %c for double, can also be specified by suffixing the value with d\n", TYPE_DOUBLE);
-    printf("       %c for cstring (ie null terminated char*)\n", TYPE_STRING);
-    printf("       %c for arbitrary pointer (ie void*) specified by address\n", TYPE_VOIDPOINTER);
-    printf("\n");
-    printf("  POINTERS AND ARRAYS AND STRUCTS:\n"
+    fprintf(stdout, "       %c for void, only allowed as a return type, and does not accept prefixes\n", TYPE_VOID);
+    fprintf(stdout, "       %c for char\n", TYPE_CHAR);
+    fprintf(stdout, "       %c for short\n", TYPE_SHORT);
+    fprintf(stdout, "       %c for int\n", TYPE_INT);
+    fprintf(stdout, "       %c for long\n", TYPE_LONG);
+    fprintf(stdout, "       %c for unsigned char\n", TYPE_UCHAR);
+    fprintf(stdout, "       %c for unsigned short\n", TYPE_USHORT);
+    fprintf(stdout, "       %c for unsigned int\n", TYPE_UINT);
+    fprintf(stdout, "       %c for unsigned long\n", TYPE_ULONG);
+    fprintf(stdout, "       %c for float, can also be specified by suffixing the value with f\n", TYPE_FLOAT);
+    fprintf(stdout, "       %c for double, can also be specified by suffixing the value with d\n", TYPE_DOUBLE);
+    fprintf(stdout, "       %c for cstring (ie null terminated char*)\n", TYPE_STRING);
+    fprintf(stdout, "       %c for arbitrary pointer (ie void*) specified by address\n", TYPE_VOIDPOINTER);
+    fprintf(stdout, "\n");
+    fprintf(stdout, "  POINTERS AND ARRAYS AND STRUCTS:\n"
            "     Typeflags can include additional flag prefixes to specify pointers, arrays or structs:\n"
            "     <typeflag> = [p[p..]]<primitive_type>\n"
            "     <typeflag> = [p[p..]][a<size>|t<argnum>][p[p..]]<primitive_type>\n"
@@ -99,14 +99,14 @@ void print_usage(char* argv0) {
            "       In arguments, where the size is specified, the value can be given as NULL, if the function is expected to allocate the array\n"
            "       Note that pa<type> means a pointer to an array of type, while ap<type> means an array of <type> pointers \n"
            "   ARRAY EXAMPLES:\n");
-    printf("     * For a function: int return_buffer(char** outbuff) which returns size\n");
-    printf("     %s libexample.so v return_buffer -past2 NULL -pi 0\n", argv0);
-    printf("     * Or alternatively if it were: void return_buffer(char** outbuff, size_t* outsize)\n");
-    printf("     %s libexample.so i return_buffer -past0 NULL\n", argv0);
-    printf("     * For a function: int add_all_ints(int** nums, size_t size) which returns sum\n");
-    printf("     %s libexample.so i add_all_ints -ai 1,2,3,4,5 -i 5\n", argv0);
-    printf("\n");
-    printf("   STRUCTS:\n"
+    fprintf(stdout, "     * For a function: int return_buffer(char** outbuff) which returns size\n");
+    fprintf(stdout, "     %s libexample.so v return_buffer -past2 NULL -pi 0\n", argv0);
+    fprintf(stdout, "     * Or alternatively if it were: void return_buffer(char** outbuff, size_t* outsize)\n");
+    fprintf(stdout, "     %s libexample.so i return_buffer -past0 NULL\n", argv0);
+    fprintf(stdout, "     * For a function: int add_all_ints(int** nums, size_t size) which returns sum\n");
+    fprintf(stdout, "     %s libexample.so i add_all_ints -ai 1,2,3,4,5 -i 5\n", argv0);
+    fprintf(stdout, "\n");
+    fprintf(stdout, "   STRUCTS:\n"
            "      Structs can be used for both arguments and return values\n"
            "      The general syntax is [-]S[K]: <arg> [<arg>..] :S \n"
            "      For arguments the dash is included and values are given (with optional typeflags)\n"
@@ -119,21 +119,21 @@ void print_usage(char* argv0) {
            "    STRUCT EXAMPLES:\n"
            "      Given a struct: struct mystruct { int x; char* s; }\n"
            "      * For a function: void print_struct(struct mystruct s)\n");
-    printf("      %s libexample.so v print_struct -S: 3 \"hello world\" :S\n", argv0);
-    printf("      * For a function: struct mystruct return_struct(int x, char* s)\n");
-    printf("      %s libexample.so S: i s :S 5 \"hello world\"\n", argv0);
-    printf("      * For a function: modifyStruct(struct mystruct* s)\n");
-    printf("      %s libexample.so v modifyStruct -pS: 3 \"hello world\" :S\n", argv0);
-    printf("\n");
-    printf("  VARARGS:\n"
+    fprintf(stdout, "      %s libexample.so v print_struct -S: 3 \"hello world\" :S\n", argv0);
+    fprintf(stdout, "      * For a function: struct mystruct return_struct(int x, char* s)\n");
+    fprintf(stdout, "      %s libexample.so S: i s :S 5 \"hello world\"\n", argv0);
+    fprintf(stdout, "      * For a function: modifyStruct(struct mystruct* s)\n");
+    fprintf(stdout, "      %s libexample.so v modifyStruct -pS: 3 \"hello world\" :S\n", argv0);
+    fprintf(stdout, "\n");
+    fprintf(stdout, "  VARARGS:\n"
            "     If a function takes varargs the position of the varargs should be specified with the `...` flag\n"
            "     The `...` flag may sometimes be the first arg if the function takes all varargs, or the last for a function that takes varargs where none are being passed\n"
            "     The varargs themselves are the same as any other function args and can be with or without typeflags\n"
            "     (Floats and types shorter than int will be upgraded for you automatically)\n"
            "    VARARGS EXAMPLES:\n");
-    printf("      %s %s%s i printf 'Hello %%s, your number is: %%.3f' ... bob 4.5\n", argv0, DEFAULT_LIBC_NAME, DEFAULT_LIBRARY_EXTENSION);
-    printf("      %s %s%s i printf 'This is just a static string' ... \n", argv0, DEFAULT_LIBC_NAME, DEFAULT_LIBRARY_EXTENSION);
-    printf("      %s some_lib.so v func_taking_all_varargs ... -i 3 -s hello\n", argv0);
+    fprintf(stdout, "      %s %s%s i printf 'Hello %%s, your number is: %%.3f' ... bob 4.5\n", argv0, DEFAULT_LIBC_NAME, DEFAULT_LIBRARY_EXTENSION);
+    fprintf(stdout, "      %s %s%s i printf 'This is just a static string' ... \n", argv0, DEFAULT_LIBC_NAME, DEFAULT_LIBRARY_EXTENSION);
+    fprintf(stdout, "      %s some_lib.so v func_taking_all_varargs ... -i 3 -s hello\n", argv0);
 }
 
 void print_function_return(FunctionCallInfo* call_info){
@@ -141,21 +141,21 @@ void print_function_return(FunctionCallInfo* call_info){
 
         // Step 4: Print the return value and any modified arguments
 
-        printf("Function returned: ");
+        fprintf(stdout, "Function returned: ");
 
         // format_and_print_arg_type(call_info->return_var);
         format_and_print_arg_value(call_info->info.return_var);
-        printf("\n");
+        fprintf(stdout, "\n");
 
         for (int i = 0; i < call_info->info.arg_count; i++) {
             // if it could have been modified, print it
             // TODO keep track of the original value and compare
             if (call_info->info.args[i]->is_array || call_info->info.args[i]->pointer_depth > 0) {
-                printf("Arg %d after function return: ", i);
+                fprintf(stdout, "Arg %d after function return: ", i);
                 format_and_print_arg_type(call_info->info.args[i]);
-                printf(" ");
+                fprintf(stdout, " ");
                 format_and_print_arg_value(call_info->info.args[i]);
-                printf("\n");
+                fprintf(stdout, "\n");
             }
         }
     unsetCodeSectionForSegfaultHandler();
@@ -177,7 +177,7 @@ void* loadFunctionHandle(void* lib_handle, const char* function_name) {
     if (isHexFormat(function_name)) { // parse it as an offset of the library
         void* address_offset_relative_to_lib = getAddressFromStoredOffsetRelativeToLibLoadedAtAddress(lib_handle, function_name);
         if (address_offset_relative_to_lib != NULL) {
-            printf("Parsed func '%s' as relative address to the library offset, 0x%" PRIxPTR "\n", function_name, (uintptr_t)address_offset_relative_to_lib);
+            fprintf(stdout, "Parsed func '%s' as relative address to the library offset, 0x%" PRIxPTR "\n", function_name, (uintptr_t)address_offset_relative_to_lib);
             return address_offset_relative_to_lib;
         } else {
             raiseException(1,  "Error: Could not find a stored offset for your library. Try again after running calculate_offset\n");
@@ -187,7 +187,7 @@ void* loadFunctionHandle(void* lib_handle, const char* function_name) {
 
     void* addressDirectly = tryGetAddressFromAddressStringOrNameOfCoercableVariable(function_name);
     if (addressDirectly != NULL) {
-        printf("Parsed func '%s' as an absolute address -> 0x%" PRIxPTR "\n", function_name, (uintptr_t)addressDirectly);
+        fprintf(stdout, "Parsed func '%s' as an absolute address -> 0x%" PRIxPTR "\n", function_name, (uintptr_t)addressDirectly);
         return addressDirectly;
     }
 
@@ -227,7 +227,7 @@ bool checkAndRunCliffiInitWithPath(char* path) {
         free(full_path);
         return false;
     } else {
-        printf("Running cliffi init file at %s\n", full_path);
+        fprintf(stdout, "Running cliffi init file at %s\n", full_path);
         char* line = NULL;
         size_t len = 0;
         ssize_t read;
@@ -322,7 +322,7 @@ int main(int argc, char* argv[]) {
             }
             if (isNewLine || isFinalArg ){
                 command[strlen(command) - 1] = '\0'; // remove the trailing space
-                printf("Executing \"%s\"\n", command);
+                fprintf(stdout, "Executing \"%s\"\n", command);
                 TRY
                 parseREPLCommand(command);
                 CATCHALL
@@ -359,7 +359,7 @@ int main(int argc, char* argv[]) {
 // print all args
 #ifdef DEBUG
     for (int i = 0; i < argc; i++) {
-        printf("argv[%d] = %s\n", i, argv[i]);
+        fprintf(stdout, "argv[%d] = %s\n", i, argv[i]);
     }
 #endif
 
