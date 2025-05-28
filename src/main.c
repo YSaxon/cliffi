@@ -4,6 +4,7 @@
 #include "parse_address.h"
 #include "return_formatter.h"
 #include "types_and_utils.h"
+#include "system_constants.h"
 
 #include <stdarg.h>
 #include <stdbool.h>
@@ -58,7 +59,7 @@ void print_usage(char* argv0) {
     printf("         %s ./libexample.so s concatstrings -s hello -s world\n", argv0);
     printf("         %s libexample.so s concatstrings hello world\n", argv0);
     printf("         %s libexample.so d multdoubles -d 1.5 1.5d\n", argv0);
-    printf("         %s libc.so i printf 'Here is a number: %%.3f' ... 4.5", argv0);
+    printf("         %s %s%s i printf 'Here is a number: %%.3f' ... 4.5", argv0, DEFAULT_LIBC_NAME, DEFAULT_LIBRARY_EXTENSION);
     printf("\n");
     printf("  TYPES:\n"
            "     The primitive typeflags are:\n");
@@ -130,8 +131,8 @@ void print_usage(char* argv0) {
            "     The varargs themselves are the same as any other function args and can be with or without typeflags\n"
            "     (Floats and types shorter than int will be upgraded for you automatically)\n"
            "    VARARGS EXAMPLES:\n");
-    printf("      %s libc.so i printf 'Hello %%s, your number is: %%.3f' ... bob 4.5\n", argv0);
-    printf("      %s libc.so i printf 'This is just a static string' ... \n", argv0);
+    printf("      %s %s%s i printf 'Hello %%s, your number is: %%.3f' ... bob 4.5\n", argv0, DEFAULT_LIBC_NAME, DEFAULT_LIBRARY_EXTENSION);
+    printf("      %s %s%s i printf 'This is just a static string' ... \n", argv0, DEFAULT_LIBC_NAME, DEFAULT_LIBRARY_EXTENSION);
     printf("      %s some_lib.so v func_taking_all_varargs ... -i 3 -s hello\n", argv0);
 }
 

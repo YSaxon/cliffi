@@ -1,5 +1,6 @@
 #include "library_path_resolver.h"
 #include "exception_handling.h"
+#include "system_constants.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,17 +8,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#ifdef _WIN32
-#include <windows.h>
-const char* library_extension = ".dll";
-const char* ENV_DELIM = ";";
-#elif defined(__APPLE__)
-const char* library_extension = ".dylib";
-const char* ENV_DELIM = ":";
-#else
-const char* library_extension = ".so";
-const char* ENV_DELIM = ":";
-#endif
 
 #if !defined(__WIN32) && !defined(__APPLE__) && !defined(__ANDROID__)
 #define use_ld_so_conf
@@ -484,9 +474,9 @@ char* resolve_library_path(const char* library_name) {
     }
 
     // If we haven't found it yet, try appending the library extension and trying again
-    if (!str_ends_with(library_name, library_extension)) {
-        char library_name_with_extension[strlen(library_name) + strlen(library_extension) + 1];
-        snprintf(library_name_with_extension, sizeof(library_name_with_extension), "%s%s", library_name, library_extension);
+    if (!str_ends_with(library_name, DEFAULT_LIBRARY_EXTENSION)) {
+        char library_name_with_extension[strlen(library_name) + strlen(DEFAULT_LIBRARY_EXTENSION) + 1];
+        snprintf(library_name_with_extension, sizeof(library_name_with_extension), "%s%s", library_name, DEFAULT_LIBRARY_EXTENSION);
         if (FindSharedLibrary(library_name_with_extension, resolved_path)) {
             return strdup(resolved_path);
         }
