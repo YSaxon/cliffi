@@ -83,6 +83,7 @@ src/parse_address.c
 src/shims.c
 src/exception_handling.c
 src/repl.c
+src/server.c
 )
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})

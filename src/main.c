@@ -16,6 +16,7 @@
 
 #include "exception_handling.h"
 #include "repl.h"
+#include "server.h"
 
 #if  !defined(_WIN32) && !defined(_WIN64)
 #include <readline/history.h>
@@ -32,6 +33,7 @@
 #endif
 
 #include "shims.h"
+
 
 const char* NAME = "cliffi";
 const char* VERSION = "v1.12.6";
@@ -348,9 +350,43 @@ int main(int argc, char* argv[]) {
         startRepl();
 
         return 0;
-    }
-
-        else if (argc < 4) {
+    } else if (argc > 1 && strcmp(argv[1], "--server") == 0)
+    {
+        const char* server_host = DEFAULT_HOST;
+        const char* server_port_str = DEFAULT_SERVER_PORT;
+        bool server_fork_mode = false; // Default to single client mode
+        for (int i = 2; i < argc; ++i) {
+            if ((strcmp(argv[i], "--host") == 0 || strcmp(argv[i], "-h") == 0 )&& i + 1 < argc) {
+                server_host = argv[++i];
+            } else if ((strcmp(argv[i], "--port") == 0 || strcmp(argv[i], "-p") == 0) && i + 1 < argc) {
+                server_port_str = argv[++i];
+            #ifndef _WIN32
+            } else if ((strcmp(argv[i], "--server-mode") == 0 || strcmp(argv[i], "-m") == 0) && i + 1 < argc) {
+                char* mode = argv[++i];
+                if (strcmp(mode, "fork") == 0) {
+                    server_fork_mode = true;
+                } else if (strcmp(mode, "single") == 0) {
+                    server_fork_mode = false;
+                } else {
+                    fprintf(stderr, "Unknown server mode: %s. Use 'fork' or 'single'.\n", mode);
+                    return 1;
+                }
+            #endif
+            } else if (strcmp(argv[i], "--help") == 0) {
+                // print_usage(argv[0]); // Your existing usage
+                printf("Server options:\n");
+                printf("  --server            Run in server mode.\n");
+                printf("  -h | --host <address>    Host address to bind to (default: %s).\n", DEFAULT_HOST);
+                printf("  -p | --port <port>       Port to listen on (default: %s).\n", DEFAULT_SERVER_PORT);
+                #ifndef _WIN32
+                printf("  -m | --server-mode <mode> Server mode: 'single' (default) or 'fork'.\n");
+                #endif
+                return 0;
+            }
+        }
+    int server_result = start_cliffi_tcp_server(server_host, server_port_str, server_fork_mode);
+    return server_result;
+    } else if (argc < 4) {
 #define DASHDASHREPL " [--repl]"
             fprintf(stderr, "%s %s\nUsage: %s [--help]%s %s\n", NAME, VERSION, argv[0], DASHDASHREPL, BASIC_USAGE_STRING);
             return 1;
