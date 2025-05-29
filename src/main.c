@@ -156,6 +156,7 @@ void print_function_return(FunctionCallInfo* call_info){
             // if it could have been modified, print it
             // TODO keep track of the original value and compare
             if (call_info->info.args[i]->is_array || call_info->info.args[i]->pointer_depth > 0) {
+                call_info->info.args[i]->is_outPointer=false; // we have to unset is_outPointer now that the function has returned
                 printf("Arg %d after function return: ", i);
                 format_and_print_arg_type(call_info->info.args[i]);
                 printf(" ");

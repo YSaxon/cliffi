@@ -191,6 +191,11 @@ void hexdump(const void *data, size_t size) {
         const void* value;
         value = arg->value;
 
+        if(arg->is_outPointer){
+            printf("(allocated outpointer to NULL)");
+            return;
+        }
+
         if (arg->pointer_depth > 0) {
             for (int j = 0; j < arg->pointer_depth; j++) {
                 value = *(void**)value;

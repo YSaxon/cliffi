@@ -195,14 +195,25 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return) { //, f
     if (struct_status != FFI_OK) {
         raiseException(1,  "Failed to get struct offsets.\n");
     }
+    void* address_to_return;
+    bool outdoubleptr_dont_allocate_struct = (struct_arginfo->is_outPointer || is_return) && struct_arginfo->pointer_depth>1;
 
+    if (outdoubleptr_dont_allocate_struct){
+        printf("test allocating pointer to null\n\n");
+        void* null_pointer = calloc(1,sizeof(void*));
+        void** pointer_to_nullpointer = calloc(1,sizeof(void*));
+        *pointer_to_nullpointer=null_pointer;
+        return pointer_to_nullpointer;
+    }
+
+    else {
     void* raw_memory = calloc(1, struct_type->size);
     free_ffi_type(struct_type);
     if (!raw_memory) {
         raiseException(1,  "Failed to allocate memory for struct.\n");
     }
 
-    for (int i = 0; i < struct_info->info.arg_count; i++) {
+        for (int i = 0; i < struct_info->info.arg_count; i++) {
 
         if (struct_info->info.args[i]->type == TYPE_STRUCT) {
             size_t inner_size;
@@ -253,6 +264,7 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return) { //, f
     }
 
     return address_to_return; // if no pointers this is a pointer to the actual bytes
+}
 }
 
 void fix_struct_pointers(ArgInfo* struct_arg, void* raw_memory) {
@@ -362,10 +374,12 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
             raiseException(1,  "Failed to convert arg[%d].type = %c to ffi_type.\n", i, call_info->info.args[i]->type);
             return -1;
         }
-        if (call_info->info.args[i]->type != TYPE_STRUCT) { //|| call_info->info.args[i]->pointer_depth == 0) {
+        if (call_info->info.args[i]->type != TYPE_STRUCT
+            // || call_info->info.args[i]->is_outPointer && call_info->info.args[i]->pointer_depth>1
+        ) { //|| call_info->info.args[i]->pointer_depth == 0) {
             values[i] = call_info->info.args[i]->value;
         } else {
-            values[i] = make_raw_value_for_struct(call_info->info.args[i], false);
+            values[i] = make_raw_value_for_struct(call_info->info.args[i], call_info->info.args[i]->is_outPointer);
         }
     }
 
