@@ -158,6 +158,13 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *extra_args_used, bool is_ret
             set_to_null = true;
             parse_arg_type_from_flag(outArg, argStr+1);
             // if (outArg->type != TYPE_STRUCT) argStr = "NULL";
+        } else if (argStr[0] == 'O'){ //for NULL
+            set_to_null = true;
+            parse_arg_type_from_flag(outArg, argStr+1);
+            if (!outArg->is_array && !outArg->pointer_depth) { // should this also check for P types?
+                raiseException(1,"Error: Outpointer flag is only defined for pointer types: %s",argStr);
+            }
+            outArg->is_outPointer=true;
         } else { // no flag, so we need to infer the type from the value
             infer_arg_type_from_value(outArg, argStr);
         }
