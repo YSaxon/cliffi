@@ -444,10 +444,12 @@ void set_arg_value_nullish(ArgInfo* arg){
         arg->value->ptr_val = makePointerLevel(array_raw, arg->pointer_depth);
     } else if (arg->type == TYPE_STRUCT && arg->pointer_depth==0){
         raiseException(1,  "Setting struct types to NULL should not be getting handled by this function. Please report this.");
+    } else if (arg->type == TYPE_STRING || arg->pointer_depth!=0){
+        void* value = NULL;
+        arg->value->ptr_val = makePointerLevel(value, 1);
     } else {
-        memset(arg->value, 0, typeToSize(arg->type, arg->pointer_depth));
+        memset(arg->value, 0, typeToSize(arg->type, 0));
     }
-
 }
 
 void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr) {
