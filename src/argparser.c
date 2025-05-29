@@ -137,8 +137,10 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *extra_args_used, bool is_ret
         bool set_to_null = false;
 
         int i = 0;
-        if (is_return){ // is a return type, so we don't need to parse values or check for the - flag
-            parse_arg_type_from_flag(outArg, argStr);
+        if (is_return){
+            int has_flag = (argStr[0]=='-');
+            if (!has_flag) fprintf(stderr, "Warning: dashless type indicators are deprecated : %s\n",argStr);
+            parse_arg_type_from_flag(outArg, argStr + has_flag);
         } else if (argStr[0] == '-' && !isAllDigits(argStr+1) && !isHexFormat(argStr+1)) {
             parse_arg_type_from_flag(outArg, argStr+1);
             if (outArg->type != TYPE_STRUCT) argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
