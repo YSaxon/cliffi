@@ -147,7 +147,12 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *extra_args_used, bool is_ret
             parse_arg_type_from_flag(outArg, argStr + has_flag);
         } else if (is_type_flag(argStr)) {
             parse_arg_type_from_flag(outArg, argStr+1);
-            if (outArg->type != TYPE_STRUCT) argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
+            if (outArg->type != TYPE_STRUCT) {
+                if (i+1<argc && !is_type_flag(argv[i+1])) argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
+                else {
+                    set_to_null = true;
+                }
+                }
         } else if (argStr[0] == 'N'){ //for NULL
             set_to_null = true;
             parse_arg_type_from_flag(outArg, argStr+1);

@@ -277,6 +277,18 @@ add_test(NAME TestAddFunction
          COMMAND cliffi ${TESTLIB} i add 1 2)
 set_tests_properties(TestAddFunction PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")
 
+add_test(NAME TestDashedReturns
+         COMMAND cliffi ${TESTLIB} -i add 1 2)
+set_tests_properties(TestDashedReturns PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")
+
+add_test(NAME TestMiddleValuelessType
+         COMMAND cliffi ${TESTLIB} -i add -i -i 2)
+set_tests_properties(TestMiddleValuelessType PROPERTIES PASS_REGULAR_EXPRESSION "Arg 0:.*explicit.*Arg 1:.*explicit.*2.*Function returned: 2")
+
+add_test(NAME TestFinalValuelessType
+         COMMAND cliffi ${TESTLIB} -i add 1 -i)
+set_tests_properties(TestFinalValuelessType PROPERTIES PASS_REGULAR_EXPRESSION "Arg 0:.*inferred.*1.*Arg 1:.*explicit.*Function returned: 1")
+
 add_test(NAME TestMultiply
          COMMAND cliffi ${TESTLIB} d multiply 1.5d -d 2)
 set_tests_properties(TestMultiply PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3.0")
