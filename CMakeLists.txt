@@ -872,6 +872,7 @@ print global_int \n
 )
 set_tests_properties(repl_test_load_store_dump_memory PROPERTIES PASS_REGULAR_EXPRESSION "global_address = (0x)?0.*global_address = ${HEXADDRESS_REGEX}.*int global_int = 1.*global_address = (int )?42.*Function returned: 43.*int global_int = 43")
 set_tests_properties(repl_test_load_store_dump_memory PROPERTIES FAIL_REGULAR_EXPRESSION "int global_int = 88")
+set_tests_properties(repl_test_load_store_dump_memory PROPERTIES FIXTURES_SETUP cleanup_cliffi_init) #because cliffi init messes up this test
 
 
 add_test(NAME repl_test_struct_variables_nested_structs # larger = {int double char char*}  containing = {char larger int}
