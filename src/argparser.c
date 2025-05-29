@@ -172,8 +172,8 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *extra_args_used, bool is_ret
             outArg->struct_info = struct_info;
             // not setting a value here, that will be handled by the make_raw_value_for_struct function in the invoke handler module
 
-            if (set_to_null && !is_return){
-                argStr = argv[++i]; // just setting for the purpose of checking if the next string afterwards is a variable
+            if ((set_to_null && !is_return) && getVar(argv[i+1])){
+                    argStr = argv[++i]; // just setting for the purpose of checking if the next string afterwards is a variable
             }
             else {
                 argStr = "";
