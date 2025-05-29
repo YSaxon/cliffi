@@ -124,6 +124,10 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
 
 void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *extra_args_used, bool is_return, bool is_struct);
 
+bool is_type_flag(char* argStr){
+    return argStr[0] == '-' && !isAllDigits(argStr+1) && !isHexFormat(argStr+1);
+}
+
 ArgInfo* parse_one_arg(int argc, char* argv[], int *extra_args_used, bool is_return){
         char* argStr = argv[0];
 
@@ -141,7 +145,7 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *extra_args_used, bool is_ret
             int has_flag = (argStr[0]=='-');
             if (!has_flag) fprintf(stderr, "Warning: dashless type indicators are deprecated : %s\n",argStr);
             parse_arg_type_from_flag(outArg, argStr + has_flag);
-        } else if (argStr[0] == '-' && !isAllDigits(argStr+1) && !isHexFormat(argStr+1)) {
+        } else if (is_type_flag(argStr)) {
             parse_arg_type_from_flag(outArg, argStr+1);
             if (outArg->type != TYPE_STRUCT) argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
         } else if (argStr[0] == 'N'){ //for NULL
