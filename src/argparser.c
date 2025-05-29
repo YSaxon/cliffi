@@ -125,7 +125,8 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
 void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *extra_args_used, bool is_return, bool is_struct);
 
 bool is_type_flag(char* argStr){
-    return argStr[0] == '-' && !isAllDigits(argStr+1) && !isHexFormat(argStr+1);
+    return (argStr[0] == '-' && !isAllDigits(argStr+1) && !isHexFormat(argStr+1)) || strcmp(argStr, ":S") == 0;
+    // we should probably also check for NS: etc
 }
 
 ArgInfo* parse_one_arg(int argc, char* argv[], int *extra_args_used, bool is_return){
