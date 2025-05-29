@@ -971,6 +971,84 @@ bool is_equal(int a, int b){
     return a==b;
 }
 
+void fill_out_int(int* outi){
+    *outi = 42;
+}
+
+void fill_out_struct(struct larger_struct* outi){
+    outi->x = 42;
+    outi->y = 3.14;
+    outi->c = 'a';
+    outi->s = malloc(10);
+    strcpy(outi->s, "hello");
+}
+
+void fill_out_array_of_int(int* outi, int size){
+    for (int i = 0; i < size; i++) {
+        outi[i] = i;
+    }
+}
+
+void allocate_and_fill_out_int(int** outi){
+    if (outi == NULL) {
+        printf("Error: outi is NULL\n");
+        return;
+    }
+    if (*outi != NULL) {
+        printf("Error: *outi is not NULL\n");
+        return;
+    }
+    *outi = malloc(sizeof(int));
+    **outi = 42;
+}
+
+void allocate_and_fill_out_struct(struct larger_struct** outi){
+    if (outi == NULL) {
+        printf("Error: outi is NULL\n");
+        return;
+    }
+    if (*outi != NULL) {
+        printf("Error: *outi is not NULL\n");
+        return;
+    }
+    *outi = malloc(sizeof(struct larger_struct));
+    (*outi)->x = 42;
+    (*outi)->y = 3.14;
+    (*outi)->c = 'a';
+    (*outi)->s = malloc(10);
+    strcpy((*outi)->s, "hello");
+}
+
+void allocate_and_fill_array_of_int(int** outi, int size){
+    if (outi == NULL) {
+        printf("Error: outi is NULL\n");
+        return;
+    }
+    if (*outi != NULL) {
+        printf("Error: *outi is not NULL\n");
+        return;
+    }
+    *outi = malloc(size * sizeof(int));
+    for (int i = 0; i < size; i++) {
+        (*outi)[i] = i;
+    }
+}
+
+// void test_out_parent_with_embedded_pointer(struct parent_with_embedded_pointer* s) {
+//     hexdump(s, sizeof(struct parent_with_embedded_pointer));
+//     printf("s->p.x: %d\n", *s->p.x);
+//     printf("s->p.s: %s\n", s->p.s);
+//     printf("s->p2->x: %d\n", *s->p2->x);
+//     printf("s->p2->s: %s\n", s->p2->s);
+// }
+// void test_allocate_and_fill_parent_with_embedded_pointer(struct parent_with_embedded_pointer* s) {
+//     hexdump(s, sizeof(struct parent_with_embedded_pointer));
+//     printf("s->p.x: %d\n", *s->p.x);
+//     printf("s->p.s: %s\n", s->p.s);
+//     printf("s->p2->x: %d\n", *s->p2->x);
+//     printf("s->p2->s: %s\n", s->p2->s);
+// }
+
 // Entry point to prevent the compiler from complaining when compiling as a shared library
 // This function will not be called; it's just to satisfy the linker.
 int main() {

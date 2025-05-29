@@ -128,7 +128,7 @@ message("attempting link readline::readline")
 endif()
 endif()
 
-if(NOT ANDROID) # on android this breaks things
+if(NOT ANDROID AND NOT APPLE) # on android this breaks things
 find_library(DL_LIBRARY NAMES dl)
 if(DL_LIBRARY)
   target_link_libraries(cliffi_common_deps INTERFACE ${DL_LIBRARY})
@@ -1354,3 +1354,128 @@ set_tests_properties(test_nonzero_exit_for_nonexistent_function PROPERTIES WILL_
 
 
 
+set(OUTSYNTAX O)
+set(OUTPOINTER ${OUTSYNTAX}p)
+set(OUTSTRUCT_START ${OUTSYNTAX}pS:)
+set(OUTARRAY_START ${OUTSYNTAX}a)
+set(OUT_DOUBLEPOINTER ${OUTSYNTAX}pp)
+set(OUT_POINTERSTRUCT_START ${OUTSYNTAX}ppS:)
+set(OUT_POINTERARRAY_START ${OUTSYNTAX}pa)
+
+set(ARG0ORIGINALLY "\tArg 0: ")
+set(ARG0AFTERRETURN "Arg 0 after function return: ")
+set(ARG0AFTERRETURN_ANY_TYPE ${ARG0AFTERRETURN}.*)
+
+# void fill_out_int(int* outi){
+#     *outi = 42;
+# }
+
+add_test(NAME test_fill_out_int
+COMMAND cliffi ${TESTLIB} v fill_out_int ${OUTPOINTER}i
+)
+set_tests_properties(test_fill_out_int PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0ORIGINALLY}.+NULL;${ARG0AFTERRETURN_ANY_TYPE}42")
+
+# void fill_out_struct(struct larger_struct* outi){
+#     outi->x = 42;
+#     outi->y = 3.14;
+#     outi->c = 'a';
+#     outi->s = malloc(10);
+#     strcpy(outi->s, "hello");
+# }
+add_test(NAME test_fill_out_struct
+COMMAND cliffi ${TESTLIB} v fill_out_struct ${OUTSTRUCT_START} i d c s :S
+)
+set_tests_properties(test_fill_out_struct PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\{ int 42, double 3.14*, char \'?a\'?, cstring \"hello\"")
+
+# just copying this for reference for larger_struct
+# COMMAND cliffi ${TESTLIB} S: i d c s :S get_larger_struct 4 2.2 -c q thisisastring )
+# set_tests_properties(return_larger_struct PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: .*\{ int 4, double 2.20*, char \'?q\'?, cstring \"thisisastring\"")
+
+
+# void fill_out_array_of_int(int* outi, int size){
+#     for (int i = 0; i < size; i++) {
+#         outi[i] = i;
+#     }
+# }
+
+add_test(NAME test_fill_out_array_of_int_dynamic_size
+COMMAND cliffi ${TESTLIB} v fill_out_array_of_int ${OUTARRAY_START}it2 5
+)
+set_tests_properties(test_fill_out_array_of_int_dynamic_size PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\\{ 0, 1, 2, 3, 4 \\}")
+
+add_test(NAME test_fill_out_array_of_int_static_size
+COMMAND cliffi ${TESTLIB} v fill_out_array_of_int ${OUTARRAY_START}i5 5
+)
+set_tests_properties(test_fill_out_array_of_int_static_size PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\\{ 0, 1, 2, 3, 4 \\}")
+
+
+# void allocate_and_fill_out_int(int** outi){
+#     if (outi == NULL) {
+#         printf("Error: outi is NULL\n");
+#         return;
+#     }
+#     if (*outi != NULL) {
+#         printf("Error: *outi is not NULL\n");
+#         return;
+#     }
+#     *outi = malloc(sizeof(int));
+#     **outi = 42;
+# }
+
+add_test(NAME test_allocate_double_int_pointer
+COMMAND cliffi ${TESTLIB} v allocate_and_fill_out_int ${OUT_DOUBLEPOINTER}i
+)
+set_tests_properties(test_allocate_double_int_pointer PROPERTIES PASS_REGULAR_EXPRESSION ${ARG0AFTERRETURN_ANY_TYPE}42)
+
+# void allocate_and_fill_out_struct(struct larger_struct** outi){
+#     if (outi == NULL) {
+#         printf("Error: outi is NULL\n");
+#         return;
+#     }
+#     if (*outi != NULL) {
+#         printf("Error: *outi is not NULL\n");
+#         return;
+#     }
+#     *outi = malloc(sizeof(struct larger_struct));
+#     (*outi)->x = 42;
+#     (*outi)->y = 3.14;
+#     (*outi)->c = 'a';
+#     (*outi)->s = malloc(10);
+#     strcpy((*outi)->s, "hello");
+# }
+
+add_test(NAME test_allocate_and_fill_out_struct
+COMMAND cliffi ${TESTLIB} v allocate_and_fill_out_struct ${OUT_POINTERSTRUCT_START} i d c s :S
+)
+set_tests_properties(test_allocate_and_fill_out_struct PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\\{ int 42, double 3.14*, char \'?a\'?, cstring \"hello\"")
+
+# void allocate_and_fill_array_of_int(int** outi, int size){
+#     if (outi == NULL) {
+#         printf("Error: outi is NULL\n");
+#         return;
+#     }
+#     if (*outi != NULL) {
+#         printf("Error: *outi is not NULL\n");
+#         return;
+#     }
+#     *outi = malloc(size * sizeof(int));
+#     for (int i = 0; i < size; i++) {
+#         (*outi)[i] = i;
+#     }
+# }
+
+add_test(NAME test_allocate_and_fill_out_array_of_int_oldway
+COMMAND cliffi ${TESTLIB} v allocate_and_fill_array_of_int -ppait2 null 5
+)
+set_tests_properties(test_allocate_and_fill_out_array_of_int_oldway PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\\{ 0, 1, 2, 3, 4 \\}")
+
+
+add_test(NAME test_allocate_and_fill_out_array_of_int_dynamic_size
+COMMAND cliffi ${TESTLIB} v allocate_and_fill_array_of_int ${OUT_POINTERARRAY_START}it2 5
+)
+set_tests_properties(test_allocate_and_fill_out_array_of_int_dynamic_size PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\\{ 0, 1, 2, 3, 4 \\}")
+
+add_test(NAME test_allocate_and_fill_out_array_of_int_static_size
+COMMAND cliffi ${TESTLIB} v allocate_and_fill_array_of_int ${OUT_POINTERARRAY_START}i5 5
+)
+set_tests_properties(test_allocate_and_fill_out_array_of_int_static_size PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\\{ 0, 1, 2, 3, 4 \\}")
