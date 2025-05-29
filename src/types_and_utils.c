@@ -258,12 +258,12 @@ ArgType infer_arg_type_single(const char* argval) {
     }
 
     // Check for boolean strings
-    if (strcmp(lowercase, "true") == 0 || 
+    if (strcmp(lowercase, "true") == 0 ||
         strcmp(lowercase, "false") == 0 )
         // strcmp(lowercase, "yes") == 0 ||
         // strcmp(lowercase, "no") == 0 ||
         // strcmp(lowercase, "1") == 0 ||
-        // strcmp(lowercase, "0") == 0) 
+        // strcmp(lowercase, "0") == 0)
         {
         free(lowercase);
         return TYPE_BOOL;
@@ -332,20 +332,20 @@ bool string_to_bool(const char* str) {
     if (!str) {
         raiseException(1, "Error: NULL string passed to boolean conversion\n");
     }
-    
+
     // Convert to lowercase for case-insensitive comparison
     char* lower = strdup(str);
     if (!lower) {
         raiseException(1, "Error: Memory allocation failed in boolean conversion\n");
     }
-    
+
     for (char* p = lower; *p; p++) {
         *p = tolower(*p);
     }
-    
+
     bool result; // any of these will be converted to true/false when flagged explicitly though only true/false will be automatically inferred as bool
-    if (strcmp(lower, "true") == 0 || 
-        strcmp(lower, "yes") == 0 || 
+    if (strcmp(lower, "true") == 0 ||
+        strcmp(lower, "yes") == 0 ||
         strcmp(lower, "t") == 0 ||
         strcmp(lower, "y") == 0 ||
         strcmp(lower, "1") == 0 ||
@@ -373,7 +373,7 @@ bool string_to_bool(const char* str) {
             raiseException(1, "Error: Invalid boolean value '%s'. Expected true/false, yes/no, 1/0, or a number\n", str);
         }
     }
-    
+
     free(lower);
     return result;
 }
@@ -439,14 +439,13 @@ void* convert_to_type(ArgType type, const char* argStr) {
 }
 
 void set_arg_value_nullish(ArgInfo* arg){
-    if (arg->is_array == ARRAY_STATIC_SIZE) { // in that case we mean a null array. (ARRAY_SIZE_AT_ARGNUM is handled in second_pass_arginfo_ptr)
+    if (arg->is_array == ARRAY_STATIC_SIZE && arg->pointer_depth==0) { // in that case we mean a null array. (ARRAY_SIZE_AT_ARGNUM is handled in second_pass_arginfo_ptr)
         void* array_raw = calloc(arg->static_or_implied_size, typeToSize(arg->type, arg->array_value_pointer_depth));
         arg->value->ptr_val = makePointerLevel(array_raw, arg->pointer_depth);
-
-    } else if (arg->type == TYPE_STRUCT){
+    } else if (arg->type == TYPE_STRUCT && arg->pointer_depth==0){
         raiseException(1,  "Setting struct types to NULL should not be getting handled by this function. Please report this.");
-    } else { // non pointer set to null is just setting the value to 0
-        memset(arg->value, 0, typeToSize(arg->type, 0));
+    } else {
+        memset(arg->value, 0, typeToSize(arg->type, arg->pointer_depth));
     }
 
 }
