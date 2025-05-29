@@ -1385,7 +1385,7 @@ set_tests_properties(test_fill_out_int PROPERTIES PASS_REGULAR_EXPRESSION "${ARG
 add_test(NAME test_fill_out_struct
 COMMAND cliffi ${TESTLIB} v fill_out_struct ${OUTSTRUCT_START} i d c s :S
 )
-set_tests_properties(test_fill_out_struct PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\{ int 42, double 3.14*, char \'?a\'?, cstring \"hello\"")
+set_tests_properties(test_fill_out_struct PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\{ int 42, double 3.140*, char \'?a\'?, cstring \"hello\"")
 
 # just copying this for reference for larger_struct
 # COMMAND cliffi ${TESTLIB} S: i d c s :S get_larger_struct 4 2.2 -c q thisisastring )
