@@ -1447,7 +1447,7 @@ set_tests_properties(test_allocate_double_int_pointer PROPERTIES PASS_REGULAR_EX
 add_test(NAME test_allocate_and_fill_out_struct
 COMMAND cliffi ${TESTLIB} v allocate_and_fill_out_struct ${OUT_POINTERSTRUCT_START} i d c s :S
 )
-set_tests_properties(test_allocate_and_fill_out_struct PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\\{ int 42, double 3.14*, char \'?a\'?, cstring \"hello\"")
+set_tests_properties(test_allocate_and_fill_out_struct PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\\{ int 42, double 3.140*, char \'?a\'?, cstring \"hello\"")
 
 # void allocate_and_fill_array_of_int(int** outi, int size){
 #     if (outi == NULL) {
