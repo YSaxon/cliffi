@@ -196,7 +196,7 @@ void hexdump(const void *data, size_t size) {
             return;
         }
 
-        if (arg->pointer_depth > 0) {
+        if (arg->pointer_depth > 0 && arg->type != TYPE_STRUCT) {
             for (int j = 0; j < arg->pointer_depth; j++) {
                 value = *(void**)value;
                 if (arg->type!=TYPE_STRUCT && value == NULL) {
