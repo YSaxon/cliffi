@@ -1365,6 +1365,8 @@ set(OUT_POINTERARRAY_START ${OUTSYNTAX}pa)
 set(ARG0ORIGINALLY "\tArg 0: ")
 set(ARG0AFTERRETURN "Arg 0 after function return: ")
 set(ARG0AFTERRETURN_ANY_TYPE ${ARG0AFTERRETURN}.*)
+set(ARG1AFTERRETURN "Arg 1 after function return: ")
+set(ARG1AFTERRETURN_ANY_TYPE ${ARG1AFTERRETURN}.*)
 
 # void fill_out_int(int* outi){
 #     *outi = 42;
@@ -1479,3 +1481,42 @@ add_test(NAME test_allocate_and_fill_out_array_of_int_static_size
 COMMAND cliffi ${TESTLIB} v allocate_and_fill_array_of_int ${OUT_POINTERARRAY_START}i5 5
 )
 set_tests_properties(test_allocate_and_fill_out_array_of_int_static_size PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\\{ 0, 1, 2, 3, 4 \\}")
+
+
+# void deallocate_double_pointer(int** ptr) {
+#     if(!ptr) {
+#         printf("Error: ptr is NULL\n");
+#         return;
+#     }
+#     if (!*ptr) {
+#         printf("Error: *ptr is NULL\n");
+#         return;
+#     }
+#     printf("Deallocating double pointer: %p\n", (void*)*ptr);
+#         free(*ptr);
+#         *ptr = NULL;
+# }
+
+add_test(NAME test_deallocate_double_pointer
+COMMAND cliffi ${TESTLIB} v deallocate_double_pointer -ppi 753
+)
+set_tests_properties(test_deallocate_double_pointer PROPERTIES FAIL_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}.*753")
+
+# void repoint_double_pointer(int** ptr, int* new_value) {
+#     if(!ptr) {
+#         printf("Error: ptr is NULL\n");
+#         return;
+#     }
+#     if (!new_value) {
+#         printf("Error: new_value is NULL\n");
+#         return;
+#     }
+#     printf("Repointing double pointer from %p to %p\n", (void*)*ptr, (void*)new_value);
+#     *ptr = new_value;
+# }
+
+add_test(NAME test_repoint_double_pointer
+COMMAND cliffi ${TESTLIB} v repoint_double_pointer -ppi 753 -pi 42
+)
+set_tests_properties(test_repoint_double_pointer PROPERTIES FAIL_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}.*753")
+set_tests_properties(test_repoint_double_pointer PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}.*42.*${ARG1AFTERRETURN}") #we want to make sure that 42 is printedfor arg0 not just arg1

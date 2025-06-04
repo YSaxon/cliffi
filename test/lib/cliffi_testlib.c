@@ -1034,6 +1034,34 @@ void allocate_and_fill_array_of_int(int** outi, int size){
     }
 }
 
+
+void deallocate_double_pointer(void** ptr) {
+    if(!ptr) {
+        printf("Error: ptr is NULL\n");
+        return;
+    }
+    if (!*ptr) {
+        printf("Error: *ptr is NULL\n");
+        return;
+    }
+    printf("Deallocating double pointer: %p\n", (void*)*ptr);
+        free(*ptr);
+        *ptr = NULL;
+}
+
+void repoint_double_pointer(void** ptr, void* new_value) {
+    if(!ptr) {
+        printf("Error: ptr is NULL\n");
+        return;
+    }
+    if (!new_value) {
+        printf("Error: new_value is NULL\n");
+        return;
+    }
+    printf("Repointing double pointer from %p to %p\n", (void*)*ptr, (void*)new_value);
+    *ptr = new_value;
+}
+
 // void test_out_parent_with_embedded_pointer(struct parent_with_embedded_pointer* s) {
 //     hexdump(s, sizeof(struct parent_with_embedded_pointer));
 //     printf("s->p.x: %d\n", *s->p.x);
