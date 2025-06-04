@@ -1542,6 +1542,13 @@ add_test(NAME test_repoint_double_pointer_struct_outpointer
 COMMAND cliffi ${TESTLIB} v repoint_double_pointer ${OUT_POINTERSTRUCT_START} i d c s :S -pS: 1 2.2 a hello :S)
 set_tests_properties(test_repoint_double_pointer_struct_outpointer PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}.*{ int 1, double 2.20*, char \'?a\'?, cstring \"hello\"? }.*${ARG1AFTERRETURN}") #we want to make sure that the struct is printed correctly
 
+add_test(NAME deallocate_double_pointer_array
+COMMAND cliffi ${TESTLIB} v deallocate_double_pointer -ppai 137,2,3,4,5)
+set_tests_properties(deallocate_double_pointer_array PROPERTIES FAIL_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}.*137") # we want to make sure that the array is printed correctly
+
+add_test(NAME repoint_double_pointer_array
+COMMAND cliffi ${TESTLIB} v repoint_double_pointer -ppai 137,24,3,4,5 -pai 185,27,3,4,5)
+set_tests_properties(repoint_double_pointer_array PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}.*185.*27.*${ARG1AFTERRETURN}") # we want to make sure that the array is printed correctly
 
 add_test(NAME deallocate_double_pointer_struct
 COMMAND cliffi ${TESTLIB} v deallocate_double_pointer -ppS: 1 2.2 a hello :S)

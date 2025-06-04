@@ -273,6 +273,10 @@ void fix_struct_pointers(ArgInfo* struct_arg, void* raw_memory) {
 
     for (int i = 0; i < struct_arg->pointer_depth; i++) {
         raw_memory = *(void**)raw_memory;
+        if (raw_memory == NULL) {
+            struct_arg->is_outPointer = true; // if we are at a pointer depth, we should mark this as an out pointer so that we can handle it correctly later
+            return; // we can't do anything with a NULL pointer, so just return
+        }
     }
 
     ffi_type* struct_type = make_ffi_type_for_struct(struct_arg);
