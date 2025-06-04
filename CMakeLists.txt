@@ -1528,3 +1528,12 @@ COMMAND cliffi ${TESTLIB} b is_null -ppS: 123 abc :S
 add_test(NAME simple_smoketest_array_double_pointer
 COMMAND cliffi ${TESTLIB} b is_null -ppai 1,2,3,4,5
 )
+
+add_test(NAME test_repoint_double_pointer_null
+COMMAND cliffi ${TESTLIB} v repoint_double_pointer -ppi 753 -pi null
+)
+set_tests_properties(test_repoint_double_pointer_null PROPERTIES FAIL_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}.*753")
+
+add_test(NAME test_repoint_double_pointer_struct
+COMMAND cliffi ${TESTLIB} v repoint_double_pointer -ppS: 0 0.0 -c 0 "" :S -pS: 1 2.2 a hello :S)
+set_tests_properties(test_repoint_double_pointer_struct PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}.*{ int 1, double 2.20*, char \'?a\'?, cstring \"hello\"? }.*${ARG1AFTERRETURN}") #we want to make sure that the struct is printed correctly
