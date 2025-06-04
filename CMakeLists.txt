@@ -1520,3 +1520,11 @@ COMMAND cliffi ${TESTLIB} v repoint_double_pointer -ppi 753 -pi 42
 )
 set_tests_properties(test_repoint_double_pointer PROPERTIES FAIL_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}.*753")
 set_tests_properties(test_repoint_double_pointer PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}.*42.*${ARG1AFTERRETURN}") #we want to make sure that 42 is printedfor arg0 not just arg1
+
+add_test(NAME simple_smoketest_struct_double_pointer
+COMMAND cliffi ${TESTLIB} b is_null -ppS: 123 abc :S
+)
+
+add_test(NAME simple_smoketest_array_double_pointer
+COMMAND cliffi ${TESTLIB} b is_null -ppai 1,2,3,4,5
+)
