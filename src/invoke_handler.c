@@ -278,6 +278,7 @@ void fix_struct_pointers(ArgInfo* struct_arg, void* raw_memory) {
             return; // we can't do anything with a NULL pointer, so just return
         }
     }
+    struct_arg->is_outPointer = false; // if we survived the pointer depth checks, we are not an out pointer
 
     ffi_type* struct_type = make_ffi_type_for_struct(struct_arg);
     ffi_status struct_status = struct_arg->struct_info->is_packed ? get_packed_offset(struct_arg, struct_type, offsets) : ffi_get_struct_offsets(FFI_DEFAULT_ABI, struct_type, offsets);
@@ -442,11 +443,11 @@ int invoke_dynamic_function(FunctionCallInfo* call_info, void* func) {
     for (int i = 0; i < call_info->info.arg_count; ++i) {
         if (call_info->info.args[i]->type == TYPE_STRUCT) {
             fix_struct_pointers(call_info->info.args[i], values[i]);
-        }
+        } else call_info->info.args[i]->is_outPointer = false; // if it's not a struct, we don't need to fix pointers, but we do need to reset the is_outPointer flag
     }
     if (call_info->info.return_var->type == TYPE_STRUCT) {
         fix_struct_pointers(call_info->info.return_var, rvalue);
-    }
+    } else call_info->info.return_var->is_outPointer = false; // if it's not a struct, we don't need to fix pointers, but we do need to reset the is_outPointer flag
 #if defined(__s390x__)
     else if (return_type->size < ffi_type_slong.size) {
         if (call_info->info.return_var->type == TYPE_CHAR) {
