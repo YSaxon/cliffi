@@ -121,6 +121,9 @@ typedef struct Point {
     double y;
 } Point;
 
+#define ISPRINT(c) ((c) >= 32 && (c) < 127)
+
+
 void hexdump(const void* data, size_t size) {
     const unsigned char* byte = (const unsigned char*)data;
     size_t i, j;
@@ -146,7 +149,7 @@ void hexdump(const void* data, size_t size) {
         // ASCII characters
         for (j = 0; j < 16; j++) {
             if (i + j < size) {
-                printf("%c", isprint(byte[i + j]) ? byte[i + j] : '.');
+                printf("%c", ISPRINT(byte[i + j]) ? byte[i + j] : '.');
             }
         }
 

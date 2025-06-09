@@ -8,6 +8,7 @@
 #include <inttypes.h>
 #include "exception_handling.h"
 
+#define ISPRINT(c) ((c) >= 32 && (c) < 127)
 
 void print_char_with_escape(char c) {
     switch (c) {
@@ -27,7 +28,7 @@ void print_char_with_escape(char c) {
             printf("\\\\");
             break;
         default:
-            if (isprint(c)) {
+            if (ISPRINT(c)) {
                 printf("%c", c);
             } else {
                 printf("\\x%02x", c);
@@ -68,7 +69,7 @@ void hexdump(const void *data, size_t size) {
         // ASCII characters
         for (j = 0; j < 16; j++) {
             if (i + j < size) {
-                printf("%c", isprint(byte[i + j]) ? byte[i + j] : '.');
+                printf("%c", ISPRINT(byte[i + j]) ? byte[i + j] : '.');
             }
         }
 
