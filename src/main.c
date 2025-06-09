@@ -264,8 +264,8 @@ void checkAndRunCliffiInits() {
     }
 }
 
-#ifndef CLIFFI_UNIT_TESTING // don't defined main() when compiling for unit tests to avoid a collision
 char* g_executable_path = NULL;
+#ifndef CLIFFI_UNIT_TESTING // don't defined main() when compiling for unit tests to avoid a collision
 int main(int argc, char* argv[]) {
     setbuf(stdout, NULL); // disable buffering for stdout
     setbuf(stderr, NULL); // disable buffering for stderr
@@ -414,7 +414,7 @@ int main(int argc, char* argv[]) {
                 return 0;
             }
         }
-    int server_result = start_cliffi_tcp_server(server_host, server_port_str, server_fork_mode);
+    int server_result = start_cliffi_tcp_server(server_host, server_port_str);
     return server_result;
     } else if (argc < 4) {
 #define DASHDASHREPL " [--repl]"

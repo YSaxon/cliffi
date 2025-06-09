@@ -1,246 +1,190 @@
-#include "repl.h"
+#include "server.h"
+#include "subprocess.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 
-// Platform-specific includes and definitions
+// --- Platform-specific Socket and Threading Includes ---
 #ifdef _WIN32
-    #ifndef WIN32_LEAN_AND_MEAN
-    #define WIN32_LEAN_AND_MEAN
-    #endif
-    #include <windows.h>
     #include <winsock2.h>
     #include <ws2tcpip.h>
-    #pragma comment(lib, "Ws2_32.lib")
+    #include <windows.h>
+    #include <process.h> // For _beginthreadex
+    #pragma comment(lib, "ws2_32.lib") // Link with the Winsock library
     typedef SOCKET socket_t;
     #define INVALID_SOCKET_VAL INVALID_SOCKET
     #define close_socket(s) closesocket(s)
-    #define socket_errno WSAGetLastError()
-#else // POSIX
-    #include <sys/types.h>
+#else // POSIX (Linux, macOS, etc.)
     #include <sys/socket.h>
     #include <netinet/in.h>
     #include <arpa/inet.h>
     #include <unistd.h>
-    #include <netdb.h>
-    #include <errno.h>
-    #include <sys/wait.h> // For waitpid (in forking mode)
-    #include <signal.h>   // For signal (in forking mode for SIGCHLD)
-#include "exception_handling.h"
+    #include <pthread.h>
+    #include <netdb.h> // For getaddrinfo
     typedef int socket_t;
     #define INVALID_SOCKET_VAL -1
     #define close_socket(s) close(s)
-    #define socket_errno errno
 #endif
 
-// --- Forward declarations for cliffi internal functions (you'll have these) ---
-// Example: This is the function from your cliffi's main.c that processes REPL commands
-// You will need to adapt it or create a variant if its current form prints directly
-// to stdout and you need to capture that output to send to the socket.
-// int parseREPLCommand(char* command); // Original
-// For the server, you might need something like:
-// char* execute_cliffi_command_and_capture_output(const char* command_string);
-// For now, we'll just conceptualize calling your existing function and note where I/O capture is needed.
 
-// --- Cliffi's main exception handling (from your provided code) ---
-// #include "exception_handling.h" // Assuming you have this
-// void main_method_install_exception_handlers() { /* Your impl */ }
-// void printException() { /* Your impl */ }
-// #define TRY if(1){
-// #define CATCHALL } else {
-// #define END_TRY }
+// This global must be set to argv[0] in main.c so the server can re-spawn itself.
+extern char* g_executable_path;
 
-char* printf_socket_error_prefix;
+typedef struct {
+    socket_t client_socket;
+    struct subprocess_s repl_process;
+    bool session_active;
+} session_data_t;
 
-// --- Constants ---
-#define DEFAULT_SERVER_PORT "16732" // Example port, choose your own
-#define DEFAULT_HOST "0.0.0.0"    // Listen on all interfaces
-#define SERVER_BUFFER_SIZE 4096
+typedef struct {
+    session_data_t* session;
+    volatile bool* is_active_flag;
+} proxy_thread_args_t;
 
-#ifndef _WIN32
-// Simple SIGCHLD handler to prevent zombie processes in forking mode
-void sigchld_handler(int s) {
-    (void)s; // Unused parameter
-    // waitpid() might overwrite errno, so we save and restore it:
-    int saved_errno = errno;
-    while(waitpid(-1, NULL, WNOHANG) > 0);
-    errno = saved_errno;
-}
-#endif
 
-/**
- * Handles a single client session.
- * Reads commands, executes them via cliffi, captures output, and sends response.
- */
-void handle_client_session(socket_t client_socket) {
-    char buffer[SERVER_BUFFER_SIZE];
-    int nbytes;
-    printf_socket_error_prefix = "[Client PID: %d] "; // Informative prefix if forking
-#ifndef _WIN32
-    // If forking, each child will have its own PID
-    if (getpid() != 0) { // Simplified; in practice, you'd know if you're a child
-         printf_socket_error_prefix = "[Client PID: %d] ";
-    } else {
-         printf_socket_error_prefix = "[Client] "; // Fallback for non-forking or parent
-    }
+#ifdef _WIN32
+unsigned __stdcall proxy_socket_to_process(void* args) {
 #else
-    // Windows does not fork like this, so a generic prefix
-    printf_socket_error_prefix = "[Client] ";
+void* proxy_socket_to_process(void* args) {
 #endif
+    proxy_thread_args_t* proxy_args = (proxy_thread_args_t*)args;
+    session_data_t* session = proxy_args->session;
+    char buffer[4096];
+    int bytes_received;
 
-    printf("%sConnected.\n", printf_socket_error_prefix);
+    FILE* p_stdin = subprocess_stdin(&session->repl_process);
 
-    // Welcome message (optional)
-    const char* welcome_msg = "Welcome to cliffi server!\n> ";
-    if (send(client_socket, welcome_msg, strlen(welcome_msg), 0) == -1) {
-        perror("send welcome"); // Use a platform-agnostic error print
-        return;
+    while (*(proxy_args->is_active_flag)) {
+        bytes_received = recv(session->client_socket, buffer, sizeof(buffer), 0);
+        if (bytes_received <= 0) {
+            break; // Client disconnected or error
+        }
+        fwrite(buffer, 1, bytes_received, p_stdin);
+        fflush(p_stdin);
     }
 
-    while ((nbytes = recv(client_socket, buffer, sizeof(buffer) - 1, 0)) > 0) {
-        buffer[nbytes] = '\0';
-
-        // Trim newline characters often sent by netcat/telnet
-        char* p = buffer;
-        while (*p) {
-            if (*p == '\n' || *p == '\r') {
-                *p = '\0';
-                break;
-            }
-            p++;
-        }
-
-        if (strlen(buffer) == 0) { // Handle empty lines after trim
-            if (send(client_socket, "> ", 2, 0) == -1) break; // Send prompt again
-            continue;
-        }
-
-        printf("%sReceived command: '%s'\n", printf_socket_error_prefix, buffer);
-
-        if (strcmp(buffer, "exit") == 0 || strcmp(buffer, "quit") == 0) {
-            printf("%sClient requested exit.\n", printf_socket_error_prefix);
-            break;
-        }
-
-
-        // --- CRITICAL SECTION: Execute command and capture output ---
-        // This is where you need to integrate with cliffi's command processing
-        // and capture its stdout/stderr.
-
-        // ** OPTION 1: If parseREPLCommand can be made to write to a buffer/pipe **
-        //    (This is the cleaner, but potentially more invasive change to cliffi)
-        //    char output_buffer[SOME_LARGE_SIZE];
-        //    int result = parseREPLCommand_to_buffer(buffer, output_buffer, sizeof(output_buffer));
-        //    if (result != 0) { /* handle cliffi error */ }
-        //    send(client_socket, output_buffer, strlen(output_buffer), 0);
-
-        // ** OPTION 2: Temporarily redirect stdout/stderr to a pipe or temp file **
-        //    (Less invasive to parseREPLCommand, but more OS-level plumbing here)
-        //    This is complex to do robustly and cross-platform within this function.
-        //    Example pseudo-code for POSIX pipe redirection:
-        int pipefd[2]; pipe(pipefd);
-        int saved_stdout = dup(STDOUT_FILENO);
-        dup2(pipefd[1], STDOUT_FILENO); // Redirect stdout to pipe write end
-        close(pipefd[1]); // Close write end in this process after dup
-
-        TRY
-        parseREPLCommand(buffer); // This now writes to the pipe
-        CATCHALL
-        printException(); // Handle exceptions from cliffi command processing
-        END_TRY
-
-        fflush(stdout); // Ensure all data is written to pipe
-        dup2(saved_stdout, STDOUT_FILENO); // Restore stdout
-        close(saved_stdout);
-
-        char captured_output[SERVER_BUFFER_SIZE];
-        int output_len = read(pipefd[0], captured_output, sizeof(captured_output)-1);
-        close(pipefd[0]);
-        if (output_len > 0) {
-            captured_output[output_len] = '\0';
-            send(client_socket, captured_output, output_len, 0);
-        } else {
-            send(client_socket, "No output or error reading output.\n", 33, 0);
-        }
-
-        // parseREPLCommand(buffer);
-        // For now, a placeholder response:
-        // char response[SERVER_BUFFER_SIZE];
-        // snprintf(response, sizeof(response), "Executing '%s' (output capture TBD)\n", buffer);
-        // This is where you would call your actual cliffi command processor
-        // e.g. by calling a modified parseREPLCommand or execute_cliffi_command_and_capture_output
-        // For now, just echoing back for testing the server shell.
-        // In a real scenario, you'd call `parseREPLCommand(buffer)` after setting up I/O redirection.
-        // Then you'd read the captured output and send it.
-
-        // Simulate calling parseREPLCommand and it printing something.
-        // This part needs actual implementation of output capture.
-        // For this skeleton, let's just send back an ack.
-        // if (send(client_socket, response, strlen(response), 0) == -1) {
-        //     // perror_win_or_posix("send response"); // Use a platform-agnostic error print
-        //     break;
-        // }
-        // --- END CRITICAL SECTION ---
-
-        // Send prompt for next command
-        if (send(client_socket, "> ", 2, 0) == -1) {
-            // perror_win_or_posix("send prompt");
-            break;
-        }
-    }
-
-    if (nbytes == 0) {
-        printf("%sClient disconnected gracefully.\n", printf_socket_error_prefix);
-    } else if (nbytes < 0) {
-        // perror_win_or_posix("recv");
-        fprintf(stderr, "%sRecv error: %d\n", printf_socket_error_prefix, socket_errno);
-    }
-
-    printf("%sSession ended.\n", printf_socket_error_prefix);
-    close_socket(client_socket);
+    fclose(p_stdin);
+    *(proxy_args->is_active_flag) = false;
+    free(proxy_args);
+    return 0;
 }
 
+#ifdef _WIN32
+unsigned __stdcall proxy_process_to_socket(void* args) {
+#else
+void* proxy_process_to_socket(void* args) {
+#endif
+    proxy_thread_args_t* proxy_args = (proxy_thread_args_t*)args;
+    session_data_t* session = proxy_args->session;
+    char buffer[4096];
+    unsigned int bytes_read;
 
-/**
- * Starts the cliffi TCP server.
- */
-int start_cliffi_tcp_server(const char* host, const char* port_str, bool fork_per_client) {
-    socket_t listen_fd = INVALID_SOCKET_VAL;
-    socket_t client_fd = INVALID_SOCKET_VAL;
-    int status;
+    while (*(proxy_args->is_active_flag)) {
+        bytes_read = subprocess_read_stdout(&session->repl_process, buffer, sizeof(buffer));
+        if (bytes_read > 0) {
+            send(session->client_socket, buffer, bytes_read, 0);
+        }
+
+        bytes_read = subprocess_read_stderr(&session->repl_process, buffer, sizeof(buffer));
+        if (bytes_read > 0) {
+            send(session->client_socket, buffer, bytes_read, 0);
+        }
+
+        if (!subprocess_alive(&session->repl_process)) {
+            break;
+        }
+
+        #ifdef _WIN32
+        Sleep(10);
+        #else
+        usleep(10000);
+        #endif
+    }
+
+    *(proxy_args->is_active_flag) = false;
+    free(proxy_args);
+    return 0;
+}
+
+#ifdef _WIN32
+unsigned __stdcall handle_client_session_thread(void* session_ptr) {
+#else
+void* handle_client_session_thread(void* session_ptr) {
+#endif
+    session_data_t* session = (session_data_t*)session_ptr;
+    printf("[Server] New session thread started.\n");
+
+    const char* command_line[] = { g_executable_path, "--repl", NULL };
+    int options = subprocess_option_inherit_environment | subprocess_option_enable_async;
+
+    if (subprocess_create(command_line, options, &session->repl_process) != 0) {
+        fprintf(stderr, "[Server] Error: Failed to spawn 'cliffi --repl' worker.\n");
+        close_socket(session->client_socket);
+        free(session);
+        return (void*)-1;
+    }
+
+    printf("[Server] Worker process spawned.\n");
+    session->session_active = true;
+
+    proxy_thread_args_t* args1 = malloc(sizeof(proxy_thread_args_t));
+    args1->session = session;
+    args1->is_active_flag = &session->session_active;
+
+    proxy_thread_args_t* args2 = malloc(sizeof(proxy_thread_args_t));
+    args2->session = session;
+    args2->is_active_flag = &session->session_active;
+
+#ifdef _WIN32
+    HANDLE hThread1 = (HANDLE)_beginthreadex(NULL, 0, proxy_socket_to_process, args1, 0, NULL);
+    HANDLE hThread2 = (HANDLE)_beginthreadex(NULL, 0, proxy_process_to_socket, args2, 0, NULL);
+    WaitForSingleObject(hThread1, INFINITE);
+    WaitForSingleObject(hThread2, INFINITE);
+    CloseHandle(hThread1);
+    CloseHandle(hThread2);
+#else
+    pthread_t tid1, tid2;
+    pthread_create(&tid1, NULL, proxy_socket_to_process, args1);
+    pthread_create(&tid2, NULL, proxy_process_to_socket, args2);
+    pthread_join(tid1, NULL);
+    pthread_join(tid2, NULL);
+#endif
+
+    printf("[Server] Session ending. Cleaning up.\n");
+    close_socket(session->client_socket);
+    subprocess_terminate(&session->repl_process);
+    subprocess_destroy(&session->repl_process);
+    free(session);
+
+    return 0;
+}
+
+int start_cliffi_tcp_server(const char* host, const char* port_str) {
+    if (g_executable_path == NULL) {
+        fprintf(stderr, "[Server] Fatal Error: g_executable_path is not set.\n");
+        return 1;
+    }
 
 #ifdef _WIN32
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        fprintf(stderr, "WSAStartup failed. Error Code: %d\n", socket_errno);
+        fprintf(stderr, "WSAStartup failed.\n");
         return 1;
-    }
-    if (fork_per_client) {
-        fprintf(stderr, "Warning: Forking mode is not supported on Windows. Using single client mode.\n");
-        fork_per_client = false;
-    }
-#else // POSIX
-    if (fork_per_client) {
-        struct sigaction sa;
-        sa.sa_handler = sigchld_handler; // Reap all dead processes
-        sigemptyset(&sa.sa_mask);
-        sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
-        if (sigaction(SIGCHLD, &sa, 0) == -1) {
-            perror("sigaction");
-            return 1;
-        }
-        printf("Server starting in fork-per-client mode.\n");
-    } else {
-        printf("Server starting in single-client-at-a-time mode.\n");
     }
 #endif
 
+    socket_t listen_socket = INVALID_SOCKET_VAL;
     struct addrinfo hints, *servinfo, *p;
+    int status;
+    int yes = 1;
+
+    // Use getaddrinfo for a robust, protocol-agnostic setup.
     memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_UNSPEC; // AF_INET or AF_INET6 to force version
+    hints.ai_family = AF_UNSPEC; // Allow IPv4 or IPv6
     hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags = AI_PASSIVE; // use my IP
+    hints.ai_flags = AI_PASSIVE; // Use my IP
 
     if ((status = getaddrinfo(host, port_str, &hints, &servinfo)) != 0) {
         fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(status));
@@ -249,24 +193,26 @@ int start_cliffi_tcp_server(const char* host, const char* port_str, bool fork_pe
 
     // Loop through all the results and bind to the first we can
     for (p = servinfo; p != NULL; p = p->ai_next) {
-        if ((listen_fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == INVALID_SOCKET_VAL) {
+        listen_socket = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+        if (listen_socket == INVALID_SOCKET_VAL) {
             perror("server: socket");
             continue;
         }
 
-        int yes = 1;
-        if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&yes, sizeof(yes)) == -1) {
-            perror("setsockopt SO_REUSEADDR");
-            close_socket(listen_fd);
+        // Set SO_REUSEADDR to prevent "Address already in use" errors on restart
+        if (setsockopt(listen_socket, SOL_SOCKET, SO_REUSEADDR, (const char*)&yes, sizeof(yes)) == -1) {
+            perror("setsockopt");
+            close_socket(listen_socket);
             freeaddrinfo(servinfo);
             return 1;
         }
 
-        if (bind(listen_fd, p->ai_addr, p->ai_addrlen) == -1) {
-            close_socket(listen_fd);
+        if (bind(listen_socket, p->ai_addr, p->ai_addrlen) == -1) {
+            close_socket(listen_socket);
             perror("server: bind");
             continue;
         }
+
         break; // If we got here, we successfully bound
     }
 
@@ -277,62 +223,44 @@ int start_cliffi_tcp_server(const char* host, const char* port_str, bool fork_pe
         return 1;
     }
 
-    if (listen(listen_fd, 10) == -1) { // 10 is a common backlog value
-        perror("listen");
+    if (listen(listen_socket, 10) < 0) {
+        fprintf(stderr, "Failed to listen on socket.\n");
+        close_socket(listen_socket);
         return 1;
     }
 
-    printf("Server listening on %s:%s...\n", host, port_str);
+    printf("[Server] Listening on %s:%s\n", host, port_str);
 
-    // Main accept() loop
     while (1) {
-        struct sockaddr_storage client_addr;
-        socklen_t sin_size = sizeof client_addr;
-        client_fd = accept(listen_fd, (struct sockaddr *)&client_addr, &sin_size);
-
-        if (client_fd == INVALID_SOCKET_VAL) {
-            perror("accept");
-            continue; // Or handle error more gracefully
+        session_data_t* session = (session_data_t*)malloc(sizeof(session_data_t));
+        if (!session) {
+             fprintf(stderr, "[Server] Fatal: Out of memory.\n"); break;
         }
 
-        // Get client IP for logging (optional)
-        char s[INET6_ADDRSTRLEN];
-        inet_ntop(client_addr.ss_family,
-                  &(((struct sockaddr_in*)&client_addr)->sin_addr), // Basic IPv4 assumption here for simplicity
-                  s, sizeof s);
-        printf("Server: got connection from %s\n", s);
+        session->client_socket = accept(listen_socket, NULL, NULL);
 
-
-        if (fork_per_client) {
-#ifndef _WIN32 // Forking only on POSIX
-            pid_t pid = fork();
-            if (pid == -1) {
-                perror("fork");
-                close_socket(client_fd); // Close client socket in parent if fork failed
-            } else if (pid == 0) { // Child process
-                close_socket(listen_fd); // Child doesn't need the listener
-                handle_client_session(client_fd);
-                printf("[Child PID %d] Terminating.\n", getpid());
-                exit(0); // Child exits after handling session
-            } else { // Parent process
-                printf("Server: dispatched client to child PID %d\n", pid);
-                close_socket(client_fd); // Parent closes its copy of client socket
-            }
+        if (session->client_socket != INVALID_SOCKET_VAL) {
+#ifdef _WIN32
+            HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, handle_client_session_thread, session, 0, NULL);
+            if (hThread) { CloseHandle(hThread); }
 #else
-            // This path should ideally not be reached if fork_per_client is true on Windows
-            // as it's set to false at the beginning of this function.
-            // Fallback to single client handling if somehow fork_per_client is true on Windows.
-            handle_client_session(client_fd);
+            pthread_t tid;
+            if (pthread_create(&tid, NULL, handle_client_session_thread, session) == 0) {
+                pthread_detach(tid);
+            }
 #endif
-        } else { // Single client mode
-            printf("Server: handling client in single mode.\n");
-            handle_client_session(client_fd);
-            printf("Server: client session ended, waiting for new connection.\n");
+            else {
+                fprintf(stderr, "[Server] Failed to create thread for new client.\n");
+                close_socket(session->client_socket);
+                free(session);
+            }
+        } else {
+            fprintf(stderr, "[Server] Error on accept().\n");
+            free(session);
         }
     }
 
-    // Cleanup (though the loop above is infinite, this is good practice if it could break)
-    close_socket(listen_fd);
+    close_socket(listen_socket);
 #ifdef _WIN32
     WSACleanup();
 #endif
