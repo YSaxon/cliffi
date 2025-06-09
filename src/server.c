@@ -27,6 +27,7 @@
     #include <errno.h>
     #include <sys/wait.h> // For waitpid (in forking mode)
     #include <signal.h>   // For signal (in forking mode for SIGCHLD)
+#include "exception_handling.h"
     typedef int socket_t;
     #define INVALID_SOCKET_VAL -1
     #define close_socket(s) close(s)
@@ -122,7 +123,6 @@ void handle_client_session(socket_t client_socket) {
             break;
         }
 
-        parseREPLCommand(buffer);
 
         // --- CRITICAL SECTION: Execute command and capture output ---
         // This is where you need to integrate with cliffi's command processing
@@ -139,34 +139,35 @@ void handle_client_session(socket_t client_socket) {
         //    (Less invasive to parseREPLCommand, but more OS-level plumbing here)
         //    This is complex to do robustly and cross-platform within this function.
         //    Example pseudo-code for POSIX pipe redirection:
-        //    int pipefd[2]; pipe(pipefd);
-        //    int saved_stdout = dup(STDOUT_FILENO);
-        //    dup2(pipefd[1], STDOUT_FILENO); // Redirect stdout to pipe write end
-        //    close(pipefd[1]); // Close write end in this process after dup
-        //
-        //    TRY {
-        //        parseREPLCommand(buffer); // This now writes to the pipe
-        //    } CATCHALL {
-        //        printException_to_pipe_or_buffer(); // Need to capture this too
-        //    } END_TRY
-        //
-        //    fflush(stdout); // Ensure all data is written to pipe
-        //    dup2(saved_stdout, STDOUT_FILENO); // Restore stdout
-        //    close(saved_stdout);
-        //
-        //    char captured_output[SERVER_BUFFER_SIZE];
-        //    int output_len = read(pipefd[0], captured_output, sizeof(captured_output)-1);
-        //    close(pipefd[0]);
-        //    if (output_len > 0) {
-        //        captured_output[output_len] = '\0';
-        //        send(client_socket, captured_output, output_len, 0);
-        //    } else {
-        //        send(client_socket, "No output or error reading output.\n", 33, 0);
-        //    }
-        //
+        int pipefd[2]; pipe(pipefd);
+        int saved_stdout = dup(STDOUT_FILENO);
+        dup2(pipefd[1], STDOUT_FILENO); // Redirect stdout to pipe write end
+        close(pipefd[1]); // Close write end in this process after dup
+
+        TRY
+        parseREPLCommand(buffer); // This now writes to the pipe
+        CATCHALL
+        printException(); // Handle exceptions from cliffi command processing
+        END_TRY
+
+        fflush(stdout); // Ensure all data is written to pipe
+        dup2(saved_stdout, STDOUT_FILENO); // Restore stdout
+        close(saved_stdout);
+
+        char captured_output[SERVER_BUFFER_SIZE];
+        int output_len = read(pipefd[0], captured_output, sizeof(captured_output)-1);
+        close(pipefd[0]);
+        if (output_len > 0) {
+            captured_output[output_len] = '\0';
+            send(client_socket, captured_output, output_len, 0);
+        } else {
+            send(client_socket, "No output or error reading output.\n", 33, 0);
+        }
+
+        // parseREPLCommand(buffer);
         // For now, a placeholder response:
-        char response[SERVER_BUFFER_SIZE];
-        snprintf(response, sizeof(response), "Executing '%s' (output capture TBD)\n", buffer);
+        // char response[SERVER_BUFFER_SIZE];
+        // snprintf(response, sizeof(response), "Executing '%s' (output capture TBD)\n", buffer);
         // This is where you would call your actual cliffi command processor
         // e.g. by calling a modified parseREPLCommand or execute_cliffi_command_and_capture_output
         // For now, just echoing back for testing the server shell.
@@ -176,10 +177,10 @@ void handle_client_session(socket_t client_socket) {
         // Simulate calling parseREPLCommand and it printing something.
         // This part needs actual implementation of output capture.
         // For this skeleton, let's just send back an ack.
-        if (send(client_socket, response, strlen(response), 0) == -1) {
-            // perror_win_or_posix("send response"); // Use a platform-agnostic error print
-            break;
-        }
+        // if (send(client_socket, response, strlen(response), 0) == -1) {
+        //     // perror_win_or_posix("send response"); // Use a platform-agnostic error print
+        //     break;
+        // }
         // --- END CRITICAL SECTION ---
 
         // Send prompt for next command
