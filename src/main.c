@@ -299,7 +299,7 @@ int main(int argc, char* argv[]) {
         struct subprocess_s subprocess;
 
         // Create the subprocess. Inherit the parent's environment so it can find libraries.
-        int options = subprocess_option_inherit_environment | subprocess_option_enable_async;
+        int options = subprocess_option_inherit_environment | subprocess_option_enable_async | subprocess_option_no_window ;
         int result = subprocess_create(command_line, options, &subprocess);
         if (result != 0) {
             fprintf(stderr, "Error: --repltest failed to create subprocess.\n");
@@ -375,6 +375,7 @@ int main(int argc, char* argv[]) {
         using_history();
         read_history(".cliffi_history");
         fprintf(stderr, "cliffi %s. Starting REPL... Type 'help' for assistance. Type 'exit' to quit:\n", VERSION);
+        fflush(stderr);
 
         // Start the REPL
         startRepl();
