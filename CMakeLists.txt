@@ -41,6 +41,13 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage")
     # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
     # endif()
+    message(STATUS "Debug build detected, enabling debug flags")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g3")
+    if(APPLE)
+        # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_DARWIN_C_SOURCE") # needed for macOS
+        set(CMAKE_C_FLAGS_DEBUG "-O0 -g -gdwarf-4")
+        set(CMAKE_EXE_LINKER_FLAGS_DEBUG "-g -gdwarf-4") # Also good to add to linker flags
+    endif()
 endif()
 
 option(ENABLE_SANITIZERS "Build with sanitizers enabled" OFF)
@@ -130,7 +137,7 @@ message("attempting link readline::readline")
 endif()
 endif()
 
-if(NOT ANDROID) # on android this breaks things
+if(NOT ANDROID AND NOT APPLE) # on android this breaks things
 find_library(DL_LIBRARY NAMES dl)
 if(DL_LIBRARY)
   target_link_libraries(cliffi_common_deps INTERFACE ${DL_LIBRARY})
@@ -278,6 +285,18 @@ endif()
 add_test(NAME TestAddFunction
          COMMAND cliffi ${TESTLIB} i add 1 2)
 set_tests_properties(TestAddFunction PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")
+
+add_test(NAME TestDashedReturns
+         COMMAND cliffi ${TESTLIB} -i add 1 2)
+set_tests_properties(TestDashedReturns PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: 3")
+
+add_test(NAME TestMiddleValuelessType
+         COMMAND cliffi ${TESTLIB} -i add -i -i 2)
+set_tests_properties(TestMiddleValuelessType PROPERTIES PASS_REGULAR_EXPRESSION "Arg 0:.*explicit.*Arg 1:.*explicit.*2.*Function returned: 2")
+
+add_test(NAME TestFinalValuelessType
+         COMMAND cliffi ${TESTLIB} -i add 1 -i)
+set_tests_properties(TestFinalValuelessType PROPERTIES PASS_REGULAR_EXPRESSION "Arg 0:.*inferred.*1.*Arg 1:.*explicit.*Function returned: 1")
 
 add_test(NAME TestMultiply
          COMMAND cliffi ${TESTLIB} d multiply 1.5d -d 2)
@@ -862,6 +881,7 @@ print global_int \n
 )
 set_tests_properties(repl_test_load_store_dump_memory PROPERTIES PASS_REGULAR_EXPRESSION "global_address = (0x)?0.*global_address = ${HEXADDRESS_REGEX}.*int global_int = 1.*global_address = (int )?42.*Function returned: 43.*int global_int = 43")
 set_tests_properties(repl_test_load_store_dump_memory PROPERTIES FAIL_REGULAR_EXPRESSION "int global_int = 88")
+set_tests_properties(repl_test_load_store_dump_memory PROPERTIES FIXTURES_SETUP cleanup_cliffi_init) #because cliffi init messes up this test
 
 
 add_test(NAME repl_test_struct_variables_nested_structs # larger = {int double char char*}  containing = {char larger int}
@@ -1343,3 +1363,201 @@ set_tests_properties(test_nonzero_exit_for_nonexistent_function PROPERTIES WILL_
 
 
 
+set(OUTSYNTAX O)
+set(OUTPOINTER ${OUTSYNTAX}p)
+set(OUTSTRUCT_START ${OUTSYNTAX}pS:)
+set(OUTARRAY_START ${OUTSYNTAX}a)
+set(OUT_DOUBLEPOINTER ${OUTSYNTAX}pp)
+set(OUT_POINTERSTRUCT_START ${OUTSYNTAX}ppS:)
+set(OUT_POINTERARRAY_START ${OUTSYNTAX}pa)
+
+set(ARG0ORIGINALLY "\tArg 0: ")
+set(ARG0AFTERRETURN "Arg 0 after function return: ")
+set(ARG0AFTERRETURN_ANY_TYPE ${ARG0AFTERRETURN}.*)
+set(ARG1AFTERRETURN "Arg 1 after function return: ")
+set(ARG1AFTERRETURN_ANY_TYPE ${ARG1AFTERRETURN}.*)
+
+# void fill_out_int(int* outi){
+#     *outi = 42;
+# }
+
+add_test(NAME test_fill_out_int
+COMMAND cliffi ${TESTLIB} v fill_out_int ${OUTPOINTER}i
+)
+set_tests_properties(test_fill_out_int PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0ORIGINALLY}.+NULL;${ARG0AFTERRETURN_ANY_TYPE}42")
+
+# void fill_out_struct(struct larger_struct* outi){
+#     outi->x = 42;
+#     outi->y = 3.14;
+#     outi->c = 'a';
+#     outi->s = malloc(10);
+#     strcpy(outi->s, "hello");
+# }
+add_test(NAME test_fill_out_struct
+COMMAND cliffi ${TESTLIB} v fill_out_struct ${OUTSTRUCT_START} i d c s :S
+)
+set_tests_properties(test_fill_out_struct PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\{ int 42, double 3.140*, char \'?a\'?, cstring \"hello\"")
+
+# just copying this for reference for larger_struct
+# COMMAND cliffi ${TESTLIB} S: i d c s :S get_larger_struct 4 2.2 -c q thisisastring )
+# set_tests_properties(return_larger_struct PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: .*\{ int 4, double 2.20*, char \'?q\'?, cstring \"thisisastring\"")
+
+
+# void fill_out_array_of_int(int* outi, int size){
+#     for (int i = 0; i < size; i++) {
+#         outi[i] = i;
+#     }
+# }
+
+add_test(NAME test_fill_out_array_of_int_dynamic_size
+COMMAND cliffi ${TESTLIB} v fill_out_array_of_int ${OUTARRAY_START}it2 5
+)
+set_tests_properties(test_fill_out_array_of_int_dynamic_size PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\\{ 0, 1, 2, 3, 4 \\}")
+
+add_test(NAME test_fill_out_array_of_int_static_size
+COMMAND cliffi ${TESTLIB} v fill_out_array_of_int ${OUTARRAY_START}i5 5
+)
+set_tests_properties(test_fill_out_array_of_int_static_size PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\\{ 0, 1, 2, 3, 4 \\}")
+
+
+# void allocate_and_fill_out_int(int** outi){
+#     if (outi == NULL) {
+#         printf("Error: outi is NULL\n");
+#         return;
+#     }
+#     if (*outi != NULL) {
+#         printf("Error: *outi is not NULL\n");
+#         return;
+#     }
+#     *outi = malloc(sizeof(int));
+#     **outi = 42;
+# }
+
+add_test(NAME test_allocate_double_int_pointer
+COMMAND cliffi ${TESTLIB} v allocate_and_fill_out_int ${OUT_DOUBLEPOINTER}i
+)
+set_tests_properties(test_allocate_double_int_pointer PROPERTIES PASS_REGULAR_EXPRESSION ${ARG0AFTERRETURN_ANY_TYPE}42)
+
+# void allocate_and_fill_out_struct(struct larger_struct** outi){
+#     if (outi == NULL) {
+#         printf("Error: outi is NULL\n");
+#         return;
+#     }
+#     if (*outi != NULL) {
+#         printf("Error: *outi is not NULL\n");
+#         return;
+#     }
+#     *outi = malloc(sizeof(struct larger_struct));
+#     (*outi)->x = 42;
+#     (*outi)->y = 3.14;
+#     (*outi)->c = 'a';
+#     (*outi)->s = malloc(10);
+#     strcpy((*outi)->s, "hello");
+# }
+
+add_test(NAME test_allocate_and_fill_out_struct
+COMMAND cliffi ${TESTLIB} v allocate_and_fill_out_struct ${OUT_POINTERSTRUCT_START} i d c s :S
+)
+set_tests_properties(test_allocate_and_fill_out_struct PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\\{ int 42, double 3.140*, char \'?a\'?, cstring \"hello\"")
+
+# void allocate_and_fill_array_of_int(int** outi, int size){
+#     if (outi == NULL) {
+#         printf("Error: outi is NULL\n");
+#         return;
+#     }
+#     if (*outi != NULL) {
+#         printf("Error: *outi is not NULL\n");
+#         return;
+#     }
+#     *outi = malloc(size * sizeof(int));
+#     for (int i = 0; i < size; i++) {
+#         (*outi)[i] = i;
+#     }
+# }
+
+add_test(NAME test_allocate_and_fill_out_array_of_int_oldway
+COMMAND cliffi ${TESTLIB} v allocate_and_fill_array_of_int -ppait2 null 5
+)
+set_tests_properties(test_allocate_and_fill_out_array_of_int_oldway PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\\{ 0, 1, 2, 3, 4 \\}")
+
+
+add_test(NAME test_allocate_and_fill_out_array_of_int_dynamic_size
+COMMAND cliffi ${TESTLIB} v allocate_and_fill_array_of_int ${OUT_POINTERARRAY_START}it2 5
+)
+set_tests_properties(test_allocate_and_fill_out_array_of_int_dynamic_size PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\\{ 0, 1, 2, 3, 4 \\}")
+
+add_test(NAME test_allocate_and_fill_out_array_of_int_static_size
+COMMAND cliffi ${TESTLIB} v allocate_and_fill_array_of_int ${OUT_POINTERARRAY_START}i5 5
+)
+set_tests_properties(test_allocate_and_fill_out_array_of_int_static_size PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\\{ 0, 1, 2, 3, 4 \\}")
+
+
+# void deallocate_double_pointer(int** ptr) {
+#     if(!ptr) {
+#         printf("Error: ptr is NULL\n");
+#         return;
+#     }
+#     if (!*ptr) {
+#         printf("Error: *ptr is NULL\n");
+#         return;
+#     }
+#     printf("Deallocating double pointer: %p\n", (void*)*ptr);
+#         free(*ptr);
+#         *ptr = NULL;
+# }
+
+add_test(NAME test_deallocate_double_pointer
+COMMAND cliffi ${TESTLIB} v deallocate_double_pointer -ppi 753
+)
+set_tests_properties(test_deallocate_double_pointer PROPERTIES FAIL_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}.*753")
+
+# void repoint_double_pointer(int** ptr, int* new_value) {
+#     if(!ptr) {
+#         printf("Error: ptr is NULL\n");
+#         return;
+#     }
+#     if (!new_value) {
+#         printf("Error: new_value is NULL\n");
+#         return;
+#     }
+#     printf("Repointing double pointer from %p to %p\n", (void*)*ptr, (void*)new_value);
+#     *ptr = new_value;
+# }
+
+add_test(NAME test_repoint_double_pointer
+COMMAND cliffi ${TESTLIB} v repoint_double_pointer -ppi 753 -pi 42
+)
+set_tests_properties(test_repoint_double_pointer PROPERTIES FAIL_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}.*753")
+set_tests_properties(test_repoint_double_pointer PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}.*42.*${ARG1AFTERRETURN}") #we want to make sure that 42 is printedfor arg0 not just arg1
+
+add_test(NAME simple_smoketest_struct_double_pointer
+COMMAND cliffi ${TESTLIB} b is_null -ppS: 123 abc :S
+)
+
+add_test(NAME simple_smoketest_array_double_pointer
+COMMAND cliffi ${TESTLIB} b is_null -ppai 1,2,3,4,5
+)
+
+add_test(NAME test_repoint_double_pointer_null
+COMMAND cliffi ${TESTLIB} v repoint_double_pointer -ppi 753 -pi null
+)
+set_tests_properties(test_repoint_double_pointer_null PROPERTIES FAIL_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}.*753")
+
+add_test(NAME test_repoint_double_pointer_struct
+COMMAND cliffi ${TESTLIB} v repoint_double_pointer -ppS: 0 0.0 -c 0 "" :S -pS: 1 2.2 a hello :S)
+set_tests_properties(test_repoint_double_pointer_struct PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}.*{ int 1, double 2.20*, char \'?a\'?, cstring \"hello\"? }.*${ARG1AFTERRETURN}") #we want to make sure that the struct is printed correctly
+
+add_test(NAME test_repoint_double_pointer_struct_outpointer
+COMMAND cliffi ${TESTLIB} v repoint_double_pointer ${OUT_POINTERSTRUCT_START} i d c s :S -pS: 1 2.2 a hello :S)
+set_tests_properties(test_repoint_double_pointer_struct_outpointer PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}.*{ int 1, double 2.20*, char \'?a\'?, cstring \"hello\"? }.*${ARG1AFTERRETURN}") #we want to make sure that the struct is printed correctly
+
+add_test(NAME deallocate_double_pointer_array
+COMMAND cliffi ${TESTLIB} v deallocate_double_pointer -ppai 137,2,3,4,5)
+set_tests_properties(deallocate_double_pointer_array PROPERTIES FAIL_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}.*137") # we want to make sure that the array is printed correctly
+
+add_test(NAME repoint_double_pointer_array
+COMMAND cliffi ${TESTLIB} v repoint_double_pointer -ppai 137,24,3,4,5 -pai 185,27,3,4,5)
+set_tests_properties(repoint_double_pointer_array PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}.*185.*27.*${ARG1AFTERRETURN}") # we want to make sure that the array is printed correctly
+
+add_test(NAME deallocate_double_pointer_struct
+COMMAND cliffi ${TESTLIB} v deallocate_double_pointer -ppS: 1 2.2 a hello :S)

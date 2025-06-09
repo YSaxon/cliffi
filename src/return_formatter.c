@@ -8,6 +8,7 @@
 #include <inttypes.h>
 #include "exception_handling.h"
 
+#define ISPRINT(c) ((c) >= 32 && (c) < 127)
 
 void print_char_with_escape(char c) {
     switch (c) {
@@ -27,7 +28,7 @@ void print_char_with_escape(char c) {
             fprintf(stdout, "\\\\");
             break;
         default:
-            if (isprint(c)) {
+            if (ISPRINT(c)) {
                 fprintf(stdout, "%c", c);
             } else {
                 fprintf(stdout, "\\x%02x", c);
@@ -68,7 +69,7 @@ void hexdump(const void *data, size_t size) {
         // ASCII characters
         for (j = 0; j < 16; j++) {
             if (i + j < size) {
-                fprintf(stdout, "%c", isprint(byte[i + j]) ? byte[i + j] : '.');
+                fprintf(stdout, "%c", ISPRINT(byte[i + j]) ? byte[i + j] : '.');
             }
         }
 
@@ -191,7 +192,12 @@ void hexdump(const void *data, size_t size) {
         const void* value;
         value = arg->value;
 
-        if (arg->pointer_depth > 0) {
+        if(arg->is_outPointer){
+            printf("(allocated outpointer to NULL)");
+            return;
+        }
+
+        if (arg->pointer_depth > 0 && arg->type != TYPE_STRUCT) {
             for (int j = 0; j < arg->pointer_depth; j++) {
                 value = *(void**)value;
                 if (arg->type!=TYPE_STRUCT && value == NULL) {

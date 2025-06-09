@@ -124,6 +124,11 @@ void parse_arg_type_from_flag(ArgInfo* arg, const char* argStr){
 
 void parse_all_from_argvs(ArgInfoContainer* info, int argc, char* argv[], int *extra_args_used, bool is_return, bool is_struct);
 
+bool is_type_flag(char* argStr){
+    return (argStr[0] == '-' && !isAllDigits(argStr+1) && !isHexFormat(argStr+1)) || strcmp(argStr, ":S") == 0;
+    // we should probably also check for NS: etc
+}
+
 ArgInfo* parse_one_arg(int argc, char* argv[], int *extra_args_used, bool is_return){
         char* argStr = argv[0];
 
@@ -137,15 +142,29 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *extra_args_used, bool is_ret
         bool set_to_null = false;
 
         int i = 0;
-        if (is_return){ // is a return type, so we don't need to parse values or check for the - flag
-            parse_arg_type_from_flag(outArg, argStr);
-        } else if (argStr[0] == '-' && !isAllDigits(argStr+1) && !isHexFormat(argStr+1)) {
+        if (is_return){
+            int has_flag = (argStr[0]=='-');
+            if (!has_flag) fprintf(stderr, "Warning: dashless type indicators are deprecated : %s\n",argStr);
+            parse_arg_type_from_flag(outArg, argStr + has_flag);
+        } else if (is_type_flag(argStr)) {
             parse_arg_type_from_flag(outArg, argStr+1);
-            if (outArg->type != TYPE_STRUCT) argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
+            if (outArg->type != TYPE_STRUCT) {
+                if (i+1<argc && !is_type_flag(argv[i+1])) argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
+                else {
+                    set_to_null = true;
+                }
+                }
         } else if (argStr[0] == 'N'){ //for NULL
             set_to_null = true;
             parse_arg_type_from_flag(outArg, argStr+1);
             // if (outArg->type != TYPE_STRUCT) argStr = "NULL";
+        } else if (argStr[0] == 'O'){ //for NULL
+            set_to_null = true;
+            parse_arg_type_from_flag(outArg, argStr+1);
+            if (!outArg->is_array && !outArg->pointer_depth) { // should this also check for P types?
+                raiseException(1,"Error: Outpointer flag is only defined for pointer types: %s",argStr);
+            }
+            outArg->is_outPointer=true;
         } else { // no flag, so we need to infer the type from the value
             infer_arg_type_from_value(outArg, argStr);
         }
@@ -161,8 +180,8 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *extra_args_used, bool is_ret
             outArg->struct_info = struct_info;
             // not setting a value here, that will be handled by the make_raw_value_for_struct function in the invoke handler module
 
-            if (set_to_null && !is_return){
-                argStr = argv[++i]; // just setting for the purpose of checking if the next string afterwards is a variable
+            if ((set_to_null && !is_return) && getVar(argv[i+1])){
+                    argStr = argv[++i]; // just setting for the purpose of checking if the next string afterwards is a variable
             }
             else {
                 argStr = "";
