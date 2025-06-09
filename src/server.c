@@ -127,45 +127,6 @@ void* proxy_process_stdout_to_socket(void* args) {
     return 0;
 }
 
-#ifdef _WIN32
-unsigned __stdcall proxy_process_stderr_to_socket(void* args) {
-#else
-void* proxy_process_stderr_to_socket(void* args) {
-#endif
-    proxy_thread_args_t* proxy_args = (proxy_thread_args_t*)args;
-    session_data_t* session = proxy_args->session;
-    char buffer[4096];
-    unsigned int bytes_read;
-
-    while (*(proxy_args->is_active_flag)) {
-
-            bytes_read = subprocess_read_stderr(&session->repl_process, buffer, sizeof(buffer));
-            if (bytes_read > 0) {
-                send(session->client_socket, buffer, bytes_read, 0);
-            }
-
-        if (!subprocess_alive(&session->repl_process)) {
-            // The child process has terminated. We must shut down the socket
-            // to unblock the other thread which is likely stuck in recv().
-            #ifdef _WIN32
-                shutdown(session->client_socket, SD_BOTH);
-            #else
-                shutdown(session->client_socket, SHUT_RDWR);
-            #endif
-            break;
-        }
-
-        #ifdef _WIN32
-        Sleep(10);
-        #else
-        usleep(10000);
-        #endif
-    }
-
-    *(proxy_args->is_active_flag) = false;
-    free(proxy_args);
-    return 0;
-}
 
 #ifdef _WIN32
 unsigned __stdcall handle_client_session_thread(void* session_ptr) {
@@ -176,7 +137,7 @@ void* handle_client_session_thread(void* session_ptr) {
     printf("[Server] New session thread started.\n");
 
     const char* command_line[] = { g_executable_path, "--repl", NULL };
-    int options = subprocess_option_inherit_environment | subprocess_option_enable_async;
+    int options = subprocess_option_inherit_environment | subprocess_option_enable_async | subprocess_option_combined_stdout_stderr | subprocess_option_no_window;
 
     if (subprocess_create(command_line, options, &session->repl_process) != 0) {
         fprintf(stderr, "[Server] Error: Failed to spawn 'cliffi --repl' worker.\n");
@@ -198,29 +159,19 @@ void* handle_client_session_thread(void* session_ptr) {
     args2->session = session;
     args2->is_active_flag = &session->session_active;
 
-    proxy_thread_args_t* args3 = malloc(sizeof(proxy_thread_args_t));
-    if (!args3) { free(args1); free(args2); goto cleanup; }
-    args3->session = session;
-    args3->is_active_flag = &session->session_active;
-
 #ifdef _WIN32
     HANDLE hThread1 = (HANDLE)_beginthreadex(NULL, 0, proxy_socket_to_process, args1, 0, NULL);
     HANDLE hThread2 = (HANDLE)_beginthreadex(NULL, 0, proxy_process_stdout_to_socket, args2, 0, NULL);
-    HANDLE hThread3 = (HANDLE)_beginthreadex(NULL, 0, proxy_process_stderr_to_socket, args3, 0, NULL);
     WaitForSingleObject(hThread1, INFINITE);
     WaitForSingleObject(hThread2, INFINITE);
-    WaitForSingleObject(hThread3, INFINITE);
     CloseHandle(hThread1);
     CloseHandle(hThread2);
-    CloseHandle(hThread3);
 #else
-    pthread_t tid1, tid2, tid3;
+    pthread_t tid1, tid2;
     pthread_create(&tid1, NULL, proxy_socket_to_process, args1);
     pthread_create(&tid2, NULL, proxy_process_stdout_to_socket, args2);
-    pthread_create(&tid3, NULL, proxy_process_stderr_to_socket, args3);
     pthread_join(tid1, NULL);
     pthread_join(tid2, NULL);
-    pthread_join(tid3, NULL);
 #endif
 
 cleanup:
