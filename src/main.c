@@ -391,27 +391,12 @@ int main(int argc, char* argv[]) {
                 server_host = argv[++i];
             } else if ((strcmp(argv[i], "--port") == 0 || strcmp(argv[i], "-p") == 0) && i + 1 < argc) {
                 server_port_str = argv[++i];
-            #ifndef _WIN32
-            } else if ((strcmp(argv[i], "--server-mode") == 0 || strcmp(argv[i], "-m") == 0) && i + 1 < argc) {
-                char* mode = argv[++i];
-                if (strcmp(mode, "fork") == 0) {
-                    server_fork_mode = true;
-                } else if (strcmp(mode, "single") == 0) {
-                    server_fork_mode = false;
-                } else {
-                    fprintf(stderr, "Unknown server mode: %s. Use 'fork' or 'single'.\n", mode);
-                    return 1;
-                }
-            #endif
             } else if (strcmp(argv[i], "--help") == 0) {
                 // print_usage(argv[0]); // Your existing usage
                 printf("Server options:\n");
                 printf("  --server            Run in server mode.\n");
                 printf("  -h | --host <address>    Host address to bind to (default: %s).\n", DEFAULT_HOST);
                 printf("  -p | --port <port>       Port to listen on (default: %s).\n", DEFAULT_SERVER_PORT);
-                #ifndef _WIN32
-                printf("  -m | --server-mode <mode> Server mode: 'single' (default) or 'fork'.\n");
-                #endif
                 return 0;
             }
         }
