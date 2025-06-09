@@ -46,6 +46,9 @@ void print_usage(char* argv0) {
     fprintf(stdout, "Usage: %s %s\n", argv0, BASIC_USAGE_STRING);
     fprintf(stdout, "  [--help]         Print this help message\n"
            "  [--repl]         Start the REPL\n"
+           "  [--server] [--host <host>] [--port <port>]      Start a REPL bind server on host (default %s) and port (default %s)\n",
+           DEFAULT_SERVER_HOST, DEFAULT_SERVER_PORT);
+    fprintf(stdout,
            "  <library>        The path to the shared library containing the function to invoke\n"
            "                   or the name of the library if it is in the system path\n"
            "  <typeflag>       The type of the return value of the function to invoke\n"
@@ -383,7 +386,7 @@ int main(int argc, char* argv[]) {
         return 0;
     } else if (argc > 1 && strcmp(argv[1], "--server") == 0)
     {
-        const char* server_host = DEFAULT_HOST;
+        const char* server_host = DEFAULT_SERVER_HOST;
         const char* server_port_str = DEFAULT_SERVER_PORT;
         bool server_fork_mode = false; // Default to single client mode
         for (int i = 2; i < argc; ++i) {
@@ -395,7 +398,7 @@ int main(int argc, char* argv[]) {
                 // print_usage(argv[0]); // Your existing usage
                 printf("Server options:\n");
                 printf("  --server            Run in server mode.\n");
-                printf("  -h | --host <address>    Host address to bind to (default: %s).\n", DEFAULT_HOST);
+                printf("  -h | --host <address>    Host address to bind to (default: %s).\n", DEFAULT_SERVER_HOST);
                 printf("  -p | --port <port>       Port to listen on (default: %s).\n", DEFAULT_SERVER_PORT);
                 return 0;
             }
