@@ -137,12 +137,6 @@ void* proxy_process_stderr_to_socket(void* args) {
     char buffer[4096];
     unsigned int bytes_read;
 
-    // fprintf(stderr, "[Server] Proxy thread started for process to socket for %s.\n",
-    //         stdout_or_stderr ? "stdout" : "stderr");
-    fprintf(stderr, "[Server] Client socket: %d\n", session->client_socket);
-    fprintf(stderr, "is_active_flag: %p\n", proxy_args->is_active_flag);
-    fprintf(stderr, "Session active: %d\n", session->session_active);
-
     while (*(proxy_args->is_active_flag)) {
 
             bytes_read = subprocess_read_stderr(&session->repl_process, buffer, sizeof(buffer));
