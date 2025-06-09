@@ -25,6 +25,7 @@
 #include <unistd.h>   // only used for forking for --repltest repl test harness mode
 #endif
 
+#include "subprocess.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -264,10 +265,12 @@ void checkAndRunCliffiInits() {
 }
 
 #ifndef CLIFFI_UNIT_TESTING // don't defined main() when compiling for unit tests to avoid a collision
+char* g_executable_path = NULL;
 int main(int argc, char* argv[]) {
     setbuf(stdout, NULL); // disable buffering for stdout
     setbuf(stderr, NULL); // disable buffering for stderr
     main_method_install_exception_handlers();
+    g_executable_path = argv[0]; // Set the global path
 
     if (argc > 1 && strcmp(argv[1], "--help") == 0) {
         print_usage(argv[0]);
@@ -279,66 +282,93 @@ int main(int argc, char* argv[]) {
             argv++;
             isTestEnvExit1OnFail = false;
         } else {
-            isTestEnvExit1OnFail = true; // in general we want to exit on fail in test mode so that mistakes in the test script are caught
+            isTestEnvExit1OnFail = true;
         }
-        #if !defined(_WIN32) && !defined(_WIN64)
-        int pipefd[2];
-        if (pipe(pipefd) == -1) {
-            perror("pipe");
+
+        // Define the command to launch ourselves in REPL mode.
+        const char* command_line[4];
+        command_line[0] = g_executable_path;
+        command_line[1] = "--repl";
+        if (isTestEnvExit1OnFail) {
+            command_line[2] = "--exit-on-fail"; // Pass the state explicitly
+            command_line[3] = NULL;
+        } else {
+            command_line[2] = NULL;
+        }
+
+        struct subprocess_s subprocess;
+
+        // Create the subprocess. Inherit the parent's environment so it can find libraries.
+        int options = subprocess_option_inherit_environment | subprocess_option_enable_async;
+        int result = subprocess_create(command_line, options, &subprocess);
+        if (result != 0) {
+            fprintf(stderr, "Error: --repltest failed to create subprocess.\n");
             return 1;
         }
 
-        pid_t pid = fork();
-        if (pid == -1) {
-            perror("fork");
+        // Get a FILE pointer to the child's standard input.
+        FILE* p_stdin = subprocess_stdin(&subprocess);
+        if (p_stdin == NULL) {
+            fprintf(stderr, "Error: --repltest couldn't get subprocess stdin.\n");
             return 1;
         }
 
-        if (pid == 0) {                    // Child process
-            close(pipefd[1]);              // Close write end of pipe
-            dup2(pipefd[0], STDIN_FILENO); // Redirect STDIN to read from pipe
-            close(pipefd[0]);              // Close read end, not needed anymore
-            goto replmode;
-        } else {              // Parent process
-            close(pipefd[0]); // Close the write end of the pipe
-            for (int i = 2; i < argc; i++) {
-                write(pipefd[1], argv[i], strlen(argv[i]));
-                write(pipefd[1], " ", 1);
-            }
-            close(pipefd[1]); // Close the write end of the pipe
-            int status;
-            waitpid(pid, &status, 0);
-            exit(WEXITSTATUS(status));
-        }
-#else // a simpler version for windows
-        checkAndRunCliffiInits();
-        //just feed each line to the repl execute func directly, by concatenating inputs after arg[2] except splitting for newline chars
-        char* command = malloc(1024);
-        command[0] = '\0'; // initialize the command
+        // Write all test arguments as a single line to the child process.
         for (int i = 2; i < argc; i++) {
-            bool isNewLine = strcmp(argv[i], "\n") == 0;
-            bool isFinalArg = argc - 1 == i;
-            if (!isNewLine || isFinalArg ) {
-                strcat(command, argv[i]);
-                strcat(command, " ");
+            fputs(argv[i], p_stdin);
+            fputs(" ", p_stdin);
+        }
+        fputs("\n", p_stdin);
+
+        // VERY IMPORTANT: Close the child's stdin pipe. This sends an EOF,
+        // allowing the child's `fgets`/`getline` loop to terminate naturally.
+        fclose(p_stdin);
+
+        char buffer[1024];
+        unsigned int bytes_read;
+        while (subprocess_alive(&subprocess)) {
+            bytes_read = subprocess_read_stdout(&subprocess, buffer, sizeof(buffer) - 1);
+            if (bytes_read > 0) {
+                buffer[bytes_read] = '\0';
+                fprintf(stdout, "%s", buffer);
             }
-            if (isNewLine || isFinalArg ){
-                command[strlen(command) - 1] = '\0'; // remove the trailing space
-                fprintf(stdout, "Executing \"%s\"\n", command);
-                TRY
-                parseREPLCommand(command);
-                CATCHALL
-                    printException();
-                    if (isTestEnvExit1OnFail) exit(1);
-                    fprintf(stderr, "Restarting REPL...\n");
-                END_TRY
-                command[0] = '\0'; // reset the command
+
+            bytes_read = subprocess_read_stderr(&subprocess, buffer, sizeof(buffer) - 1);
+            if (bytes_read > 0) {
+                buffer[bytes_read] = '\0';
+                fprintf(stderr, "%s", buffer);
             }
         }
-        return(0);
-        #endif
+
+        // Wait for the child process to complete and get its exit code.
+        int return_code;
+        result = subprocess_join(&subprocess, &return_code);
+        if (result != 0) {
+            fprintf(stderr, "Error: --repltest failed to join subprocess.\n");
+        }
+
+        // Clean up subprocess resources.
+        subprocess_destroy(&subprocess);
+
+        // Exit with the same code as the child process, just like the original test.
+        if (isTestEnvExit1OnFail && return_code != 0) {
+            fprintf(stderr, "\n\nTest failed with exit code %d\n", return_code);
+        } else {
+            fprintf(stdout, "\n\nTest completed with exit code %d\n", return_code);
+        }
+        exit(return_code);
     } else if (argc > 1 && strcmp(argv[1], "--repl") == 0)
     replmode: {
+        isTestEnvExit1OnFail = false; // Default to exiting with 1 on failure in REPL mode
+           for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--exit-on-fail") == 0) {
+            isTestEnvExit1OnFail = true;
+            argc--;
+            argv++;
+            break;
+        }
+    }
+
         checkAndRunCliffiInits();
         // rl_completion_entry_function = (Function*)cliffi_completion;
         rl_bind_key('\t', rl_complete);
