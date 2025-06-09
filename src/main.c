@@ -388,7 +388,6 @@ int main(int argc, char* argv[]) {
     {
         const char* server_host = DEFAULT_SERVER_HOST;
         const char* server_port_str = DEFAULT_SERVER_PORT;
-        bool server_fork_mode = false; // Default to single client mode
         for (int i = 2; i < argc; ++i) {
             if ((strcmp(argv[i], "--host") == 0 || strcmp(argv[i], "-h") == 0 )&& i + 1 < argc) {
                 server_host = argv[++i];
