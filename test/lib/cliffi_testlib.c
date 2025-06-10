@@ -1065,6 +1065,15 @@ void repoint_double_pointer(void** ptr, void* new_value) {
     *ptr = new_value;
 }
 
+static int unexported_test_function(int a, int b) {
+    printf("Unexported test function called with a: %d, b: %d\n", a, b);
+    return 2 * a + 7 * b;
+}
+
+void ___call_unexported_test_function_so_it_doesnt_get_compiled_out(void) {
+    unexported_test_function(3, 4);
+}
+
 // void test_out_parent_with_embedded_pointer(struct parent_with_embedded_pointer* s) {
 //     hexdump(s, sizeof(struct parent_with_embedded_pointer));
 //     printf("s->p.x: %d\n", *s->p.x);
