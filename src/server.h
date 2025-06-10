@@ -2,7 +2,7 @@
 #define CLIFFI_SERVER_H
 
 #define DEFAULT_SERVER_PORT "16732" // Example port, choose your own
-#define DEFAULT_SERVER_HOST "0.0.0.0"    // Listen on all interfaces
+#define DEFAULT_SERVER_HOST "127.0.0.1"    // Listen on all interfaces
 #define SERVER_BUFFER_SIZE 4096
 /**
  * @brief Starts the cliffi TCP server.
