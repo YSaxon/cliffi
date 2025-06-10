@@ -136,11 +136,11 @@ void* handle_client_session_thread(void* session_ptr) {
     session_data_t* session = (session_data_t*)session_ptr;
     printf("[Server] New session thread started.\n");
 
-    const char* command_line[] = { g_executable_path, "--repl", NULL };
+    const char* command_line[] = { g_executable_path, "--server-internal-repl", NULL };
     int options = subprocess_option_inherit_environment | subprocess_option_enable_async | subprocess_option_combined_stdout_stderr | subprocess_option_no_window;
 
     if (subprocess_create(command_line, options, &session->repl_process) != 0) {
-        fprintf(stderr, "[Server] Error: Failed to spawn 'cliffi --repl' worker.\n");
+        fprintf(stderr, "[Server] Error: Failed to spawn 'cliffi --server-internal-repl' worker.\n");
         close_socket(session->client_socket);
         free(session);
         return (void*)-1;

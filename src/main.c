@@ -404,7 +404,24 @@ int main(int argc, char* argv[]) {
         }
     int server_result = start_cliffi_tcp_server(server_host, server_port_str);
     return server_result;
-    } else if (argc < 4) {
+    } else if (argc > 1 && strcmp(argv[1], "--server-internal-repl") == 0){
+        isTestEnvExit1OnFail = false; // Default to exiting with 1 on failure in REPL mode
+        for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--exit-on-fail") == 0) {
+            isTestEnvExit1OnFail = true;
+            argc--;
+            argv++;
+            break;
+        }
+    }
+    fprintf(stderr, "INTERNAL SERVER REPL STARTUP\n");
+    fprintf(stderr, "CHECKING FOR INITIALIZATION COMMANDS IN LOCAL DOTFILES\n");
+    checkAndRunCliffiInits();
+    fprintf(stderr, "INITIALIZATION COMPLETE. STARTING INTERNAL SERVER REPL\n");
+    startInternalServerRepl();
+    return 0;
+    }
+    else if (argc < 4) {
 #define DASHDASHREPL " [--repl]"
             fprintf(stderr, "%s %s\nUsage: %s [--help]%s %s\n", NAME, VERSION, argv[0], DASHDASHREPL, BASIC_USAGE_STRING);
             return 1;

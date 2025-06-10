@@ -3,6 +3,7 @@
 
 // REPL command parsing and execution
 void startRepl();
+void startInternalServerRepl();
 int parseREPLCommand(char* command);
 
 #endif // CLIFFI_REPL_H

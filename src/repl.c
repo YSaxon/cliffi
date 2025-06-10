@@ -460,3 +460,37 @@ void startRepl() {
     }
 }
 
+void startInternalServerRepl(){
+
+    char* command;
+
+    while ((fprintf(stderr,"<WAITING FOR NEXT REPL COMMAND>\n") && (command = readline("")) != NULL)) {
+        int breakRepl = 0;
+        TRY
+        if (strlen(command) > 0) {
+            // fprintf(stderr, "Command: %s\n", command);
+            HIST_ENTRY* last_command = history_get(history_length);
+            if (last_command == NULL || strcmp(command, last_command->line) != 0) {
+                add_history(command);
+                write_history(".cliffi_history");
+            }
+        fprintf(stderr, "COMMAND `%s` RECEIVED\n", command);
+        breakRepl = parseREPLCommand(command);
+        fprintf(stderr, "COMMAND `%s` RESPONSE FINISHED\n", command);
+        }
+        CATCHALL
+        fprintf(stderr, "EXCEPTION THROWN DURING EXECUTION OF `%s`. PRINTING BELOW\n", command);
+        printException();
+        if (isTestEnvExit1OnFail)
+        {
+            fprintf(stderr, "EXIT ON EXCEPTION OPTION WAS SET. EXITING REPL\n");
+            exit(1);
+        }
+        fprintf(stderr, "COMMAND `%s` RESPONSE FINISHED AFTER EXCEPTION\n", command);
+        END_TRY
+        if (breakRepl) break;
+        else free(command);
+    }
+    fprintf(stderr, "EXITING REPL AFTER `%s`\n", command);
+    free(command);
+}
