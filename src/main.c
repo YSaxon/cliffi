@@ -38,7 +38,7 @@
 
 const char* NAME = "cliffi";
 const char* VERSION = "v1.12.6";
-const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
+const char* BASIC_USAGE_STRING = "<library> <-return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
 
 
 void print_usage(char* argv0) {
@@ -51,8 +51,8 @@ void print_usage(char* argv0) {
     fprintf(stdout,
            "  <library>        The path to the shared library containing the function to invoke\n"
            "                   or the name of the library if it is in the system path\n"
-           "  <typeflag>       The type of the return value of the function to invoke\n"
-           "                   v for void, i for int, s for string, etc\n"
+           "  -<typeflag>      The type of the return value of the function to invoke\n"
+           "                   -v for void, -i for int, -s for string, etc\n"
            "  <function_name>  The name of the function to invoke\n"
            "  [-<typeflag>] <arg> The argument values to pass to the function\n"
            "                   Types will be inferred if not prefixed with flags\n"
@@ -60,12 +60,12 @@ void print_usage(char* argv0) {
            "  ...              Mark the position of varargs in the function signature if applicable\n");
     fprintf(stdout, "\n"
            "  BASIC EXAMPLES:\n");
-    fprintf(stdout, "         %s libexample.so i addints 3 4\n", argv0);
-    fprintf(stdout, "         %s path/to/libexample.so v dofoo\n", argv0);
-    fprintf(stdout, "         %s ./libexample.so s concatstrings -s hello -s world\n", argv0);
-    fprintf(stdout, "         %s libexample.so s concatstrings hello world\n", argv0);
-    fprintf(stdout, "         %s libexample.so d multdoubles -d 1.5 1.5d\n", argv0);
-    fprintf(stdout, "         %s %s%s i printf 'Here is a number: %%.3f' ... 4.5", argv0, DEFAULT_LIBC_NAME, DEFAULT_LIBRARY_EXTENSION);
+    fprintf(stdout, "         %s libexample.so -i addints 3 4\n", argv0);
+    fprintf(stdout, "         %s path/to/libexample.so -v dofoo\n", argv0);
+    fprintf(stdout, "         %s ./libexample.so -s concatstrings -s hello -s world\n", argv0);
+    fprintf(stdout, "         %s libexample.so -s concatstrings hello world\n", argv0);
+    fprintf(stdout, "         %s libexample.so -d multdoubles -d 1.5 1.5d\n", argv0);
+    fprintf(stdout, "         %s %s%s -i printf 'Here is a number: %%.3f' ... 4.5", argv0, DEFAULT_LIBC_NAME, DEFAULT_LIBRARY_EXTENSION);
     fprintf(stdout, "\n");
     fprintf(stdout, "  TYPES:\n"
            "     The primitive typeflags are:\n");
@@ -106,11 +106,11 @@ void print_usage(char* argv0) {
            "       Note that pa<type> means a pointer to an array of type, while ap<type> means an array of <type> pointers \n"
            "   ARRAY EXAMPLES:\n");
     fprintf(stdout, "     * For a function: int return_buffer(char** outbuff) which returns size\n");
-    fprintf(stdout, "     %s libexample.so v return_buffer -past2 NULL -pi 0\n", argv0);
+    fprintf(stdout, "     %s libexample.so -v return_buffer -past2 NULL -pi 0\n", argv0);
     fprintf(stdout, "     * Or alternatively if it were: void return_buffer(char** outbuff, size_t* outsize)\n");
-    fprintf(stdout, "     %s libexample.so i return_buffer -past0 NULL\n", argv0);
+    fprintf(stdout, "     %s libexample.so -i return_buffer -past0 NULL\n", argv0);
     fprintf(stdout, "     * For a function: int add_all_ints(int** nums, size_t size) which returns sum\n");
-    fprintf(stdout, "     %s libexample.so i add_all_ints -ai 1,2,3,4,5 -i 5\n", argv0);
+    fprintf(stdout, "     %s libexample.so -i add_all_ints -ai 1,2,3,4,5 -i 5\n", argv0);
     fprintf(stdout, "\n");
     fprintf(stdout, "   STRUCTS:\n"
            "      Structs can be used for both arguments and return values\n"
@@ -125,11 +125,11 @@ void print_usage(char* argv0) {
            "    STRUCT EXAMPLES:\n"
            "      Given a struct: struct mystruct { int x; char* s; }\n"
            "      * For a function: void print_struct(struct mystruct s)\n");
-    fprintf(stdout, "      %s libexample.so v print_struct -S: 3 \"hello world\" :S\n", argv0);
+    fprintf(stdout, "      %s libexample.so -v print_struct -S: 3 \"hello world\" :S\n", argv0);
     fprintf(stdout, "      * For a function: struct mystruct return_struct(int x, char* s)\n");
-    fprintf(stdout, "      %s libexample.so S: i s :S 5 \"hello world\"\n", argv0);
+    fprintf(stdout, "      %s libexample.so -S: i s :S 5 \"hello world\"\n", argv0);
     fprintf(stdout, "      * For a function: modifyStruct(struct mystruct* s)\n");
-    fprintf(stdout, "      %s libexample.so v modifyStruct -pS: 3 \"hello world\" :S\n", argv0);
+    fprintf(stdout, "      %s libexample.so -v modifyStruct -pS: 3 \"hello world\" :S\n", argv0);
     fprintf(stdout, "\n");
     fprintf(stdout, "  VARARGS:\n"
            "     If a function takes varargs the position of the varargs should be specified with the `...` flag\n"
@@ -137,9 +137,9 @@ void print_usage(char* argv0) {
            "     The varargs themselves are the same as any other function args and can be with or without typeflags\n"
            "     (Floats and types shorter than int will be upgraded for you automatically)\n"
            "    VARARGS EXAMPLES:\n");
-    fprintf(stdout, "      %s %s%s i printf 'Hello %%s, your number is: %%.3f' ... bob 4.5\n", argv0, DEFAULT_LIBC_NAME, DEFAULT_LIBRARY_EXTENSION);
-    fprintf(stdout, "      %s %s%s i printf 'This is just a static string' ... \n", argv0, DEFAULT_LIBC_NAME, DEFAULT_LIBRARY_EXTENSION);
-    fprintf(stdout, "      %s some_lib.so v func_taking_all_varargs ... -i 3 -s hello\n", argv0);
+    fprintf(stdout, "      %s %s%s -i printf 'Hello %%s, your number is: %%.3f' ... bob 4.5\n", argv0, DEFAULT_LIBC_NAME, DEFAULT_LIBRARY_EXTENSION);
+    fprintf(stdout, "      %s %s%s -i printf 'This is just a static string' ... \n", argv0, DEFAULT_LIBC_NAME, DEFAULT_LIBRARY_EXTENSION);
+    fprintf(stdout, "      %s some_lib.so -v func_taking_all_varargs ... -i 3 -s hello\n", argv0);
 }
 
 void print_function_return(FunctionCallInfo* call_info){

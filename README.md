@@ -11,16 +11,16 @@ Alternatively, you can build it yourself pretty easily. Get libffi installed, cl
 
 Let's start with two simple examples.
 ```
-cliffi libc.so L strlen abcdefg
-cliffi libc.so i printf "hello %s, this is example number %d" ... world 2
+cliffi libc.so -L strlen abcdefg
+cliffi libc.so -i printf "hello %s, this is example number %d" ... world 2
 ```
 
-In these two examples we've used automatic type inferrence to infer the types of unflagged arguments (except for return type which must be specified). The `...` marks where the varargs started for printf.
+In these two examples we've used automatic type inferrence to infer the types of unflagged arguments (except for return type which must always be specified). The `...` marks where the varargs started for printf.
 
 We can also specify types explicitly by putting a flag before them:
 
 ```
-cliffi libm.so d sqrt -d 2
+cliffi libm.so -d sqrt -d 2
 ```
 
 Here we denoted that 2 should be a double by preceeding it with a -d flag. Though we could have also written it as 2.0 or 2d to implicitly mark it as a double
@@ -29,32 +29,32 @@ This is only rarely necessary with basic primitive types, but becomes more helpf
 
 
 ### Primitive Types
-- v for void, only allowed as a return type, and does not accept prefixes
-- b for bool
-- c for char
-- h for short
-- i for int
-- l for long
-- C for unsigned char
-- H for unsigned short
-- I for unsigned int
-- L for unsigned long
-- f for float
-- d for double
-- s for cstring (ie null terminated char*)
-- P for arbitrary pointer (void*) specified by address
+- -v for void, only allowed as a return type, and does not accept prefixes
+- -b for bool
+- -c for char
+- -h for short
+- -i for int
+- -l for long
+- -C for unsigned char
+- -H for unsigned short
+- -I for unsigned int
+- -L for unsigned long
+- -f for float
+- -d for double
+- -s for cstring (ie null terminated char*)
+- -P for arbitrary pointer (void*) specified by address
 
 ### Pointers
 Pointers are specified with a number of `p` flags equal to the level of pointer.
 - `-pi` = *int
 - `-ppi` = **int
 
-This is not to be confused with the `P` _type_ above.
-`p` pointers are specified by their ultimate value, so `-pi 4` represents an `int*` to the value 4.
-`P` pointers are specified by their address, so `-P 0xdeadbeef` is a pointer to whatever is at 0xdeadbeef
+This is not to be confused with the `-P` _type_ above.
+`-p` pointers are specified by their ultimate value, so `-pi 4` represents an `int*` to the value 4.
+`-P` pointers are specified by their address, so `-P 0xdeadbeef` is a pointer to whatever is at 0xdeadbeef
 You can even mix them, so `-pP 0xdeadbeef` would be a pointer to a pointer to whatever is at 0xdeadbeef
 
-`P` pointers are especially useful in REPL mode for containing pointers to types you don't care to specify but will need to reuse
+`-P` pointers are especially useful in REPL mode for containing pointers to types you don't care to specify but will need to reuse
 
 ### Arrays
 Array values are specified as unspaced comma delimited values, like `1,2,3,4` or `this,"is an","array of",strings` or `4.3,3.1,9,0`
@@ -95,11 +95,11 @@ Some examples:
 
 ### Other notes
 * Note that arrays inside of structs are raw memory arrays of that size, whereas "arrays" given to functions as arguments directly are really pointer types in disguise, as are cstrings. This is a quirk of C itself, not of cliffi.
-* Remember to always include the return type before the function name, and remember that the return type flag there does not take a dash, nor do any inner flags inside of structs used as return types. A struct as return type is all types no values, no dashes, like `S: i ac3 ppi :S`.
+* Remember to always include the return type before the function name, and note that the dashless syntax for return types has been deprecated. All types now take a dash prefix.
 * Remember you can always add a type flag in your arguments to solve typing/escaping problems. Eg if you happen to have a parameter that takes a string that is literally `"-ai4"`, or `"..."`, or even just `"3.3"`, you can just prefix it with a `-s` and it will be interpreted as a string. If you need to pass a string with a space in it, just put it in quotes.
 * If you mark something as a char array, it will be formatted back to you as a string. If you mark it as a uchar array, it will be formatted as a hexdump.
 * Arrays of structs are not currently supported (as it's just a syntactical nightmare), but you can fake one with a struct of structs if you really want to.
-* Don't get the order mixed up for struct start and end tags, it's S: :S. I mess this up sometimes myself, but it's still the best shell-inert delimitter syntax I could come up with.
+* Don't get the order mixed up for struct start and end tags, it's -S: :S. I mess this up sometimes myself, but it's still the best shell-inert delimitter syntax I could come up with.
 
 ## REPL mode
 
@@ -155,7 +155,7 @@ For example if in your decompiler, there is a static struct `{ int; short; char*
 ```
 calculate_offset myoffset mysharedlib.so doFoo 0x10dead  // calculate the offset
 hexdump myoffset+0x10beef 16             // to just see 16 bytes at that address
-dump S: i h s :S myoffset+0x10beef       // to dump the struct presently at that address
+dump -S: -i -h -s :S myoffset+0x10beef       // to dump the struct presently at that address
 store myoffset+0x10beef -S: 20 -h 0x6008 hello :S // to store that value into that address
 ```
 
