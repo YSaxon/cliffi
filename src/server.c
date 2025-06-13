@@ -22,7 +22,7 @@
     #include <arpa/inet.h>
     #include <unistd.h>
     #include <pthread.h>
-    #include <netdb.h> // For getaddrinfo
+    #include <netdb.h> // For getaddrinfo, getnameinfo
     typedef int socket_t;
     #define INVALID_SOCKET_VAL -1
     #define close_socket(s) close(s)
@@ -45,6 +45,7 @@ typedef struct {
     socket_t client_socket;
     struct subprocess_s repl_process;
     bool session_active;
+    char client_info[INET6_ADDRSTRLEN + 8];  //Field to store a unique client identifier string like "[127.0.0.1:12345]"
 } session_data_t;
 
 typedef struct {
@@ -67,14 +68,22 @@ void* proxy_socket_to_process(void* args) {
 
     while (*(proxy_args->is_active_flag)) {
         bytes_received = recv(session->client_socket, buffer, sizeof(buffer), 0);
-        if (bytes_received <= 0) {
+        if (bytes_received > 0) {
+            // Print each line of input the server receives to the "REAL" stderr.
+            // We use fwrite as the buffer is not guaranteed to be a null-terminated string.
+            fprintf(stderr, "%s [RECV] <<< ", session->client_info);
+            fwrite(buffer, 1, bytes_received, stderr);
+            fflush(stderr); // Ensure log output is immediate.
+
+            // Write data to the subprocess stdin
+            fwrite(buffer, 1, bytes_received, p_stdin);
+            fflush(p_stdin);
+        } else {
             // Client disconnected or socket was shut down by the other thread.
             // Terminate the child process to ensure it doesn't become a zombie.
             subprocess_terminate(&session->repl_process);
             break;
         }
-        fwrite(buffer, 1, bytes_received, p_stdin);
-        fflush(p_stdin);
     }
 
     if (p_stdin) {
@@ -134,19 +143,19 @@ unsigned __stdcall handle_client_session_thread(void* session_ptr) {
 void* handle_client_session_thread(void* session_ptr) {
 #endif
     session_data_t* session = (session_data_t*)session_ptr;
-    printf("[Server] New session thread started.\n");
+    printf("%s [Server] New session thread started.\n", session->client_info);
 
     const char* command_line[] = { g_executable_path, "--server-internal-repl", NULL };
     int options = subprocess_option_inherit_environment | subprocess_option_enable_async | subprocess_option_combined_stdout_stderr | subprocess_option_no_window;
 
     if (subprocess_create(command_line, options, &session->repl_process) != 0) {
-        fprintf(stderr, "[Server] Error: Failed to spawn 'cliffi --server-internal-repl' worker.\n");
+        fprintf(stderr, "%s [Server] Error: Failed to spawn 'cliffi --server-internal-repl' worker.\n", session->client_info);
         close_socket(session->client_socket);
         free(session);
         return (void*)-1;
     }
 
-    printf("[Server] Worker process spawned.\n");
+    printf("%s [Server] Worker process spawned.\n", session->client_info);
     session->session_active = true;
 
     proxy_thread_args_t* args1 = malloc(sizeof(proxy_thread_args_t));
@@ -175,7 +184,7 @@ void* handle_client_session_thread(void* session_ptr) {
 #endif
 
 cleanup:
-    printf("[Server] Session ending. Cleaning up.\n");
+    printf("%s [Server] Session ending. Cleaning up.\n", session->client_info);
 
     // The proxy threads have exited, so we can now safely clean up resources.
     int return_code;
@@ -260,9 +269,25 @@ int start_cliffi_tcp_server(const char* host, const char* port_str) {
              fprintf(stderr, "[Server] Fatal: Out of memory.\n"); break;
         }
 
-        session->client_socket = accept(listen_socket, NULL, NULL);
+        // Capture client address information on accept()
+        struct sockaddr_storage client_addr;
+        socklen_t client_addr_len = sizeof(client_addr);
+
+        session->client_socket = accept(listen_socket, (struct sockaddr*)&client_addr, &client_addr_len);
 
         if (session->client_socket != INVALID_SOCKET_VAL) {
+            // Get human-readable IP and Port and store it in the session struct
+            char host_str_client[INET6_ADDRSTRLEN];
+            char port_str_client[8];
+            getnameinfo((struct sockaddr*)&client_addr, client_addr_len,
+                        host_str_client, sizeof(host_str_client),
+                        port_str_client, sizeof(port_str_client),
+                        NI_NUMERICHOST | NI_NUMERICSERV);
+            snprintf(session->client_info, sizeof(session->client_info), "[%s:%s]", host_str_client, port_str_client);
+
+            // Log the connection with the client's address
+            printf("[Server] Accepted connection from %s\n", session->client_info);
+
 #ifdef _WIN32
             HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, handle_client_session_thread, session, 0, NULL);
             if (hThread) { CloseHandle(hThread); }
