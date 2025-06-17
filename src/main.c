@@ -302,7 +302,7 @@ int main(int argc, char* argv[]) {
         struct subprocess_s subprocess;
 
         // Create the subprocess. Inherit the parent's environment so it can find libraries.
-        int options = subprocess_option_inherit_environment | subprocess_option_enable_async | subprocess_option_no_window ;
+        int options = subprocess_option_inherit_environment | subprocess_option_enable_async | subprocess_option_no_window | subprocess_option_combined_stdout_stderr;
         int result = subprocess_create(command_line, options, &subprocess);
         if (result != 0) {
             fprintf(stderr, "Error: --repltest failed to create subprocess.\n");
@@ -329,7 +329,6 @@ int main(int argc, char* argv[]) {
 
         char buffer[1024];
         unsigned int bytes_read_stdout;
-        unsigned int bytes_read_stderr;
         do {
             bytes_read_stdout = subprocess_read_stdout(&subprocess, buffer, sizeof(buffer) - 1);
             if (bytes_read_stdout > 0) {
@@ -337,12 +336,7 @@ int main(int argc, char* argv[]) {
                 fprintf(stdout, "%s", buffer);
             }
 
-            bytes_read_stderr = subprocess_read_stderr(&subprocess, buffer, sizeof(buffer) - 1);
-            if (bytes_read_stderr > 0) {
-                buffer[bytes_read_stderr] = '\0';
-                fprintf(stderr, "%s", buffer);
-            }
-        } while (subprocess_alive(&subprocess) || (bytes_read_stdout > 0 || bytes_read_stderr > 0));
+        } while (subprocess_alive(&subprocess) || (bytes_read_stdout > 0));
 
         // Wait for the child process to complete and get its exit code.
         int return_code;
