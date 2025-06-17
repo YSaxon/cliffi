@@ -328,20 +328,21 @@ int main(int argc, char* argv[]) {
         fclose(p_stdin);
 
         char buffer[1024];
-        unsigned int bytes_read;
-        while (subprocess_alive(&subprocess)) {
-            bytes_read = subprocess_read_stdout(&subprocess, buffer, sizeof(buffer) - 1);
-            if (bytes_read > 0) {
-                buffer[bytes_read] = '\0';
+        unsigned int bytes_read_stdout;
+        unsigned int bytes_read_stderr;
+        do {
+            bytes_read_stdout = subprocess_read_stdout(&subprocess, buffer, sizeof(buffer) - 1);
+            if (bytes_read_stdout > 0) {
+                buffer[bytes_read_stdout] = '\0';
                 fprintf(stdout, "%s", buffer);
             }
 
-            bytes_read = subprocess_read_stderr(&subprocess, buffer, sizeof(buffer) - 1);
-            if (bytes_read > 0) {
-                buffer[bytes_read] = '\0';
+            bytes_read_stderr = subprocess_read_stderr(&subprocess, buffer, sizeof(buffer) - 1);
+            if (bytes_read_stderr > 0) {
+                buffer[bytes_read_stderr] = '\0';
                 fprintf(stderr, "%s", buffer);
             }
-        }
+        } while (subprocess_alive(&subprocess) || (bytes_read_stdout > 0 || bytes_read_stderr > 0));
 
         // Wait for the child process to complete and get its exit code.
         int return_code;
