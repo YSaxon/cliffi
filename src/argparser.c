@@ -141,12 +141,20 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *extra_args_used, bool is_ret
         outArg->value = malloc(sizeof(*outArg->value));
         bool set_to_null = false;
 
+
         int i = 0;
         if (is_return){
             int has_flag = (argStr[0]=='-');
             if (!has_flag) fprintf(stderr, "Warning: dashless type indicators are deprecated : %s\n",argStr);
             parse_arg_type_from_flag(outArg, argStr + has_flag);
         } else if (is_type_flag(argStr)) {
+
+            // this is terribly hacky, but it lets outpointers be used with a dash when original code did not
+            if (argStr[1] == 'O') {
+                argStr++;
+                goto parse_outpointer; // skip the dash and go to the outpointer case
+            }
+
             parse_arg_type_from_flag(outArg, argStr+1);
             if (outArg->type != TYPE_STRUCT) {
                 if (i+1<argc && !is_type_flag(argv[i+1])) argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
@@ -154,11 +162,12 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *extra_args_used, bool is_ret
                     set_to_null = true;
                 }
                 }
-        } else if (argStr[0] == 'N'){ //for NULL
+        } else if (argStr[0] == 'N'){ //for NULL, this is undocumented for now and highly expected to change, please don't rely on it
             set_to_null = true;
             parse_arg_type_from_flag(outArg, argStr+1);
             // if (outArg->type != TYPE_STRUCT) argStr = "NULL";
         } else if (argStr[0] == 'O'){ //for NULL
+            parse_outpointer:
             set_to_null = true;
             parse_arg_type_from_flag(outArg, argStr+1);
             if (!outArg->is_array && !outArg->pointer_depth) { // should this also check for P types?
