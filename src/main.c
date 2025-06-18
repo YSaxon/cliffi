@@ -327,25 +327,28 @@ int main(int argc, char* argv[]) {
         // allowing the child's `fgets`/`getline` loop to terminate naturally.
         fclose(p_stdin);
 
-        char buffer[1024];
-        unsigned int bytes_read_stdout;
-        do {
-            bytes_read_stdout = subprocess_read_stdout(&subprocess, buffer, sizeof(buffer) - 1);
-            if (bytes_read_stdout > 0) {
-                buffer[bytes_read_stdout] = '\0';
+        while (1) {
+            char buffer[1024];
+            unsigned int bytes_read = subprocess_read_stdout(&subprocess, buffer, sizeof(buffer) - 1);
+
+            if (bytes_read > 0) {
+                buffer[bytes_read] = '\0';
                 fprintf(stdout, "%s", buffer);
+            } else {
+                // If there's no more output AND the process is no longer alive, we can exit the loop.
+                if (!subprocess_alive(&subprocess)) {
+                    break;
+                }
             }
-
-        } while (subprocess_alive(&subprocess) || (bytes_read_stdout > 0));
-
-        // Wait for the child process to complete and get its exit code.
+        }
+        // Now that the loop is finished, perform cleanup exactly once.
         int return_code;
         result = subprocess_join(&subprocess, &return_code);
         if (result != 0) {
             fprintf(stderr, "Error: --repltest failed to join subprocess.\n");
         }
 
-        // Clean up subprocess resources.
+        // This is the final cleanup. It should handle anything not covered by join.
         subprocess_destroy(&subprocess);
 
         // Exit with the same code as the child process, just like the original test.
