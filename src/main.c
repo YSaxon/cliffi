@@ -326,6 +326,8 @@ int main(int argc, char* argv[]) {
         // VERY IMPORTANT: Close the child's stdin pipe. This sends an EOF,
         // allowing the child's `fgets`/`getline` loop to terminate naturally.
         fclose(p_stdin);
+        // 2. Nullify the pointer in the struct to prevent the library from closing it again.
+        subprocess.stdin_file = NULL;
 
         while (1) {
             char buffer[1024];
