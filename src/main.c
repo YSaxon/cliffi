@@ -267,6 +267,78 @@ void checkAndRunCliffiInits() {
     }
 }
 
+#ifdef _WIN32
+bool is_running_under_wine() {
+    // Check for the WINEPREFIX environment variable, which is set when running under Wine
+    // This is a common way to detect if the program is running under Wine.
+    // Note: This is a heuristic and may not be foolproof, but it works for
+    // many common Wine setups.
+    const char* wine_prefix = getenv("WINEPREFIX");
+    if (wine_prefix != NULL && strlen(wine_prefix) > 0) {
+        fprintf(stdout, "Detected Wine environment (WINEPREFIX=%s)\n", wine_prefix
+        );
+        return true;
+    }
+    // Additionally, check for the WINELOADER environment variable, which is also set when
+    // running under Wine. This is another common way to detect Wine.
+    const char* wine_loader = getenv("WINELOADER");
+    if (wine_loader != NULL && strlen(wine_loader) > 0) {
+        fprintf(stdout, "Detected Wine environment (WINELOADER=%s)\n", wine_loader);
+        return true;
+    }
+    // If neither variable is set, we assume we are not running under Wine.
+    return false;
+}
+#endif
+
+// Builds the command line for the child process.
+// This version is now architecture-aware for dockcross/QEMU.
+const char** build_child_command_line(const char* executable_path, bool exit_on_fail) {
+    // Use static so the arrays and string persist after the function returns.
+    static const char* command_line[5];
+    static char qemu_interpreter_path[256]; // Buffer to build the interpreter path string
+
+    // Your environment provides QEMU_LD_PREFIX, let's use that for detection.
+    if (getenv("QEMU_LD_PREFIX")) {
+        // QEMU environment detected.
+        const char* arch = getenv("ARCH");
+
+        if (arch) {
+            // Dynamically construct the interpreter path, e.g., "/usr/bin/qemu-arm"
+            snprintf(qemu_interpreter_path, sizeof(qemu_interpreter_path), "/usr/bin/qemu-%s", arch);
+
+            command_line[0] = qemu_interpreter_path;
+            command_line[1] = executable_path;
+            command_line[2] = "--repl";
+            command_line[3] = exit_on_fail ? "--exit-on-fail" : NULL;
+            command_line[4] = NULL;
+        } else {
+            // Fallback for safety, though ARCH should always exist in dockcross
+            command_line[0] = executable_path;
+            command_line[1] = "--repl";
+            command_line[2] = exit_on_fail ? "--exit-on-fail" : NULL;
+            command_line[3] = NULL;
+        }
+        #ifdef _WIN32
+    } else if (is_running_under_wine()) {
+        // Wine environment detected
+        command_line[0] = "wine";
+        command_line[1] = executable_path;
+        command_line[2] = "--repl";
+        command_line[3] = exit_on_fail ? "--exit-on-fail" : NULL;
+        command_line[4] = NULL;
+        #endif
+    } else {
+        // Native execution
+        command_line[0] = executable_path;
+        command_line[1] = "--repl";
+        command_line[2] = exit_on_fail ? "--exit-on-fail" : NULL;
+        command_line[3] = NULL;
+    }
+
+    return command_line;
+}
+
 char* g_executable_path = NULL;
 #ifndef CLIFFI_UNIT_TESTING // don't defined main() when compiling for unit tests to avoid a collision
 int main(int argc, char* argv[]) {
@@ -284,20 +356,13 @@ int main(int argc, char* argv[]) {
             argc--;
             argv++;
             isTestEnvExit1OnFail = false;
-        } else {
-            isTestEnvExit1OnFail = true;
-        }
-
+            } else {
+                isTestEnvExit1OnFail = true;
+                }
+    #ifndef _WIN32 // various issues with subprocess library on Windows, so we use a simpler method
         // Define the command to launch ourselves in REPL mode.
-        const char* command_line[4];
-        command_line[0] = g_executable_path;
-        command_line[1] = "--repl";
-        if (isTestEnvExit1OnFail) {
-            command_line[2] = "--exit-on-fail"; // Pass the state explicitly
-            command_line[3] = NULL;
-        } else {
-            command_line[2] = NULL;
-        }
+
+        const char** command_line = build_child_command_line(g_executable_path, isTestEnvExit1OnFail);
 
         struct subprocess_s subprocess;
 
@@ -360,6 +425,33 @@ int main(int argc, char* argv[]) {
             fprintf(stdout, "\n\nTest completed with exit code %d\n", return_code);
         }
         exit(return_code);
+        #else // simpler way that doesn't run into problems with qemu
+        checkAndRunCliffiInits();
+        //just feed each line to the repl execute func directly, by concatenating inputs after arg[2] except splitting for newline chars
+        char* command = malloc(1024);
+        command[0] = '\0'; // initialize the command
+        for (int i = 2; i < argc; i++) {
+            bool isNewLine = strcmp(argv[i], "\n") == 0;
+            bool isFinalArg = argc - 1 == i;
+            if (!isNewLine || isFinalArg ) {
+                strcat(command, argv[i]);
+                strcat(command, " ");
+            }
+            if (isNewLine || isFinalArg ){
+                command[strlen(command) - 1] = '\0'; // remove the trailing space
+                printf("Executing \"%s\"\n", command);
+                TRY
+                parseREPLCommand(command);
+                CATCHALL
+                    printException();
+                    if (isTestEnvExit1OnFail) exit(1);
+                    fprintf(stderr, "Restarting REPL...\n");
+                END_TRY
+                command[0] = '\0'; // reset the command
+            }
+        }
+        return(0);
+        #endif
     } else if (argc > 1 && strcmp(argv[1], "--repl") == 0)
     replmode: {
         isTestEnvExit1OnFail = false; // Default to exiting with 1 on failure in REPL mode
