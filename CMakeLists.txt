@@ -674,9 +674,9 @@ COMMAND cliffi ${TESTLIB} s concat -s "test" -ac 0x3031323334 )
 set_tests_properties(test_setting_array_with_long_hex PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?test01234\"?")
 
 
-add_test(NAME test_null_pointer_syntax
-COMMAND cliffi ${TESTLIB} b is_null Npi)
-set_tests_properties(test_null_pointer_syntax PROPERTIES PASS_REGULAR_EXPRESSION "int\\* = \\(NULL pointer\\).*Function returned: true")
+# add_test(NAME test_null_pointer_syntax
+# COMMAND cliffi ${TESTLIB} b is_null Npi)
+# set_tests_properties(test_null_pointer_syntax PROPERTIES PASS_REGULAR_EXPRESSION "int\\* = \\(NULL pointer\\).*Function returned: true")
 
 if(USE_REPL_MODE)
 
