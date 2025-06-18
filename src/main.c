@@ -359,7 +359,7 @@ int main(int argc, char* argv[]) {
             } else {
                 isTestEnvExit1OnFail = true;
                 }
-    #if 1 // various issues with subprocess library on Windows, so we use a simpler method
+    #if 0 // various issues with subprocess library on Windows, so we use a simpler method
         // Define the command to launch ourselves in REPL mode.
 
         const char** command_line = build_child_command_line(g_executable_path, isTestEnvExit1OnFail);
