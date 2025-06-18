@@ -645,6 +645,16 @@ void convert_arg_value(ArgInfo* arg, const char* argStr) {
 
 void second_pass_arginfo_ptr_sized_null_array_initialization_inner(ArgInfo* arg) {
     // first we have to traverse the pointer_depths to get to the actual array
+    if (arg->is_outPointer) {
+        if (arg->pointer_depth == 0) { // in that case we mean a null array. (ARRAY_SIZE_AT_ARGNUM is handled in second_pass_arginfo_ptr)
+            size_t size = get_size_for_arginfo_sized_array(arg);
+            void* array_raw = calloc(size, typeToSize(arg->type, arg->array_value_pointer_depth));
+            arg->value->ptr_val = makePointerLevel(array_raw, 0);
+        } else {
+            arg->value->ptr_val = makePointerLevel(NULL, 1);
+        }
+    return;
+    }
     void* value = arg->value->ptr_val;
     void* parent = arg->value;
     for (int j = 0; j < arg->pointer_depth; j++) {
