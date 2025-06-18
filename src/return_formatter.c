@@ -192,8 +192,8 @@ void hexdump(const void *data, size_t size) {
         const void* value;
         value = arg->value;
 
-        if(arg->is_outPointer){
-            printf("(allocated outpointer to NULL)");
+        if(arg->is_outPointer && !(arg->is_array && arg->pointer_depth == 0)) {
+            printf("(outpointer)");
             return;
         }
 
