@@ -26,6 +26,8 @@ typedef enum {
     TYPE_UNKNOWN = -1,      // For representing unknown types when parsing
     TYPE_STRUCT = 'S',
     TYPE_BOOL = 'b',        // For boolean values
+    TYPE_OUTPOINTER = 'O', // For out pointers (modifiers for existing pointers)
+    TYPE_CAST_TYPE = 'T' // For specifying a type to cast a variable to, used in parsing
 } ArgType;
 
 typedef enum {
@@ -110,7 +112,7 @@ void* makePointerLevel(void* value, int pointer_depth);
 void* dereferencePointerLevels(void* value, int pointer_depth);
 
 void castArgValueToType(ArgInfo* destinationTypedArg, ArgInfo* sourceValueArg);
-void set_arg_value_nullish(ArgInfo* arg);
+void set_arg_value_outpointer(ArgInfo* arg);
 
 
 #endif /* ARG_TOOLS_H */

@@ -218,7 +218,7 @@ void* make_raw_value_for_struct(ArgInfo* struct_arginfo, bool is_return) { //, f
         if (struct_info->info.args[i]->type == TYPE_STRUCT) {
             size_t inner_size;
             if (struct_info->info.args[i]->pointer_depth == 0) {
-                fprintf(stderr, "Warning, parsing a nested struct that is not a pointer type. Are you sure you meant to do this? Otherwise add a p\n");
+                // fprintf(stderr, "Warning, parsing a nested struct that is not a pointer type. Are you sure you meant to do this? Otherwise add a p\n");
                 inner_size = get_size_of_struct(struct_info->info.args[i]);
             } else {
                 inner_size = sizeof(void*);

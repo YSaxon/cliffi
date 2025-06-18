@@ -674,9 +674,9 @@ COMMAND cliffi ${TESTLIB} s concat -s "test" -ac 0x3031323334 )
 set_tests_properties(test_setting_array_with_long_hex PROPERTIES PASS_REGULAR_EXPRESSION "Function returned: \"?test01234\"?")
 
 
-add_test(NAME test_null_pointer_syntax
-COMMAND cliffi ${TESTLIB} b is_null Npi)
-set_tests_properties(test_null_pointer_syntax PROPERTIES PASS_REGULAR_EXPRESSION "int\\* = \\(NULL pointer\\).*Function returned: true")
+# add_test(NAME test_null_pointer_syntax # we are removing this syntax or altering it
+# COMMAND cliffi ${TESTLIB} b is_null Npi)
+# set_tests_properties(test_null_pointer_syntax PROPERTIES PASS_REGULAR_EXPRESSION "int\\* = \\(NULL pointer\\).*Function returned: true")
 
 if(USE_REPL_MODE)
 
@@ -1174,7 +1174,7 @@ COMMAND cliffi --repltest
 foo = -S: 1 2.2 a hello :S \n
 bar = -aC80 foo \n
 #set baz -S: 0 0.0 a empty :S bar \n )
-baz = NS: i d c s :S bar \n)
+baz = TS: -i -d -c -s :S bar \n)
 set_tests_properties(repl_test_cast_struct_to_array_and_back PROPERTIES PASS_REGULAR_EXPRESSION "struct baz = { int 1, double 2.20*, char \'?a\'?, cstring \"?hello")
 
 add_test(NAME repl_test_modify_var_value_with_cast_and_store
@@ -1475,10 +1475,15 @@ set_tests_properties(test_allocate_and_fill_out_struct PROPERTIES PASS_REGULAR_E
 #     }
 # }
 
-add_test(NAME test_allocate_and_fill_out_array_of_int_oldway
+add_test(NAME test_allocate_and_fill_out_array_of_int_oldway_dynamic
 COMMAND cliffi ${TESTLIB} v allocate_and_fill_array_of_int -ppait2 null 5
 )
-set_tests_properties(test_allocate_and_fill_out_array_of_int_oldway PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\\{ 0, 1, 2, 3, 4 \\}")
+set_tests_properties(test_allocate_and_fill_out_array_of_int_oldway_dynamic PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\\{ 0, 1, 2, 3, 4 \\}")
+
+add_test(NAME test_allocate_and_fill_out_array_of_int_oldway_static
+COMMAND cliffi ${TESTLIB} v allocate_and_fill_array_of_int -ppai5 null 5
+)
+set_tests_properties(test_allocate_and_fill_out_array_of_int_oldway_static PROPERTIES PASS_REGULAR_EXPRESSION "${ARG0AFTERRETURN_ANY_TYPE}\\{ 0, 1, 2, 3, 4 \\}")
 
 
 add_test(NAME test_allocate_and_fill_out_array_of_int_dynamic_size

@@ -438,7 +438,7 @@ void* convert_to_type(ArgType type, const char* argStr) {
     return result;
 }
 
-void set_arg_value_nullish(ArgInfo* arg){
+void set_arg_value_outpointer(ArgInfo* arg){
     if (arg->is_array == ARRAY_STATIC_SIZE && arg->pointer_depth==0) { // in that case we mean a null array. (ARRAY_SIZE_AT_ARGNUM is handled in second_pass_arginfo_ptr)
         void* array_raw = calloc(arg->static_or_implied_size, typeToSize(arg->type, arg->array_value_pointer_depth));
         arg->value->ptr_val = makePointerLevel(array_raw, arg->pointer_depth);
@@ -482,18 +482,20 @@ void handle_array_arginfo_conversion(ArgInfo* arg, const char* argStr) {
     // if (arg->is_array==ARRAY_STATIC_SIZE) {
 
     if ((strcmp(argStr, "0") == 0 || strcmp(argStr, "NULL") == 0 || strcmp(argStr, "null") == 0)) {
-        fprintf(stderr, "Setting an array to NULL this way is deprecated. Please use the newer more flexible syntax, replacing the dash in the type with an N, like Nai4 for a null array of 4 ints");
-        if (arg->is_array == ARRAY_STATIC_SIZE) {
-            arg->value->ptr_val = calloc(arg->static_or_implied_size, typeToSize(arg->type, arg->array_value_pointer_depth));
-            return;
-        } else if (arg->is_array == ARRAY_SIZE_AT_ARGNUM) {
-            // fprintf(stderr, "Warning: We have not yet implemented initializing null arrays of size pointed to by another argument, so this will be a null pointer for now\n");
-            // we've now implemented this in second_pass_arginfo_ptr_sized_null_array_initialization, so we can just return
-            arg->value->ptr_val = NULL;
-            return;
-        } else {
-            raiseException(1,  "Error: Argstr %s is interpreted as NULL. We cannot initialize a null array with no sizing info. If you WANT a null pointer you should use the pointer flag instead\n", argStr);
-        }
+        fprintf(stderr, "Setting an array to NULL this way is deprecated. Please use the newer more flexible syntax, replacing the dash in the type with an O, like Oai4 for an out array of 4 ints\n");
+        set_arg_value_outpointer(arg); // this will set the value to a null pointer, which is what we want
+        return;
+        // if (arg->is_array == ARRAY_STATIC_SIZE) {
+        //     arg->value->ptr_val = calloc(arg->static_or_implied_size, typeToSize(arg->type, arg->array_value_pointer_depth));
+        //     return;
+        // } else if (arg->is_array == ARRAY_SIZE_AT_ARGNUM) {
+        //     // fprintf(stderr, "Warning: We have not yet implemented initializing null arrays of size pointed to by another argument, so this will be a null pointer for now\n");
+        //     // we've now implemented this in second_pass_arginfo_ptr_sized_null_array_initialization, so we can just return
+        //     arg->value->ptr_val = NULL;
+        //     return;
+        // } else {
+        //     raiseException(1,  "Error: Argstr %s is interpreted as NULL. We cannot initialize a null array with no sizing info. If you WANT a null pointer you should use the pointer flag instead\n", argStr);
+        // }
     }
 
     // three different cases for array argStr
@@ -647,6 +649,17 @@ void second_pass_arginfo_ptr_sized_null_array_initialization_inner(ArgInfo* arg)
     // first we have to traverse the pointer_depths to get to the actual array
     void* value = arg->value->ptr_val;
     void* parent = arg->value;
+
+    if (arg->is_outPointer) {
+        if (arg->pointer_depth > 0) {
+            memset(arg->value, 0, typeToSize(arg->type, 1));
+            return;
+        }
+        void* array_raw = calloc(get_size_for_arginfo_sized_array(arg), typeToSize(arg->type, arg->array_value_pointer_depth));
+        arg->value->ptr_val = makePointerLevel(array_raw, arg->pointer_depth);
+        return;
+    }
+
     for (int j = 0; j < arg->pointer_depth; j++) {
         parent = value;
         value = *(void**)value;
@@ -804,6 +817,10 @@ ArgType charToType(char c) {
         return TYPE_STRUCT;
     case 'b':
         return TYPE_BOOL;
+    case 'O':
+        return TYPE_OUTPOINTER; // This is a special case for out pointers, not a type
+    case 'T':
+        return TYPE_CAST_TYPE; // This is a special case for type casting, not a type
     default:
         return TYPE_UNKNOWN; // Default or error handling
     }

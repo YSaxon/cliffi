@@ -139,27 +139,30 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *extra_args_used, bool is_ret
 
         ArgInfo* outArg = calloc(1,sizeof(ArgInfo));
         outArg->value = malloc(sizeof(*outArg->value));
-        bool set_to_null = false;
+        bool is_outpointer = false;
+        bool type_for_casting = false;
 
         int i = 0;
         if (is_return){
             int has_flag = (argStr[0]=='-');
-            if (!has_flag) fprintf(stderr, "Warning: dashless type indicators are deprecated : %s\n",argStr);
+            // if (!has_flag) fprintf(stderr, "Warning: dashless type indicators are deprecated : %s\n",argStr);
             parse_arg_type_from_flag(outArg, argStr + has_flag);
         } else if (is_type_flag(argStr)) {
             parse_arg_type_from_flag(outArg, argStr+1);
             if (outArg->type != TYPE_STRUCT) {
                 if (i+1<argc && !is_type_flag(argv[i+1])) argStr = argv[++i]; // Set the value to one arg past the flag, and increment i to skip the value
                 else {
-                    set_to_null = true;
+                    is_outpointer = true;
                 }
                 }
-        } else if (argStr[0] == 'N'){ //for NULL
-            set_to_null = true;
+        } else if (argStr[0] == 'T'){ //for NULL
+            // set_to_null = true;
+            type_for_casting = true;
+            // outArg->explicitType = true;
             parse_arg_type_from_flag(outArg, argStr+1);
             // if (outArg->type != TYPE_STRUCT) argStr = "NULL";
-        } else if (argStr[0] == 'O'){ //for NULL
-            set_to_null = true;
+        } else if (argStr[0] == 'O'){ //for OUT
+            is_outpointer = true;
             parse_arg_type_from_flag(outArg, argStr+1);
             if (!outArg->is_array && !outArg->pointer_depth) { // should this also check for P types?
                 raiseException(1,"Error: Outpointer flag is only defined for pointer types: %s",argStr);
@@ -174,13 +177,13 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *extra_args_used, bool is_ret
             outArg->struct_info->info.return_var = calloc(1,sizeof(ArgInfo));
             int struct_args_used = 0;
             i++; // skip the S: open tag
-            parse_all_from_argvs(&struct_info->info, argc-i, argv+i, &struct_args_used, is_return || set_to_null, true);
+            parse_all_from_argvs(&struct_info->info, argc-i, argv+i, &struct_args_used, is_return || is_outpointer || type_for_casting, true);
 
             i+=struct_args_used;
             outArg->struct_info = struct_info;
             // not setting a value here, that will be handled by the make_raw_value_for_struct function in the invoke handler module
 
-            if ((set_to_null && !is_return) && getVar(argv[i+1])){
+            if ((type_for_casting && !is_return) && getVar(argv[i+1])){
                     argStr = argv[++i]; // just setting for the purpose of checking if the next string afterwards is a variable
             }
             else {
@@ -190,7 +193,7 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *extra_args_used, bool is_ret
             // but we can fix that by only allowing casting to NULL structs (specified like NS:). So if its an actual struct we don't try to cast to it
         }
 
-        if(!is_return && outArg->explicitType && (outArg->type!=TYPE_STRUCT || set_to_null)){
+        if(type_for_casting || (!is_return && outArg->explicitType && outArg->type!=TYPE_STRUCT)){
             // if the value is a variable, we should cast it to the type specified in the flag and return
             ArgInfo* storedVar = getVar(argStr);
             if (storedVar != NULL) {
@@ -201,11 +204,15 @@ ArgInfo* parse_one_arg(int argc, char* argv[], int *extra_args_used, bool is_ret
                 fprintf(stdout, "\n");
                 castArgValueToType(outArg, storedVar);
                 goto set_args_used_and_return;
+            } else { // no variable
+                if (type_for_casting) {
+                    raiseException(1,"T flag is only for defining a type for casting, but no valid variable was printed after it: %s %s\n", argv[i-1],argStr);
+                }
             }
         }
 
-        if (outArg->type!=TYPE_STRUCT && (set_to_null || is_return)) { // should probably instead make another field for is_null in both parse_one_arg and parse_all_from_argvs, but this is adequate for now
-            set_arg_value_nullish(outArg); // I'm not sure if this causes a memory leak, but fixing memory leaks will be a project for another time
+        if (outArg->type!=TYPE_STRUCT && (is_outpointer || is_return)) { // should probably instead make another field for is_null in both parse_one_arg and parse_all_from_argvs, but this is adequate for now
+            set_arg_value_outpointer(outArg); // I'm not sure if this causes a memory leak, but fixing memory leaks will be a project for another time
         } else if (!is_return && outArg->type!=TYPE_STRUCT) {
             convert_arg_value(outArg, argStr);
         }
