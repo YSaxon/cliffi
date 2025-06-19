@@ -23,32 +23,16 @@
 #include "shims.h"
 #include "exception_handling.h"
 
-#if defined(__riscv) && defined(__riscv_xlen) && __riscv_xlen == 64 && !defined(_WIN32)
-#include <unistd.h>
-#include <sys/syscall.h>
-void terminateThread() {
-    // Get the kernel thread ID (TID/LWP)
-    pid_t tid = syscall(SYS_gettid);
-    pid_t tgid = getpid();
-    // No stack unwinding. No cleanup. Mutexes remain locked. Memory is leaked.
-    syscall(SYS_tgkill, tgid, tid, SIGKILL);
-}
-#else
-void terminateThread() {
-    pthread_exit(NULL);
-}
-#endif
-
 
 bool isTestEnvExit1OnFail = false;
 
 sigjmp_buf rootJmpBuffer;
 
-_Thread_local sigjmp_buf* current_exception_buffer = &rootJmpBuffer;
-_Thread_local sigjmp_buf* old_exception_buffer;
-_Thread_local char* current_exception_message = NULL;
-_Thread_local char** current_stacktrace_strings = NULL;
-_Thread_local size_t current_stacktrace_size = 0;
+sigjmp_buf* current_exception_buffer = &rootJmpBuffer;
+sigjmp_buf* old_exception_buffer;
+char* current_exception_message = NULL;
+char** current_stacktrace_strings = NULL;
+size_t current_stacktrace_size = 0;
 
 #ifdef use_backtrace
 void saveStackTrace() {
@@ -290,25 +274,12 @@ void segfault_handler(int sig, siginfo_t *info, void *ucontext) {
     void *ip = get_instruction_pointer(context);
     // Print fault address
     asprintf(&segfault_message,
-     "Segmentation fault at address: %p\n"
+     "\nSegmentation fault at address: %p\n"
      "Instruction pointer: %p\n"
-     "In Section: %s\n"
+     "In Section: %s"
      , fault_address, ip, SEGFAULT_SECTION);
 
-     current_exception_message = segfault_message;
-
-    // Get the stack trace
-
-    if(!is_main_thread()){
-        fprintf(stderr, "Caught segfault on non-main thread. Terminating thread.\n");
-        fprintf(stdout, "%s\n", segfault_message);
-        saveStackTrace();
-        printStackTrace();
-        if (isTestEnvExit1OnFail) exit(1);
-        terminateThread();
-    } else {
-        raiseException(1, "%s\n", segfault_message);
-    }
+    raiseException(1, "%s", segfault_message);
 }
 #else
 void segfault_handler(int signal) {
