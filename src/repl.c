@@ -9,6 +9,7 @@
 #include "var_map.h"
 #include "exception_handling.h"
 #include "tokenize.h"
+#include "shims.h"
 
 #include <stdarg.h>
 #include <stdbool.h>
