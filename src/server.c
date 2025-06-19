@@ -152,7 +152,11 @@ void* handle_client_session_thread(void* session_ptr) {
         fprintf(stderr, "%s [Server] Error: Failed to spawn 'cliffi --server-internal-repl' worker.\n", session->client_info);
         close_socket(session->client_socket);
         free(session);
-        return (void*)-1;
+        #ifdef _WIN32
+                return (unsigned int)-1;
+        #else
+                return (void*)-1;
+        #endif
     }
 
     printf("%s [Server] Worker process spawned.\n", session->client_info);
