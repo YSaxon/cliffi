@@ -103,6 +103,9 @@ add_executable(cliffi ${CLIFFI_COMMON_SOURCES})
 
 if(NOT DEFINED USE_FIND_PACKAGE)
 
+find_package(Threads REQUIRED) # we can always use find_package for this one since its a builtin
+target_link_libraries(cliffi_common_deps INTERFACE Threads::Threads)
+
 find_package(PkgConfig REQUIRED)
 
 pkg_search_module(LIBFFI libffi REQUIRED)
