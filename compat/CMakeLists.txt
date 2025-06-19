@@ -1,0 +1,3 @@
+add_library(posix_spawn_compat STATIC posix_spawn_compat.cpp)
+set_target_properties(posix_spawn_compat PROPERTIES CXX_STANDARD 11)
+target_include_directories(posix_spawn_compat PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

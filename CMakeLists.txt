@@ -157,6 +157,13 @@ target_include_directories(cliffi_common_deps INTERFACE
         ${CMAKE_SOURCE_DIR}/src
         )
 
+# In your main CMakeLists.txt
+if(ANDROID AND CMAKE_SYSTEM_VERSION LESS 28)
+    message(STATUS "Android API < 28 detected. Adding posix_spawn compatibility subproject.")
+    add_subdirectory(compat)
+    target_link_libraries(cliffi_common_deps INTERFACE posix_spawn_compat)
+endif()
+
 target_link_libraries(cliffi PRIVATE cliffi_common_deps)
 
 # Compile cliffi_testlib.c into a shared library
