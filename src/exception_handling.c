@@ -23,6 +23,22 @@
 #include "shims.h"
 #include "exception_handling.h"
 
+#if defined(__riscv) && defined(__riscv_xlen) && __riscv_xlen == 64 && !defined(_WIN32)
+#include <unistd.h>
+#include <sys/syscall.h>
+void terminateThread() {
+    // Get the kernel thread ID (TID/LWP)
+    pid_t tid = syscall(SYS_gettid);
+    pid_t tgid = getpid();
+    // No stack unwinding. No cleanup. Mutexes remain locked. Memory is leaked.
+    syscall(SYS_tgkill, tgid, tid, SIGKILL);
+}
+#else
+void terminateThread() {
+    pthread_exit(NULL);
+}
+#endif
+
 
 bool isTestEnvExit1OnFail = false;
 
@@ -187,10 +203,6 @@ void set_main_threadid() {
 
 bool is_main_thread() {
     return pthread_equal(main_thread_id, pthread_self());
-}
-
-void terminateThread() {
-    pthread_exit(NULL);
 }
 
 #ifndef _WIN32
