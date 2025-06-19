@@ -147,6 +147,9 @@ if(DL_LIBRARY)
   target_link_libraries(cliffi_common_deps INTERFACE ${DL_LIBRARY})
 endif()
 endif()
+if(WIN32) #socket library is needed for Windows
+  target_link_libraries(cliffi_common_deps INTERFACE ws2_32)
+endif()
 
 target_include_directories(cliffi_common_deps INTERFACE
         ${LIBFFI_INCLUDE_DIRS}
