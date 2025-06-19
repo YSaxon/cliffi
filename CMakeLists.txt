@@ -97,15 +97,15 @@ if(NOT DEFINED USE_FIND_PACKAGE)
 find_package(PkgConfig REQUIRED)
 
 pkg_search_module(LIBFFI libffi REQUIRED)
+target_link_libraries(cliffi_common_deps INTERFACE ${LIBFFI_LIBRARIES})
+
+if (NOT WIN32)
 pkg_search_module(READLINE readline REQUIRED)
-
-
-target_link_libraries(cliffi_common_deps INTERFACE
-${LIBFFI_LIBRARIES}
-${READLINE_LIBRARIES}
-)
+target_link_libraries(cliffi_common_deps INTERFACE ${READLINE_LIBRARIES})
+endif()
 
 endif()
+
 # Append the project root directory to CMAKE_PREFIX_PATH
 list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/build")
 
