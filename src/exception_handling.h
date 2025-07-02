@@ -62,12 +62,6 @@ void printException();
 #define CATCHALL } else { { /*handleException:*/ \
     current_exception_buffer = old_exception_buffer; \
 
-// #if defined (use_backtrace)
-#define freebacktrace free(current_stacktrace_strings); current_stacktrace_strings = NULL; current_stacktrace_size = 0;
-// #else
-// #define freebacktrace
-// #endif
-
 #define END_TRY }} \
     free(newjmpBufferPtr); \
     current_exception_buffer = old_exception_buffer; \
@@ -75,7 +69,7 @@ void printException();
         free(current_exception_message); \
         current_exception_message = NULL; \
     } \
-    freebacktrace \
+    clear_stack_trace(); \
 } while (0);
 
 

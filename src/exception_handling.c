@@ -98,9 +98,9 @@ void printStackTrace(){
     for (size_t i = 0; i < current_stacktrace_size; i++) {
         fprintf(stderr, "%s\n", current_stacktrace_strings[i]);
     }
-    free(current_stacktrace_strings);
-    current_stacktrace_strings = NULL;
-    current_stacktrace_size = 0;
+    // free(current_stacktrace_strings); // removing this to prevent double free
+    // current_stacktrace_strings = NULL; // freeing these will only happen in END_TRY
+    // current_stacktrace_size = 0;
 }
 #else
     //just save the previous error message(s) in a buffer in order to print "while handling exception: " in the catch block
@@ -130,6 +130,26 @@ void printStackTrace(){
     }
 
 #endif
+
+void clear_stack_trace() {
+    if (current_stacktrace_strings == NULL) {
+        return;
+    }
+
+#ifndef use_backtrace
+    // For non-backtrace, we must free each archived message string individually.
+    for (size_t i = 0; i < current_stacktrace_size; i++) {
+        free(current_stacktrace_strings[i]);
+    }
+#endif
+
+    // In both cases, we free the array of pointers itself.
+    // For use_backtrace, backtrace_symbols allocates the strings and the array
+    // in one block, so a single free is correct.
+    free(current_stacktrace_strings);
+    current_stacktrace_strings = NULL;
+    current_stacktrace_size = 0;
+}
 
 
 void raiseException(int status, char* formatstr, ...) {
@@ -166,8 +186,8 @@ void printException() {
         fprintf(stderr, "Error thrown with no message\n");
     } else {
         fprintf(stderr, "%s\n", current_exception_message);
-        free(current_exception_message);
-        current_exception_message = NULL;
+        // free(current_exception_message); // removing this from here to prevent double free
+        // current_exception_message = NULL; // freeing these will only happen in END_TRY
     }
     printStackTrace();
 }
