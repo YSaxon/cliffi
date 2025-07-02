@@ -131,27 +131,6 @@ void printStackTrace(){
 
 #endif
 
-void clear_stack_trace() {
-    if (current_stacktrace_strings == NULL) {
-        return;
-    }
-
-#ifndef use_backtrace
-    // For non-backtrace, we must free each archived message string individually.
-    for (size_t i = 0; i < current_stacktrace_size; i++) {
-        free(current_stacktrace_strings[i]);
-    }
-#endif
-
-    // In both cases, we free the array of pointers itself.
-    // For use_backtrace, backtrace_symbols allocates the strings and the array
-    // in one block, so a single free is correct.
-    free(current_stacktrace_strings);
-    current_stacktrace_strings = NULL;
-    current_stacktrace_size = 0;
-}
-
-
 void raiseException(int status, char* formatstr, ...) {
     saveStackTrace(); // call it first so that the stack trace is saved with the old message before the message is overwritten
 
