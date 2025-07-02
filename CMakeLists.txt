@@ -189,26 +189,17 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(unity)
 
-# Add unit test source
-set(UNIT_TEST_SOURCES
-   ${CLIFFI_COMMON_SOURCES}
-    test/unit/test_cliffi_unit.c
-    # cliffi_testlib.c
-)
+# Find all test source files in test/unit/
+file(GLOB UNIT_TEST_SOURCES "${CMAKE_SOURCE_DIR}/test/unit/*.c")
 
-message(STATUS "unity test sources at ${UNIT_TEST_SOURCES},\n source dir at ${unity_SOURCE_DIR}/src)" )
-add_executable(cliffi_unit_tests ${UNIT_TEST_SOURCES})
-target_include_directories(cliffi_unit_tests PRIVATE ${unity_SOURCE_DIR}/src)
-target_link_libraries(cliffi_unit_tests PRIVATE
-    cliffi_common_deps  # This brings in libffi, readline, dl, and their includes
-    unity               # The Unity testing framework library
-)
-target_compile_definitions(cliffi_unit_tests PRIVATE CLIFFI_UNIT_TESTING) # this prevents main() from main.c from being compiled
-
-
-add_test(NAME cliffi_unit_tests COMMAND cliffi_unit_tests)
-
-
+foreach(test_src ${UNIT_TEST_SOURCES})
+    # Get the filename without extension
+    get_filename_component(test_name ${test_src} NAME_WE)
+    add_executable(${test_name}_test ${test_src} ${CLIFFI_COMMON_SOURCES})
+    target_link_libraries(${test_name}_test PRIVATE cliffi_common_deps unity) # or whatever libs you need
+    target_compile_definitions(${test_name}_test PRIVATE CLIFFI_UNIT_TESTING) # this prevents main() from main.c from being compiled
+    add_test(NAME ${test_name}_test COMMAND ${test_name}_test)
+endforeach()
 
 
 if(ANDROID)
