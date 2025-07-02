@@ -140,19 +140,23 @@ void raiseException(int status, char* formatstr, ...) {
         current_exception_message = NULL;
     }
     if (formatstr != NULL) {
+        bool should_free_formatstr = false;
         size_t formatstr_len = strlen(formatstr);
         if (formatstr[formatstr_len - 1] != '\n') {
             char* new_formatstr = malloc(formatstr_len + 2);
             strcpy(new_formatstr, formatstr);
             new_formatstr[formatstr_len] = '\n';
             new_formatstr[formatstr_len + 1] = '\0';
-            // free(formatstr); can't free formatstr because it's a pointer to a string literal
             formatstr = new_formatstr;
+            should_free_formatstr = true;
         }
         va_list args;
         va_start(args, formatstr);
         vasprintf(&current_exception_message, formatstr, args);
         va_end(args);
+        if (should_free_formatstr) {
+            free(formatstr);
+        }
     }
     siglongjmp(*current_exception_buffer, status);
 }
