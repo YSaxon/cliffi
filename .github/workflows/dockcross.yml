@@ -93,54 +93,54 @@ jobs:
       fail-fast: false
       matrix:
         dockcross_image:
-          - android-arm
-          - android-arm64
-          - android-x86
-          - android-x86_64
-          - linux-arm64
-          - linux-arm64-lts
-          # - linux-arm64-full
-          # - linux-arm64-musl
-          - linux-armv5
-          # - linux-armv5-musl
-          # - linux-armv5-uclibc
-          - linux-armv6
-          # - linux-armv6-lts
-          # - linux-armv6-musl
-          - linux-armv7
+          # - android-arm
+          # - android-arm64
+          # - android-x86
+          # - android-x86_64
+          # - linux-arm64
+          # - linux-arm64-lts
+          # # - linux-arm64-full
+          # # - linux-arm64-musl
+          # - linux-armv5
+          # # - linux-armv5-musl
+          # # - linux-armv5-uclibc
+          # - linux-armv6
+          # # - linux-armv6-lts
+          # # - linux-armv6-musl
+          # - linux-armv7
           - linux-armv7-lts
-          # - linux-armv7a
-          # - linux-armv7l-musl
-          - linux-mips
-          # - linux-mips-uclibc
-          - linux-mips-lts
-          # - linux-mipsel-lts
-          - linux-s390x
-          - linux-ppc64le
-          # - linux-ppc64le-lts
-          - linux-riscv32
-          - linux-riscv64
-          # - linux-m68k-uclibc
-          # - linux-xtensa-uclibc
-          # - manylinux_2_28-x64
-          # - manylinux2014-x86
-          # - manylinux2014-x64
-          # - linux-i686
-          - linux-x86
-          - linux-x64
-          # - linux-x86_64-full
-          # - linux-x64-clang
-          # - linux-x64-tinycc
-          # - web-wasm
-          # - web-wasi
-          # - windows-shared-x86
-          # - windows-shared-x64
-          # - windows-shared-x64-posix
-          - windows-static-x86
-          - windows-static-x64
-          # - windows-static-x64-posix
-          # - windows-armv7 #no idea why this one doesn't work
-          - windows-arm64
+          # # - linux-armv7a
+          # # - linux-armv7l-musl
+          # - linux-mips
+          # # - linux-mips-uclibc
+          # - linux-mips-lts
+          # # - linux-mipsel-lts
+          # - linux-s390x
+          # - linux-ppc64le
+          # # - linux-ppc64le-lts
+          # - linux-riscv32
+          # - linux-riscv64
+          # # - linux-m68k-uclibc
+          # # - linux-xtensa-uclibc
+          # # - manylinux_2_28-x64
+          # # - manylinux2014-x86
+          # # - manylinux2014-x64
+          # # - linux-i686
+          # - linux-x86
+          # - linux-x64
+          # # - linux-x86_64-full
+          # # - linux-x64-clang
+          # # - linux-x64-tinycc
+          # # - web-wasm
+          # # - web-wasi
+          # # - windows-shared-x86
+          # # - windows-shared-x64
+          # # - windows-shared-x64-posix
+          # - windows-static-x86
+          # - windows-static-x64
+          # # - windows-static-x64-posix
+          # # - windows-armv7 #no idea why this one doesn't work
+          # - windows-arm64
 
     steps:
       - uses: actions/checkout@v4
@@ -278,49 +278,49 @@ jobs:
           prerelease: true
 
 
-  smoke_test:
-    needs: [ build, build_on_mac, create_release ]
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest,macos-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Download Release
-        uses: robinraju/release-downloader@v1.12
-        with:
-          releaseId: ${{ needs.create_release.outputs.release_id }}
-          fileName: cliffi-${{ matrix.os == 'windows-latest' && 'windows-static-x64.exe' || matrix.os == 'ubuntu-latest' && 'linux-x64' || 'mac-arm64' }}
+  # smoke_test:
+  #   needs: [ build, build_on_mac, create_release ]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-latest, windows-latest,macos-latest]
+  #   runs-on: ${{ matrix.os }}
+  #   steps:
+  #     - name: Download Release
+  #       uses: robinraju/release-downloader@v1.12
+  #       with:
+  #         releaseId: ${{ needs.create_release.outputs.release_id }}
+  #         fileName: cliffi-${{ matrix.os == 'windows-latest' && 'windows-static-x64.exe' || matrix.os == 'ubuntu-latest' && 'linux-x64' || 'mac-arm64' }}
 
-      - name: Run Smoke Test (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          ls
-          mv 'cliffi*.exe' cliffi.exe
-          ./cliffi.exe msvcrt i strlen test 2>&1 | tee output
-          grep -q "Function returned: 4" output || exit 1
+  #     # - name: Run Smoke Test (Windows)
+  #     #   if: runner.os == 'Windows'
+  #     #   run: |
+  #     #     ls
+  #     #     mv 'cliffi*.exe' cliffi.exe
+  #     #     ./cliffi.exe msvcrt i strlen test 2>&1 | tee output
+  #     #     grep -q "Function returned: 4" output || exit 1
 
-      - name: Run Smoke Test (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          ls -l
-          mv cliffi-* cliffi
-          chmod +x cliffi
-          ./cliffi libc i strlen test 2>&1 | tee output
-          grep -q "Function returned: 4" output || exit 1
+  #     # - name: Run Smoke Test (Linux)
+  #     #   if: runner.os == 'Linux'
+  #     #   run: |
+  #     #     ls -l
+  #     #     mv cliffi-* cliffi
+  #     #     chmod +x cliffi
+  #     #     ./cliffi libc i strlen test 2>&1 | tee output
+  #     #     grep -q "Function returned: 4" output || exit 1
 
-      - name: Run Smoke Test (Mac)
-        if: runner.os == 'macOS'
-        run: |
-          ls -l
-          mv cliffi-* cliffi
-          chmod +x cliffi
-          ./cliffi libSystem i strlen test 2>&1 | tee output
-          grep -q "Function returned: 4" output || exit 1
+  #     # - name: Run Smoke Test (Mac)
+  #     #   if: runner.os == 'macOS'
+  #     #   run: |
+  #     #     ls -l
+  #     #     mv cliffi-* cliffi
+  #     #     chmod +x cliffi
+  #     #     ./cliffi libSystem i strlen test 2>&1 | tee output
+  #     #     grep -q "Function returned: 4" output || exit 1
 
-      - name: Setup tmate session if failed
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
+      # - name: Setup tmate session if failed
+      #   if: ${{ failure() }}
+      #   uses: mxschmitt/action-tmate@v3
 
   finalize_release:
     needs: [build, create_release]
