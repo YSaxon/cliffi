@@ -108,24 +108,39 @@ void printStackTrace(){
 }
 #else
     //just save the previous error message(s) in a buffer in order to print "while handling exception: " in the catch block
-    void saveStackTrace() {
+     void saveStackTrace() {
         if (current_exception_message == NULL) return;
-        // put the existing message in the stack trace buffer and free it for the new message
+
+        // FIX: Use strdup to prevent use-after-free, as raiseException will free current_exception_message.
+        char* message_copy = strdup(current_exception_message);
+        if (!message_copy) {
+            return; // strdup failed
+        }
+
         if (current_stacktrace_strings == NULL) {
             current_stacktrace_strings = malloc(sizeof(char*));
-            current_stacktrace_strings[0] = current_exception_message;
+            if (!current_stacktrace_strings) {
+                free(message_copy);
+                return; // malloc failed
+            }
+            current_stacktrace_strings[0] = message_copy;
             current_stacktrace_size = 1;
         } else {
             size_t combined_size = current_stacktrace_size + 1;
             char** combined_strings = malloc(combined_size * sizeof(char*));
+            if (!combined_strings) {
+                free(message_copy);
+                return; // malloc failed
+            }
             for (size_t i = 0; i < current_stacktrace_size; i++)
                 combined_strings[i] = current_stacktrace_strings[i];
-            combined_strings[current_stacktrace_size] = current_exception_message;
+
+            combined_strings[current_stacktrace_size] = message_copy;
+
             free(current_stacktrace_strings);
             current_stacktrace_strings = combined_strings;
             current_stacktrace_size = combined_size;
         }
-
     }
     void printStackTrace() {
         for (size_t i = 1; i < current_stacktrace_size; i++) { // skip the first message, which is the current exception message
