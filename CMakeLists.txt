@@ -102,8 +102,12 @@ add_library(cliffi_common_deps INTERFACE)
 add_executable(cliffi ${CLIFFI_COMMON_SOURCES})
 
 
-find_package(Threads REQUIRED) # we can always use find_package for this one since its a builtin
-target_link_libraries(cliffi_common_deps INTERFACE Threads::Threads)
+find_package(Threads) # we can always use find_package for this one since its a builtin; make it not required to see where its actually needed for builds that are now failing
+if(Threads_FOUND)
+    target_link_libraries(cliffi_common_deps INTERFACE Threads::Threads)
+else()
+    message(STATUS "Threads package not found. Server mode or anything else depending on threads will not work.")
+endif()
 
 
 if(NOT DEFINED USE_FIND_PACKAGE) # eg when using brew or apt installed packages
