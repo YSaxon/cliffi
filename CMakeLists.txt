@@ -36,7 +36,7 @@ endif()
 
 
 #if in debug mode enable coverage
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(TRUE)
     # if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage")
     # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
@@ -47,10 +47,10 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_DARWIN_C_SOURCE") # needed for macOS
         set(CMAKE_C_FLAGS_DEBUG "-O0 -g -gdwarf-4")
         set(CMAKE_EXE_LINKER_FLAGS_DEBUG "-g -gdwarf-4") # Also good to add to linker flags
-    endif()
+endif()
 endif()
 
-option(ENABLE_SANITIZERS "Build with sanitizers enabled" OFF)
+option(ENABLE_SANITIZERS "Build with sanitizers enabled" ON)
 if(ENABLE_SANITIZERS)
     include(CheckCCompilerFlag)
     CHECK_C_COMPILER_FLAG("-fsanitize=address" COMPILER_SUPPORTS_ASAN)
