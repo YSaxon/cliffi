@@ -12,6 +12,7 @@
 #include <setjmp.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 
 #if defined(_WIN32) || defined(_WIN64)
 #define sigjmp_buf jmp_buf
@@ -45,10 +46,10 @@ void printException();
     hexdump(current_exception_buffer, sizeof(sigjmp_buf)); */ \
     if (sigsetjmp(*newjmpBufferPtr, 1) == 0) {
 
-// #define CATCH(messageSearchString) } else { \
+// #define CATCH(messageSearchString) } else {  \
 //     /*current_exception_buffer = old_exception_buffer; */\
 //     if (messageSearchString != NULL && strstr(messageSearchString, current_exception_message) == NULL) { /* this means that the catch handler shouldn't catch it*/ \
-//         if (old_exception_buffer != NULL) { siglongjmp(*current_exception_buffer, 1); \ //<-- current_exception_buffer is probably wrong in that code. maybe we need to replace it with old_exception_buffer? \
+//         if (old_exception_buffer != NULL) { siglongjmp(*current_exception_buffer, 1); /*<-- current_exception_buffer is probably wrong in that code. maybe we need to replace it with old_exception_buffer? */ \
 //         } else { \
 //             fprintf(stderr, "Not able to rethrow exception.\n"); \
 //             goto handleException; \
@@ -57,10 +58,29 @@ void printException();
 //         handleException: \
 //         current_exception_buffer = old_exception_buffer;
 
-// #define CATCHALL CATCH(NULL)
 
-#define CATCHALL } else { { /*handleException:*/ \
-    current_exception_buffer = old_exception_buffer; \
+#define CATCH(messageSearchString) \
+        } else { \
+            /* First, check if this handler should IGNORE the exception */ \
+            if (messageSearchString != NULL && (current_exception_message == NULL || strstr(current_exception_message, messageSearchString) == NULL)) { \
+                /* Condition does NOT match, so re-throw to the outer handler. */ \
+                /* This is a non-local jump and will not return. */ \
+                if (old_exception_buffer) { \
+                    siglongjmp(*old_exception_buffer, 1); \
+                } else { \
+                    /* This is a fatal error: an unhandled exception reached the top. */ \
+                    fprintf(stderr, "Unhandled exception: %s\n", current_exception_message ? current_exception_message : "(no message)"); \
+                    exit(1); \
+                } \
+            } \
+            /* If we get here, the condition matched. Set up the buffer and execute the user's code. */ \
+            current_exception_buffer = old_exception_buffer; \
+            {
+
+#define CATCHALL CATCH(NULL)
+
+// #define CATCHALL } else { { /*handleException:*/ \
+//     current_exception_buffer = old_exception_buffer; \
 
 // #if defined (use_backtrace)
 #define freebacktrace free(current_stacktrace_strings); current_stacktrace_strings = NULL; current_stacktrace_size = 0;

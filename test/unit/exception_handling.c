@@ -143,6 +143,53 @@ void test_exception_in_catch_block(void) {
     TEST_ASSERT_NULL(current_stacktrace_strings);
 }
 
+
+void test_conditional_catch_rethrows_unmatched_exception(void) {
+    bool inner_catch_entered = false;
+    bool outer_catch_entered = false;
+
+    TRY
+        TRY
+            raiseException(1, "This is a specific error");
+         CATCH("A different message")
+            // This block should be SKIPPED because the message doesn't match.
+            inner_catch_entered = true;
+        END_TRY;
+
+        TEST_FAIL_MESSAGE("This line should be unreachable if re-throw works.");
+
+     CATCH("specific error")
+        // The exception should be re-thrown and land here.
+        outer_catch_entered = true;
+        TEST_ASSERT_EQUAL_STRING("This is a specific error\n", current_exception_message);
+    END_TRY;
+
+    TEST_ASSERT_FALSE(inner_catch_entered);
+    TEST_ASSERT_TRUE(outer_catch_entered);
+}
+
+void test_conditional_catch_catches_matched_exception(void) {
+    bool inner_catch_entered = false;
+    bool outer_catch_entered = false;
+
+    TRY
+        TRY
+            raiseException(1, "This is a specific error");
+         CATCH("specific error")
+            // This block should be entered because the message matches.
+            inner_catch_entered = true;
+        END_TRY;
+
+    CATCHALL
+        // This block should NOT be entered because the inner catch already handled it.
+        outer_catch_entered = true;
+    END_TRY;
+
+    TEST_ASSERT_TRUE(inner_catch_entered);
+    TEST_ASSERT_FALSE(outer_catch_entered);
+}
+
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_single_exception_memory_cleanup);
@@ -151,5 +198,7 @@ int main(void) {
     RUN_TEST(test_exception_path);
     RUN_TEST(test_nested_try_single_exception);
     RUN_TEST(test_exception_in_catch_block);
+    RUN_TEST(test_conditional_catch_rethrows_unmatched_exception);
+    RUN_TEST(test_conditional_catch_catches_matched_exception);
     return UNITY_END();
 }
