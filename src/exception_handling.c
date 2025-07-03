@@ -40,26 +40,30 @@ void saveStackTrace() {
     size_t i;
 
     if (current_stacktrace_strings == NULL) {
-
         current_stacktrace_size = backtrace(array, 10);
         if (current_stacktrace_size == 0) {
-            // current_stacktrace_size = 1;
-            // current_stacktrace_strings = malloc(sizeof(char*));
-            // current_stacktrace_strings[0] = strdup("(no stack trace available)");
-            return;
+            // FIX: If backtrace() fails, check if we are handling a nested exception.
+            // If so, archive its message as a fallback stack trace.
+            if (current_exception_message != NULL) {
+                current_stacktrace_strings = malloc(sizeof(char*));
+                if (current_stacktrace_strings) { // Check malloc success
+                    // Must copy the string, as the original will be freed by raiseException.
+                    current_stacktrace_strings[0] = strdup(current_exception_message);
+                    current_stacktrace_size = 1;
+                }
+            }
+            return; // Exit, as there's no new backtrace to process.
         }
-
         current_stacktrace_strings = backtrace_symbols(array, current_stacktrace_size);
-
     } else {
-
         if (current_exception_message == NULL) {
             fprintf(stdout, "While handling exception, current_stacktrace exists but current_exception_message does not. We may have called saveStackTrace twice by mistake\n");
             current_exception_message = strdup("(null message)");
-            }
+        }
 
         size_t new_size = backtrace(array, 10);
-        char** new_strings = backtrace_symbols(array, current_stacktrace_size);
+        // FIX: Use new_size, not current_stacktrace_size.
+        char** new_strings = backtrace_symbols(array, new_size);
 
         int lines_for_subheader = 1;
 
