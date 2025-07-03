@@ -69,6 +69,11 @@ if(ENABLE_SANITIZERS)
     endif()
 endif()
 
+if(UNIX AND NOT APPLE AND NOT ANDROID)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -rdynamic")
+endif()
+
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread") # bugfix for pthread on lts
 
 
