@@ -20,13 +20,13 @@ void test_single_exception_memory_cleanup(void) {
     TEST_ASSERT_NULL(current_exception_message);
     TEST_ASSERT_NULL(current_stacktrace_strings);
 
-    TRY {
+    TRY
         raiseException(1, "Test exception");
-    } CATCHALL {
+    CATCHALL
         // We expect to land here
         TEST_ASSERT_NOT_NULL(current_exception_message);
         TEST_ASSERT_EQUAL_STRING("Test exception\n", current_exception_message);
-    } END_TRY;
+    END_TRY;
 
     // The most important check: END_TRY should have cleaned everything up.
     TEST_ASSERT_NULL(current_exception_message);
@@ -34,22 +34,22 @@ void test_single_exception_memory_cleanup(void) {
 }
 
 void test_nested_exception_memory_cleanup(void) {
-    TRY {
-        TRY {
+    TRY
+        TRY
             raiseException(1, "Inner exception");
-        } CATCHALL {
+        CATCHALL
             // We are now handling the inner exception.
             // The message and trace for "Inner exception" should exist.
             TEST_ASSERT_NOT_NULL(current_exception_message);
 
             // Now, raise another exception from within the catch block.
             raiseException(2, "Outer exception");
-        } END_TRY;
+        END_TRY;
 
         // This part of the outer TRY block should be skipped.
         TEST_FAIL_MESSAGE("Should not have reached here.");
 
-    } CATCHALL {
+    CATCHALL
         // We should land in the outer catch block.
         // The message should now be for the "Outer exception".
         TEST_ASSERT_EQUAL_STRING("Outer exception\n", current_exception_message);
@@ -58,7 +58,7 @@ void test_nested_exception_memory_cleanup(void) {
         // You can add more specific checks here based on the implementation.
         TEST_ASSERT_NOT_NULL(current_stacktrace_strings);
 
-    } END_TRY;
+    END_TRY;
 
     // After all is said and done, everything must be clean.
     TEST_ASSERT_NULL(current_exception_message);
@@ -67,11 +67,11 @@ void test_nested_exception_memory_cleanup(void) {
 
 void test_no_exception_path(void) {
     int x = 0;
-    TRY {
+    TRY
         x = 10;
-    } CATCHALL {
+    CATCHALL
         TEST_FAIL_MESSAGE("Catch block should not be entered.");
-    } END_TRY;
+    END_TRY;
 
     // Verify code was executed and memory is clean.
     TEST_ASSERT_EQUAL_INT(10, x);
