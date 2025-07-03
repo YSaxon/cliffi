@@ -63,9 +63,9 @@ if(ENABLE_SANITIZERS)
     CHECK_C_COMPILER_FLAG("-fsanitize=undefined" COMPILER_SUPPORTS_UBSAN)
     if(COMPILER_SUPPORTS_UBSAN)
         message(STATUS "Building with undefined behavior sanitizer")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=undefined")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined")
-        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=undefined")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=undefined -static-libubsan") #static ubsan
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined -static-libubsan")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=undefined -static-libubsan")
     endif()
 endif()
 
