@@ -192,14 +192,7 @@ FetchContent_MakeAvailable(unity)
 # Find all test source files in test/unit/
 file(GLOB UNIT_TEST_SOURCES "${CMAKE_SOURCE_DIR}/test/unit/*.c")
 
-foreach(test_src ${UNIT_TEST_SOURCES})
-    # Get the filename without extension
-    get_filename_component(test_name ${test_src} NAME_WE)
-    add_executable(${test_name}_test ${test_src} ${CLIFFI_COMMON_SOURCES})
-    target_link_libraries(${test_name}_test PRIVATE cliffi_common_deps unity) # or whatever libs you need
-    target_compile_definitions(${test_name}_test PRIVATE CLIFFI_UNIT_TESTING) # this prevents main() from main.c from being compiled
-    add_test(NAME ${test_name}_test COMMAND ${test_name}_test)
-endforeach()
+
 
 
 if(ANDROID)
@@ -265,7 +258,17 @@ set(TESTLIB ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_SHARED_LIBRARY_PREFIX}clif
 
 endif()
 
-
+foreach(test_src ${UNIT_TEST_SOURCES})
+    # Get the filename without extension
+    get_filename_component(test_name ${test_src} NAME_WE)
+    add_executable(${test_name}_test ${test_src} ${CLIFFI_COMMON_SOURCES})
+    target_link_libraries(${test_name}_test PRIVATE cliffi_common_deps unity) # or whatever libs you need
+    target_compile_definitions(${test_name}_test PRIVATE CLIFFI_UNIT_TESTING) # this prevents main() from main.c from being compiled
+    add_test(NAME ${test_name}_test COMMAND ${test_name}_test)
+    if(ANDROID)
+        set_tests_properties(${test_name}_test PROPERTY CROSSCOMPILING_EMULATOR "${ADB_RUNNER_SCRIPT}")
+    endif()
+endforeach()
 
 
 
