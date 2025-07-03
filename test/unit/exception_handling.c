@@ -148,5 +148,8 @@ int main(void) {
     RUN_TEST(test_single_exception_memory_cleanup);
     RUN_TEST(test_nested_exception_memory_cleanup);
     RUN_TEST(test_no_exception_path);
+    RUN_TEST(test_exception_path);
+    RUN_TEST(test_nested_try_single_exception);
+    RUN_TEST(test_exception_in_catch_block);
     return UNITY_END();
 }
