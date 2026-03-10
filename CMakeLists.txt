@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(cliffi VERSION 1.0 LANGUAGES C)
+project(cliffi VERSION 1.0 LANGUAGES C CXX)
 
 enable_testing()
 
@@ -82,12 +82,16 @@ src/tokenize.c
 src/parse_address.c
 src/shims.c
 src/exception_handling.c
+src/export_symbols.cpp
 )
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 add_library(cliffi_common_deps INTERFACE)
+
+# LIEF is optional for local/pkg-config builds and enabled via Conan/CMakeDeps in cross-platform CI.
+set(CLIFFI_HAS_LIEF OFF)
 
 # Target executable
 add_executable(cliffi ${CLIFFI_COMMON_SOURCES})
@@ -98,12 +102,19 @@ find_package(PkgConfig REQUIRED)
 
 pkg_search_module(LIBFFI libffi REQUIRED)
 pkg_search_module(READLINE readline REQUIRED)
+pkg_search_module(LIEF_CPP QUIET LIEF lief)
 
 
 target_link_libraries(cliffi_common_deps INTERFACE
 ${LIBFFI_LIBRARIES}
 ${READLINE_LIBRARIES}
 )
+
+if(LIEF_CPP_FOUND)
+    target_include_directories(cliffi_common_deps INTERFACE ${LIEF_CPP_INCLUDE_DIRS})
+    target_link_libraries(cliffi_common_deps INTERFACE ${LIEF_CPP_LIBRARIES})
+    set(CLIFFI_HAS_LIEF ON)
+endif()
 
 endif()
 # Append the project root directory to CMAKE_PREFIX_PATH
@@ -126,6 +137,12 @@ target_link_libraries(cliffi_common_deps INTERFACE readline::readline)
 message(STATUS "readline include dirs: ${readline_INCLUDE_DIRS}")
 message("attempting link readline::readline")
 endif()
+
+set(LIEF_DIR ${CMAKE_SOURCE_DIR}/build)
+set(ENV{LIEF_DIR} ${CMAKE_SOURCE_DIR}/build)
+find_package(LIEF REQUIRED)
+target_link_libraries(cliffi_common_deps INTERFACE LIEF::LIEF)
+set(CLIFFI_HAS_LIEF ON)
 endif()
 
 if(NOT ANDROID) # on android this breaks things
@@ -142,6 +159,7 @@ target_include_directories(cliffi_common_deps INTERFACE
         )
 
 target_link_libraries(cliffi PRIVATE cliffi_common_deps)
+target_compile_definitions(cliffi PRIVATE $<$<BOOL:${CLIFFI_HAS_LIEF}>:CLIFFI_HAS_LIEF>)
 
 # Compile cliffi_testlib.c into a shared library
 add_library(cliffitest SHARED test/lib/cliffi_testlib.c)
@@ -181,6 +199,7 @@ target_link_libraries(cliffi_unit_tests PRIVATE
     unity               # The Unity testing framework library
 )
 target_compile_definitions(cliffi_unit_tests PRIVATE CLIFFI_UNIT_TESTING) # this prevents main() from main.c from being compiled
+target_compile_definitions(cliffi_unit_tests PRIVATE $<$<BOOL:${CLIFFI_HAS_LIEF}>:CLIFFI_HAS_LIEF>)
 
 
 add_test(NAME cliffi_unit_tests COMMAND cliffi_unit_tests)
@@ -1338,6 +1357,5 @@ set_tests_properties(is_equal_true_test PROPERTIES PASS_REGULAR_EXPRESSION "Func
 add_test(NAME test_nonzero_exit_for_nonexistent_function
         COMMAND cliffi ${TESTLIB} i non_existent_function 1 2)
 set_tests_properties(test_nonzero_exit_for_nonexistent_function PROPERTIES WILL_FAIL TRUE) # this test is expected to fail
-
 
 
