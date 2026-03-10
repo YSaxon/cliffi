@@ -5,6 +5,7 @@
 #if defined(CLIFFI_HAS_LIEF)
 #include <LIEF/LIEF.hpp>
 #include <memory>
+#include <string>
 
 bool list_exported_symbols_with_lief(const char* library_path) {
     std::unique_ptr<LIEF::Binary> binary = LIEF::Parser::parse(library_path);
@@ -14,11 +15,9 @@ bool list_exported_symbols_with_lief(const char* library_path) {
     }
 
     size_t exported_count = 0;
-    for (const LIEF::Symbol& symbol : binary->symbols()) {
-        if (!symbol.is_exported()) {
-            continue;
-        }
-        printf("%s\n", symbol.name().c_str());
+    const auto exported = binary->exported_functions();
+    for (const std::string& symbol_name : exported) {
+        printf("%s\n", symbol_name.c_str());
         exported_count++;
     }
 
