@@ -1,3 +1,4 @@
 [requires]
 libffi/3.4.6
 readline/8.2
+lief/0.16.2
