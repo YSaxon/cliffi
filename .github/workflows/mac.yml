@@ -18,7 +18,7 @@ jobs:
 
     - name: Install Dependencies (macOS)
       if: runner.os == 'macOS'
-      run: brew install libffi cmake
+      run: brew install libffi cmake lief
 
     - name: Configure CMake (macOS)
       if: runner.os == 'macOS'
