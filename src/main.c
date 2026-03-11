@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
+#include <ctype.h>
 
 #include "exception_handling.h"
 
@@ -29,8 +30,19 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include <psapi.h>
 #else
 #include <dlfcn.h>
+#endif
+
+#ifdef __linux__
+#include <libgen.h>
+#endif
+
+#ifdef __APPLE__
+#include <mach/mach.h>
+#include <mach-o/dyld.h>
+#include <libgen.h>
 #endif
 
 #include "shims.h"
@@ -38,6 +50,320 @@
 const char* NAME = "cliffi";
 const char* VERSION = "v1.12.6";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
+
+void printVariableWithArgInfo(char* varName, ArgInfo* arg);
+
+typedef struct {
+    uintptr_t start;
+    uintptr_t end;
+} MemoryRegion;
+
+typedef struct {
+    uintptr_t address;
+    size_t region_index;
+} MemoryMatch;
+
+static bool path_ends_with(const char* full_path, const char* suffix) {
+    if (full_path == NULL || suffix == NULL) {
+        return false;
+    }
+    size_t full_len = strlen(full_path);
+    size_t suffix_len = strlen(suffix);
+    if (suffix_len > full_len) {
+        return false;
+    }
+    return strcmp(full_path + full_len - suffix_len, suffix) == 0;
+}
+
+static unsigned char* parse_search_bytes(const char* bytestring, size_t* out_len) {
+    if (bytestring == NULL || out_len == NULL) {
+        raiseException(1, "Error: Invalid bytestring input\n");
+    }
+    if (strncmp(bytestring, "0x", 2) == 0 || strncmp(bytestring, "0X", 2) == 0) {
+        size_t hex_len = strlen(bytestring + 2);
+        if (hex_len == 0 || hex_len % 2 != 0) {
+            raiseException(1, "Error: Hex bytestring must contain an even number of hex chars\n");
+        }
+        *out_len = hex_len / 2;
+        return hex_string_to_bytes(bytestring);
+    }
+    *out_len = strlen(bytestring);
+    if (*out_len == 0) {
+        raiseException(1, "Error: Empty bytestring not allowed\n");
+    }
+    unsigned char* out = malloc(*out_len);
+    if (out == NULL) {
+        raiseException(1, "Error: Failed to allocate bytestring buffer\n");
+    }
+    memcpy(out, bytestring, *out_len);
+    return out;
+}
+
+static void append_region(MemoryRegion** regions, size_t* region_count, size_t* region_capacity, uintptr_t start, uintptr_t end) {
+    if (end <= start) {
+        return;
+    }
+    if (*region_count >= *region_capacity) {
+        *region_capacity = *region_capacity == 0 ? 16 : *region_capacity * 2;
+        *regions = realloc(*regions, *region_capacity * sizeof(MemoryRegion));
+        if (*regions == NULL) {
+            raiseException(1, "Error: Failed to allocate memory region list\n");
+        }
+    }
+    (*regions)[*region_count].start = start;
+    (*regions)[*region_count].end = end;
+    (*region_count)++;
+}
+
+#ifdef __linux__
+static size_t get_readable_regions_for_library(const char* library_path, MemoryRegion** out_regions) {
+    FILE* maps = fopen("/proc/self/maps", "r");
+    if (maps == NULL) {
+        raiseException(1, "Error: Could not open /proc/self/maps\n");
+    }
+    char line[4096];
+    MemoryRegion* regions = NULL;
+    size_t region_count = 0;
+    size_t region_capacity = 0;
+    while (fgets(line, sizeof(line), maps) != NULL) {
+        unsigned long start = 0;
+        unsigned long end = 0;
+        char perms[5] = {0};
+        char mapped_path[2048] = {0};
+        int fields = sscanf(line, "%lx-%lx %4s %*s %*s %*s %2047[^\n]", &start, &end, perms, mapped_path);
+        if (fields < 3) {
+            continue;
+        }
+        if (perms[0] != 'r') {
+            continue;
+        }
+        if (fields < 4) {
+            continue;
+        }
+        char* clean_path = mapped_path;
+        while (*clean_path && isspace((unsigned char)*clean_path)) {
+            clean_path++;
+        }
+        if (path_ends_with(clean_path, library_path)) {
+            append_region(&regions, &region_count, &region_capacity, (uintptr_t)start, (uintptr_t)end);
+        }
+    }
+    fclose(maps);
+    *out_regions = regions;
+    return region_count;
+}
+#elif defined(_WIN32)
+static size_t get_readable_regions_for_library(void* lib_handle, MemoryRegion** out_regions) {
+    MODULEINFO module_info;
+    if (!GetModuleInformation(GetCurrentProcess(), (HMODULE)lib_handle, &module_info, sizeof(module_info))) {
+        raiseException(1, "Error: Could not get module information\n");
+    }
+    uintptr_t module_start = (uintptr_t)module_info.lpBaseOfDll;
+    uintptr_t module_end = module_start + module_info.SizeOfImage;
+
+    MemoryRegion* regions = NULL;
+    size_t region_count = 0;
+    size_t region_capacity = 0;
+    MEMORY_BASIC_INFORMATION mbi;
+    unsigned char* addr = (unsigned char*)module_start;
+    while (addr < (unsigned char*)module_end && VirtualQuery(addr, &mbi, sizeof(mbi))) {
+        uintptr_t start = (uintptr_t)mbi.BaseAddress;
+        uintptr_t end = start + mbi.RegionSize;
+        bool readable = mbi.State == MEM_COMMIT && !(mbi.Protect & PAGE_GUARD) && !(mbi.Protect & PAGE_NOACCESS);
+        if (readable) {
+            uintptr_t clipped_start = start < module_start ? module_start : start;
+            uintptr_t clipped_end = end > module_end ? module_end : end;
+            append_region(&regions, &region_count, &region_capacity, clipped_start, clipped_end);
+        }
+        addr = (unsigned char*)end;
+    }
+    *out_regions = regions;
+    return region_count;
+}
+#elif defined(__APPLE__)
+static size_t get_readable_regions_for_library(const char* library_path, MemoryRegion** out_regions) {
+    const struct mach_header* image_header = NULL;
+    intptr_t image_slide = 0;
+    uint32_t image_count = _dyld_image_count();
+    for (uint32_t i = 0; i < image_count; i++) {
+        const char* image_name = _dyld_get_image_name(i);
+        if (image_name != NULL && path_ends_with(image_name, library_path)) {
+            image_header = _dyld_get_image_header(i);
+            image_slide = _dyld_get_image_vmaddr_slide(i);
+            break;
+        }
+    }
+    if (image_header == NULL) {
+        *out_regions = NULL;
+        return 0;
+    }
+
+    uintptr_t image_start = UINTPTR_MAX;
+    uintptr_t image_end = 0;
+    const struct load_command* cmd = (const struct load_command*)((const char*)image_header + sizeof(struct mach_header_64));
+    for (uint32_t i = 0; i < ((struct mach_header_64*)image_header)->ncmds; i++) {
+        if (cmd->cmd == LC_SEGMENT_64) {
+            const struct segment_command_64* seg = (const struct segment_command_64*)cmd;
+            uintptr_t start = (uintptr_t)(seg->vmaddr + image_slide);
+            uintptr_t end = start + seg->vmsize;
+            if (start < image_start) image_start = start;
+            if (end > image_end) image_end = end;
+        }
+        cmd = (const struct load_command*)((const char*)cmd + cmd->cmdsize);
+    }
+    if (image_start >= image_end) {
+        *out_regions = NULL;
+        return 0;
+    }
+
+    MemoryRegion* regions = NULL;
+    size_t region_count = 0;
+    size_t region_capacity = 0;
+    mach_vm_address_t addr = image_start;
+    while (addr < image_end) {
+        mach_vm_size_t size = 0;
+        vm_region_basic_info_data_64_t info;
+        mach_msg_type_number_t count = VM_REGION_BASIC_INFO_COUNT_64;
+        mach_port_t object_name = MACH_PORT_NULL;
+        kern_return_t kr = mach_vm_region(mach_task_self(), &addr, &size, VM_REGION_BASIC_INFO_64, (vm_region_info_t)&info, &count, &object_name);
+        if (kr != KERN_SUCCESS) {
+            break;
+        }
+        if (info.protection & VM_PROT_READ) {
+            uintptr_t start = (uintptr_t)addr;
+            uintptr_t end = start + size;
+            if (end > image_start && start < image_end) {
+                uintptr_t clipped_start = start < image_start ? image_start : start;
+                uintptr_t clipped_end = end > image_end ? image_end : end;
+                append_region(&regions, &region_count, &region_capacity, clipped_start, clipped_end);
+            }
+        }
+        addr += size;
+    }
+    *out_regions = regions;
+    return region_count;
+}
+#endif
+
+static bool find_bytes_in_regions(const MemoryRegion* regions, size_t region_count, const unsigned char* bytes, size_t bytes_len, MemoryMatch* first_match, MemoryMatch* second_match) {
+    bool found_first = false;
+    for (size_t i = 0; i < region_count; i++) {
+        uintptr_t start = regions[i].start;
+        size_t size = regions[i].end - regions[i].start;
+        if (size < bytes_len) {
+            continue;
+        }
+        unsigned char* memory = (unsigned char*)start;
+        for (size_t offset = 0; offset <= size - bytes_len; offset++) {
+            if (memcmp(memory + offset, bytes, bytes_len) == 0) {
+                if (!found_first) {
+                    first_match->address = start + offset;
+                    first_match->region_index = i;
+                    found_first = true;
+                } else {
+                    second_match->address = start + offset;
+                    second_match->region_index = i;
+                    return true;
+                }
+            }
+        }
+    }
+    return found_first;
+}
+
+static void dump_match_context(const MemoryRegion* region, uintptr_t match_address, size_t bytes_len) {
+    const size_t max_context = 64;
+    uintptr_t before = bytes_len < max_context ? bytes_len : max_context;
+    uintptr_t after = max_context;
+    uintptr_t dump_start = match_address > region->start + before ? match_address - before : region->start;
+    uintptr_t desired_end = match_address + bytes_len + after;
+    uintptr_t dump_end = desired_end < region->end ? desired_end : region->end;
+    size_t dump_size = dump_end - dump_start;
+    printf("Hexdump context around match at 0x%" PRIxPTR " (size=%zu):\n", match_address, dump_size);
+    hexdump((void*)dump_start, dump_size);
+}
+
+void parseSetOffset(char* setOffsetCommand) {
+    int argc;
+    char** argv;
+    tokenize(setOffsetCommand, &argc, &argv);
+    if (argc != 2) {
+        raiseException(1, "Error: Invalid number of arguments for set_offset\n");
+        return;
+    }
+    char* library_name = argv[0];
+    char* offset_str = argv[1];
+    void* lib_handle = getOrLoadLibrary(library_name);
+    void* offset = getAddressFromAddressStringOrNameOfCoercableVariable(offset_str);
+    storeOffsetForLibLoadedAtAddress(lib_handle, offset);
+    printf("Stored offset for %s as %p\n", library_name, offset);
+}
+
+void parseSearchOffset(char* searchOffsetCommand) {
+    int argc;
+    char** argv;
+    tokenize(searchOffsetCommand, &argc, &argv);
+    if (argc < 3 || argc > 4) {
+        raiseException(1, "Error: Invalid number of arguments for search_offset\n");
+        return;
+    }
+
+    bool hasVar = argc == 4;
+    char* var_name = hasVar ? argv[0] : NULL;
+    char* library_name = argv[0 + hasVar];
+    char* bytestring = argv[1 + hasVar];
+    char* provided_addr_str = argv[2 + hasVar];
+    uintptr_t provided_addr = (uintptr_t)getAddressFromAddressStringOrNameOfCoercableVariable(provided_addr_str);
+
+    void* lib_handle = getOrLoadLibrary(library_name);
+    char* resolved_library_path = resolve_library_path(library_name);
+
+    size_t bytes_len = 0;
+    unsigned char* bytes = parse_search_bytes(bytestring, &bytes_len);
+
+    MemoryRegion* regions = NULL;
+#ifdef _WIN32
+    size_t region_count = get_readable_regions_for_library(lib_handle, &regions);
+#else
+    size_t region_count = get_readable_regions_for_library(resolved_library_path, &regions);
+#endif
+    if (region_count == 0) {
+        free(bytes);
+        raiseException(1, "Error: Could not find readable mapped regions for library %s\n", library_name);
+    }
+
+    MemoryMatch first_match = {0};
+    MemoryMatch second_match = {0};
+    bool found = find_bytes_in_regions(regions, region_count, bytes, bytes_len, &first_match, &second_match);
+    if (!found) {
+        free(bytes);
+        free(regions);
+        raiseException(1, "Error: Did not find the requested bytestring in readable regions of %s\n", library_name);
+    }
+
+    printf("Found first bytestring match at 0x%" PRIxPTR "\n", first_match.address);
+    dump_match_context(&regions[first_match.region_index], first_match.address, bytes_len);
+
+    if (second_match.address != 0) {
+        printf("Found second bytestring match at 0x%" PRIxPTR "\n", second_match.address);
+        dump_match_context(&regions[second_match.region_index], second_match.address, bytes_len);
+        free(bytes);
+        free(regions);
+        raiseException(1, "Error: Bytestring is not unique in %s. Please provide a more specific string.\n", library_name);
+    }
+
+    ptrdiff_t offset = (ptrdiff_t)(first_match.address - provided_addr);
+    printf("Calculation: 0x%" PRIxPTR " - 0x%" PRIxPTR " = %p\n", first_match.address, provided_addr, (void*)offset);
+    storeOffsetForLibLoadedAtAddress(lib_handle, (void*)offset);
+    if (hasVar) {
+        ArgInfo* offsetArg = getPVar((void*)offset);
+        setVar(var_name, offsetArg);
+        printVariableWithArgInfo(var_name, offsetArg);
+    }
+
+    free(bytes);
+    free(regions);
+}
 
 
 
@@ -561,6 +887,9 @@ int parseREPLCommand(char* command){
                        "  load <var> <type> <address>: Load the value at a memory address into a variable\n"
                        "  calculate_offset [<variable>] <library> <symbol> <address>:"
                        "      Calculate memory offset by comparing the address of a known symbol [and store in var]\n"
+                       "  set_offset <library> <offset>: Set memory offset for a library directly\n"
+                       "  search_offset [<variable>] <library> <bytestring> <address>:"
+                       "      Search readable library pages for bytestring, verify uniqueness, and store computed offset\n"
                        "  hexdump <address> <size>: Print a hexdump of memory\n"
                        "Shared Library Management:\n"
                        "  list: List all opened libraries\n"
@@ -597,6 +926,10 @@ int parseREPLCommand(char* command){
                 parseLoadMemoryToVar(command + 5);
             } else if (strncmp(command, "calculate_offset ", 17) == 0) {
                 parseCalculateOffset(command + 17);
+            } else if (strncmp(command, "set_offset ", 11) == 0) {
+                parseSetOffset(command + 11);
+            } else if (strncmp(command, "search_offset ", 14) == 0) {
+                parseSearchOffset(command + 14);
             } else if (strncmp(command, "hexdump ", 8) == 0) {
                 parseHexdump(command + 8); // could also be done by dump aC<size> <address>
             } else if (command[0] == '!') {
