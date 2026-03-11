@@ -6,6 +6,7 @@
 #include "return_formatter.h"
 #include "types_and_utils.h"
 #include "var_map.h"
+#include "export_symbols.h"
 
 #include <stdarg.h>
 #include <stdbool.h>
@@ -540,6 +541,26 @@ void parseHexdump(char* hexdumpCommand) {
 
 
 
+void parseListExports(char* exportsCommand) {
+    int argc;
+    char** argv;
+    tokenize(exportsCommand, &argc, &argv);
+    if (argc < 1) {
+        raiseException(1,  "Error: Invalid number of arguments for exports\n");
+        return;
+    }
+
+    char* resolvedPath = resolve_library_path(argv[0]);
+    if (resolvedPath == NULL) {
+        raiseException(1,  "Error: Could not resolve library path for '%s'\n", argv[0]);
+        return;
+    }
+
+    if (!list_exported_symbols_with_lief(resolvedPath)) {
+        raiseException(1,  "Error: Failed to list exported symbols for '%s'\n", resolvedPath);
+    }
+}
+
 int parseREPLCommand(char* command){
         command = trim_whitespace(command);
         if (strlen(command) > 0) {
@@ -564,6 +585,7 @@ int parseREPLCommand(char* command){
                        "  hexdump <address> <size>: Print a hexdump of memory\n"
                        "Shared Library Management:\n"
                        "  list: List all opened libraries\n"
+                       "  exports <library>: List exported symbols/functions for a library (LIEF-backed)\n"
                        "  close <library>: Close the specified library\n"
                        "  closeall: Close all opened libraries\n"
                        "Shell commands:\n"
@@ -575,6 +597,8 @@ int parseREPLCommand(char* command){
                 print_usage(">");
             } else if (strcmp(command, "list") == 0) {
                 listOpenedLibraries();
+            } else if (strncmp(command, "exports ", 8) == 0) {
+                parseListExports(command + 8);
             } else if (strncmp(command, "close", 5) == 0) {
                 char* libraryName = command + 5;
                 while (*libraryName == ' ') {

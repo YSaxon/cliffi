@@ -1,0 +1,37 @@
+#include "export_symbols.h"
+
+#include <stdio.h>
+
+#if defined(CLIFFI_HAS_LIEF)
+#include <LIEF/LIEF.hpp>
+#include <memory>
+#include <string>
+
+bool list_exported_symbols_with_lief(const char* library_path) {
+    std::unique_ptr<LIEF::Binary> binary = LIEF::Parser::parse(library_path);
+    if (!binary) {
+        fprintf(stderr, "Error: Failed to parse '%s' using LIEF\n", library_path);
+        return false;
+    }
+
+    size_t exported_count = 0;
+    const auto exported = binary->exported_functions();
+    for (const std::string& symbol_name : exported) {
+        printf("%s\n", symbol_name.c_str());
+        exported_count++;
+    }
+
+    printf("Total exported symbols: %zu\n", exported_count);
+    return true;
+}
+
+#else
+
+bool list_exported_symbols_with_lief(const char* library_path) {
+    (void)library_path;
+    fprintf(stderr,
+            "Error: This build does not include LIEF support. Rebuild with a LIEF dependency to use 'exports'.\n");
+    return false;
+}
+
+#endif

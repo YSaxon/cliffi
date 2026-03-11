@@ -82,6 +82,15 @@ sed -i "s|^compiler\s*=.*|compiler=$COMPILER|" "$PROFILE_PATH"
 sed -i "s|^os\s*=.*|os=$OS|" "$PROFILE_PATH" # This ensures the 'os=' line is present and set.
 echo "Updated arch, compiler, os in profile."
 
+# Conan Android profiles must use libc++ (not libstdc++11) with clang/NDK.
+if [ "$OS" == "Android" ]; then
+    if grep -q '^compiler\.libcxx\s*=' "$PROFILE_PATH"; then
+        sed -i 's|^compiler\.libcxx\s*=.*|compiler.libcxx=c++_shared|' "$PROFILE_PATH"
+    else
+        printf '\ncompiler.libcxx=c++_shared\n' >> "$PROFILE_PATH"
+    fi
+fi
+
 # --- Correctly add os.api_level AFTER the 'os=' line ---
 if [ "$OS" == "Android" ]; then
     TARGET_API_LEVEL="${ANDROID_API}"

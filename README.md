@@ -149,11 +149,12 @@ addr_pointer = -P intpointer
 
 In REPL mode, there are `load`, `dump`, and `store` to respectively load a value from a memory address, print a value from a memory address, or store a value to a memory address.
 
-There are also commands to do a `hexdump` from a memory address, and `calculate_offset` to calculate a memory offset (and store the offset to a variable) for a particular library loaded into memory, relative to some reference layout, given a known symbol (ie function) name and reference address. This is helpful for calculating the actual locations of various stripped global and static variables from their addresses in the binary.
+There are also commands to do a `hexdump` from a memory address, `exports <library>` to list exported symbols/functions from a shared library, and `calculate_offset` to calculate a memory offset (and store the offset to a variable) for a particular library loaded into memory, relative to some reference layout, given a known symbol (ie function) name and reference address. This is helpful for calculating the actual locations of various stripped global and static variables from their addresses in the binary.
 
 For example if in your decompiler, there is a static struct `{ int; short; char*; }` of interest at `0x10beef`, you can find the address of an exported function doFoo() at `0x10dead`, calculate the offset and store it in a variable, and then reference it.
 ```
 calculate_offset myoffset mysharedlib.so doFoo 0x10dead  // calculate the offset
+exports mysharedlib.so                   // list exports/symbols (LIEF-backed)
 hexdump myoffset+0x10beef 16             // to just see 16 bytes at that address
 dump S: i h s :S myoffset+0x10beef       // to dump the struct presently at that address
 store myoffset+0x10beef -S: 20 -h 0x6008 hello :S // to store that value into that address

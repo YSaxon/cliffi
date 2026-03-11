@@ -18,11 +18,19 @@ jobs:
 
     - name: Install Dependencies (macOS)
       if: runner.os == 'macOS'
-      run: brew install libffi cmake
+      run: |
+        brew install libffi cmake
+        python3 -m pip install --upgrade pip conan
+
+    - name: Resolve Conan dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        conan profile detect --force
+        conan install . --output-folder=build --build=missing -g CMakeDeps
 
     - name: Configure CMake (macOS)
       if: runner.os == 'macOS'
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DUSE_FIND_PACKAGE=ON
 
     - name: Build
       run: cmake --build build --config Release
