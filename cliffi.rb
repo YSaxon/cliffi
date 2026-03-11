@@ -6,7 +6,6 @@ class Cliffi < Formula
   license "MIT"
 
   depends_on "cmake" => [:build, :test]
-  depends_on "lief"
   uses_from_macos "libffi"
 
   def install

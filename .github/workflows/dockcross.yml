@@ -58,10 +58,17 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Dependencies
-        run: brew install libffi readline llvm lief
+        run: |
+          brew install libffi readline llvm
+          python3 -m pip install --upgrade pip conan
+
+      - name: Resolve Conan dependencies
+        run: |
+          conan profile detect --force
+          conan install . --output-folder=build --build=missing -g CMakeDeps
 
       - name: Configure CMake
-        run: brew sh -c "mkdir build && cd build && cmake  .."
+        run: brew sh -c "mkdir build && cd build && cmake .. -DUSE_FIND_PACKAGE=ON"
 
       - name: Build
         run: brew sh -c "cd build && make -j 4"
