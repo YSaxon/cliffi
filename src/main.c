@@ -9,6 +9,7 @@
 
 #include <stdarg.h>
 #include <stdbool.h>
+#include <ctype.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,11 +34,184 @@
 #include <dlfcn.h>
 #endif
 
+#ifdef __APPLE__
+#include <mach/mach.h>
+#endif
+
 #include "shims.h"
 
 const char* NAME = "cliffi";
 const char* VERSION = "v1.12.6";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
+
+typedef struct {
+    uintptr_t start;
+    uintptr_t end;
+} MemoryRange;
+
+typedef struct {
+    MemoryRange* ranges;
+    size_t count;
+    size_t capacity;
+} MemoryRangeList;
+
+static void appendMemoryRange(MemoryRangeList* list, uintptr_t start, uintptr_t end) {
+    if (end <= start) {
+        return;
+    }
+    if (list->count == list->capacity) {
+        list->capacity = list->capacity == 0 ? 16 : list->capacity * 2;
+        list->ranges = realloc(list->ranges, list->capacity * sizeof(*list->ranges));
+    }
+    list->ranges[list->count++] = (MemoryRange){ .start = start, .end = end };
+}
+
+static void freeMemoryRangeList(MemoryRangeList* list) {
+    free(list->ranges);
+    list->ranges = NULL;
+    list->count = 0;
+    list->capacity = 0;
+}
+
+static bool parseByteString(const char* byteString, unsigned char** pattern, size_t* patternLen) {
+    *pattern = NULL;
+    *patternLen = 0;
+    size_t inputLen = strlen(byteString);
+    if (inputLen == 0) {
+        return false;
+    }
+
+    if (inputLen > 2 && byteString[0] == '0' && (byteString[1] == 'x' || byteString[1] == 'X')) {
+        const char* hex = byteString + 2;
+        size_t hexLen = strlen(hex);
+        if (hexLen == 0 || hexLen % 2 != 0) {
+            raiseException(1, "Error: Hex bytestring must have an even number of digits: %s\n", byteString);
+            return false;
+        }
+        for (size_t i = 0; i < hexLen; i++) {
+            if (!isxdigit((unsigned char)hex[i])) {
+                raiseException(1, "Error: Invalid hex digit '%c' in bytestring %s\n", hex[i], byteString);
+                return false;
+            }
+        }
+        *patternLen = hexLen / 2;
+        *pattern = calloc(*patternLen, sizeof(unsigned char));
+        for (size_t i = 0; i < *patternLen; i++) {
+            unsigned int value = 0;
+            sscanf(hex + i * 2, "%2x", &value);
+            (*pattern)[i] = (unsigned char)value;
+        }
+        return true;
+    }
+
+    *patternLen = inputLen;
+    *pattern = calloc(*patternLen, sizeof(unsigned char));
+    memcpy(*pattern, byteString, *patternLen);
+    return true;
+}
+
+static void collectReadableLibraryRanges(void* libHandle, const char* resolvedLibraryPath, MemoryRangeList* ranges) {
+    (void)libHandle;
+#ifdef __linux__
+    FILE* maps = fopen("/proc/self/maps", "r");
+    if (maps == NULL) {
+        raiseException(1, "Error: Could not open /proc/self/maps\n");
+        return;
+    }
+
+    char line[4096] = {0};
+    while (fgets(line, sizeof(line), maps) != NULL) {
+        unsigned long start = 0;
+        unsigned long end = 0;
+        char perms[5] = {0};
+        char path[2048] = {0};
+        int parsed = sscanf(line, "%lx-%lx %4s %*s %*s %*s %2047[^\n]", &start, &end, perms, path);
+        if (parsed < 3) {
+            continue;
+        }
+        if (perms[0] != 'r') {
+            continue;
+        }
+        if (resolvedLibraryPath == NULL || strlen(resolvedLibraryPath) == 0) {
+            continue;
+        }
+        if (parsed == 4 && strstr(path, resolvedLibraryPath) != NULL) {
+            appendMemoryRange(ranges, (uintptr_t)start, (uintptr_t)end);
+        }
+    }
+    fclose(maps);
+#elif defined(_WIN32)
+    (void)resolvedLibraryPath;
+    HMODULE module = (HMODULE)libHandle;
+    if (module == NULL) {
+        raiseException(1, "Error: Could not determine module handle for library\n");
+        return;
+    }
+    MEMORY_BASIC_INFORMATION mbi = {0};
+    unsigned char* addr = NULL;
+    while (VirtualQuery(addr, &mbi, sizeof(mbi)) == sizeof(mbi)) {
+        bool isReadable = mbi.Protect == PAGE_READONLY || mbi.Protect == PAGE_READWRITE ||
+                          mbi.Protect == PAGE_WRITECOPY || mbi.Protect == PAGE_EXECUTE_READ ||
+                          mbi.Protect == PAGE_EXECUTE_READWRITE || mbi.Protect == PAGE_EXECUTE_WRITECOPY;
+        if (mbi.State == MEM_COMMIT && isReadable && mbi.AllocationBase == module) {
+            appendMemoryRange(ranges, (uintptr_t)mbi.BaseAddress, (uintptr_t)mbi.BaseAddress + mbi.RegionSize);
+        }
+        addr += mbi.RegionSize;
+    }
+#elif defined(__APPLE__)
+    (void)resolvedLibraryPath;
+    mach_vm_address_t addr = MACH_VM_MIN_ADDRESS;
+    while (true) {
+        mach_vm_size_t size = 0;
+        vm_region_submap_info_data_64_t info;
+        mach_msg_type_number_t count = VM_REGION_SUBMAP_INFO_COUNT_64;
+        natural_t depth = 0;
+        kern_return_t status = mach_vm_region_recurse(mach_task_self(), &addr, &size, &depth, (vm_region_recurse_info_t)&info, &count);
+        if (status != KERN_SUCCESS) {
+            break;
+        }
+        if ((info.protection & VM_PROT_READ) != 0) {
+            appendMemoryRange(ranges, (uintptr_t)addr, (uintptr_t)(addr + size));
+        }
+        addr += size;
+    }
+#else
+    (void)resolvedLibraryPath;
+    raiseException(1, "Error: search_offset is not supported on this platform\n");
+#endif
+}
+
+static uintptr_t findSubsequence(uintptr_t start, uintptr_t end, const unsigned char* pattern, size_t patternLen, uintptr_t beginFrom) {
+    if (patternLen == 0 || end <= start || beginFrom >= end) {
+        return 0;
+    }
+    uintptr_t scanStart = beginFrom > start ? beginFrom : start;
+    uintptr_t lastStart = end - patternLen;
+    if (scanStart > lastStart) {
+        return 0;
+    }
+    for (uintptr_t current = scanStart; current <= lastStart; current++) {
+        if (memcmp((const void*)current, pattern, patternLen) == 0) {
+            return current;
+        }
+    }
+    return 0;
+}
+
+static void dumpMatchContext(uintptr_t foundAddress, uintptr_t rangeStart, uintptr_t rangeEnd, size_t patternLen, const char* label) {
+    uintptr_t contextBefore = 32;
+    uintptr_t contextAfter = 64;
+    uintptr_t dumpStart = foundAddress > contextBefore ? foundAddress - contextBefore : rangeStart;
+    if (dumpStart < rangeStart) {
+        dumpStart = rangeStart;
+    }
+    uintptr_t dumpEnd = foundAddress + patternLen + contextAfter;
+    if (dumpEnd > rangeEnd) {
+        dumpEnd = rangeEnd;
+    }
+    printf("%s at %p:\n", label, (void*)foundAddress);
+    hexdump((const void*)dumpStart, dumpEnd - dumpStart);
+}
 
 
 
@@ -518,6 +692,131 @@ void parseCalculateOffset(char* calculateCommand) {
     storeOffsetForLibLoadedAtAddress(lib_handle, (void*)offset);
 }
 
+void parseSetOffset(char* setOffsetCommand) {
+    int argc;
+    char** argv;
+    tokenize(setOffsetCommand, &argc, &argv);
+    // <library> <offset>
+    if (argc != 2) {
+        raiseException(1, "Error: Invalid number of arguments for set_offset\n");
+        return;
+    }
+
+    char* libraryName = argv[0];
+    char* offsetStr = argv[1];
+    void* offset = getAddressFromAddressStringOrNameOfCoercableVariable(offsetStr);
+    void* lib_handle = getOrLoadLibrary(libraryName);
+    storeOffsetForLibLoadedAtAddress(lib_handle, offset);
+    printf("Set offset for %s to %p\n", libraryName, offset);
+}
+
+void parseSearchOffset(char* searchOffsetCommand) {
+    int argc;
+    char** argv;
+    tokenize(searchOffsetCommand, &argc, &argv);
+    // [<var>] <library> <bytestring> <address>
+    if (argc < 3 || argc > 4) {
+        raiseException(1, "Error: Invalid number of arguments for search_offset\n");
+        return;
+    }
+
+    bool hasVar = argc == 4;
+    char* varName = hasVar ? argv[0] : NULL;
+    char* libraryName = argv[0 + hasVar];
+    char* byteString = argv[1 + hasVar];
+    char* addressStr = argv[2 + hasVar];
+
+    unsigned char* pattern = NULL;
+    size_t patternLen = 0;
+    if (!parseByteString(byteString, &pattern, &patternLen)) {
+        return;
+    }
+    if (patternLen == 0) {
+        free(pattern);
+        raiseException(1, "Error: Empty bytestring is not allowed\n");
+        return;
+    }
+
+    void* providedAddress = getAddressFromAddressStringOrNameOfCoercableVariable(addressStr);
+    void* libHandle = getOrLoadLibrary(libraryName);
+    char* resolvedPath = resolve_library_path(libraryName);
+
+    MemoryRangeList ranges = {0};
+    collectReadableLibraryRanges(libHandle, resolvedPath, &ranges);
+    if (ranges.count == 0) {
+        free(pattern);
+        raiseException(1, "Error: Could not find readable memory ranges for library %s\n", libraryName);
+        return;
+    }
+
+    uintptr_t firstMatch = 0;
+    uintptr_t secondMatch = 0;
+    uintptr_t firstRangeStart = 0;
+    uintptr_t firstRangeEnd = 0;
+    uintptr_t secondRangeStart = 0;
+    uintptr_t secondRangeEnd = 0;
+
+    for (size_t i = 0; i < ranges.count; i++) {
+        uintptr_t start = ranges.ranges[i].start;
+        uintptr_t end = ranges.ranges[i].end;
+
+        uintptr_t beginFrom = start;
+        if (firstMatch != 0 && firstMatch >= start && firstMatch < end) {
+            beginFrom = firstMatch + 1;
+        }
+
+        uintptr_t found = findSubsequence(start, end, pattern, patternLen, beginFrom);
+        if (found == 0) {
+            continue;
+        }
+        if (firstMatch == 0) {
+            firstMatch = found;
+            firstRangeStart = start;
+            firstRangeEnd = end;
+            uintptr_t foundAgain = findSubsequence(start, end, pattern, patternLen, found + 1);
+            if (foundAgain != 0) {
+                secondMatch = foundAgain;
+                secondRangeStart = start;
+                secondRangeEnd = end;
+                break;
+            }
+            continue;
+        }
+        secondMatch = found;
+        secondRangeStart = start;
+        secondRangeEnd = end;
+        break;
+    }
+
+    freeMemoryRangeList(&ranges);
+    free(pattern);
+
+    if (firstMatch == 0) {
+        raiseException(1, "Error: bytestring not found in readable memory for library %s\n", libraryName);
+        return;
+    }
+
+    dumpMatchContext(firstMatch, firstRangeStart, firstRangeEnd, patternLen, "First match");
+    if (secondMatch != 0) {
+        dumpMatchContext(secondMatch, secondRangeStart, secondRangeEnd, patternLen, "Second match");
+        raiseException(1, "Error: bytestring was found multiple times; please provide a more specific bytestring\n");
+        return;
+    }
+
+    ptrdiff_t offset = (uintptr_t)firstMatch - (uintptr_t)providedAddress;
+    printf("Calculation: found=%p; provided=%p; %p - %p = %p\n", (void*)firstMatch, providedAddress, (void*)firstMatch, providedAddress, (void*)offset);
+    if (offset < 0) {
+        fprintf(stderr, "Warning: Calculated offset is negative (%td).\n", offset);
+    }
+
+    if (hasVar) {
+        ArgInfo* offsetArg = getPVar((void*)offset);
+        setVar(varName, offsetArg);
+        printVariableWithArgInfo(varName, offsetArg);
+    }
+    storeOffsetForLibLoadedAtAddress(libHandle, (void*)offset);
+}
+
 void parseHexdump(char* hexdumpCommand) {
     int argc;
     char** argv;
@@ -561,6 +860,9 @@ int parseREPLCommand(char* command){
                        "  load <var> <type> <address>: Load the value at a memory address into a variable\n"
                        "  calculate_offset [<variable>] <library> <symbol> <address>:"
                        "      Calculate memory offset by comparing the address of a known symbol [and store in var]\n"
+                       "  set_offset <library> <offset>: Set memory offset for a library directly\n"
+                       "  search_offset [<variable>] <library> <bytestring> <address>:"
+                       "      Search library readable memory for bytestring, verify uniqueness, and store calculated offset\n"
                        "  hexdump <address> <size>: Print a hexdump of memory\n"
                        "Shared Library Management:\n"
                        "  list: List all opened libraries\n"
@@ -597,6 +899,10 @@ int parseREPLCommand(char* command){
                 parseLoadMemoryToVar(command + 5);
             } else if (strncmp(command, "calculate_offset ", 17) == 0) {
                 parseCalculateOffset(command + 17);
+            } else if (strncmp(command, "set_offset ", 11) == 0) {
+                parseSetOffset(command + 11);
+            } else if (strncmp(command, "search_offset ", 14) == 0) {
+                parseSearchOffset(command + 14);
             } else if (strncmp(command, "hexdump ", 8) == 0) {
                 parseHexdump(command + 8); // could also be done by dump aC<size> <address>
             } else if (command[0] == '!') {
