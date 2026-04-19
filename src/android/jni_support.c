@@ -41,9 +41,14 @@
 
 static bool g_fake_jvm_initialized = false;
 
-// Set true while parseInitJNI is in progress so jni_notify_library_loaded
-// does not fire an extra JNI_OnLoad before the chosen JVM is ready.
-static bool g_suppress_auto_jni_onload = false;
+// When true, jni_notify_library_loaded auto-calls JNI_OnLoad via FalsoJNI.
+// Default is false: only a reminder is printed and the user calls initjni.
+static bool g_auto_jni_onload = false;
+
+// Set true while parseInitJNI is active so jni_notify_library_loaded does
+// not fire during the controlled load (prevents double JNI_OnLoad call even
+// when g_auto_jni_onload is on).
+static bool g_suppress_jni_notify = false;
 
 static void ensure_fake_jvm(void) {
     if (!g_fake_jvm_initialized) {
@@ -130,35 +135,56 @@ __attribute__((visibility("default"))) void EnsureFrontOfChain(void)       {}
 __attribute__((visibility("default"))) void AddSpecialSignalHandlerFn(void){}
 __attribute__((visibility("default"))) void RemoveSpecialSignalHandlerFn(void){}
 
-// ── Auto-init hook (called by library_manager) ───────────────────────────────
+// ── Library-load hook (called by library_manager) ────────────────────────────
 
 typedef int (*JNI_OnLoadFunc)(void* vm, void* reserved);
 
 void jni_notify_library_loaded(void* lib_handle, const char* lib_path) {
-    if (g_suppress_auto_jni_onload) return;
+    if (g_suppress_jni_notify) return;
 
     JNI_OnLoadFunc onLoad =
         (JNI_OnLoadFunc)dlsym(lib_handle, "JNI_OnLoad");
     if (!onLoad) return;
 
-    bool first_init = !g_fake_jvm_initialized;
-    ensure_fake_jvm();
-
-    if (first_init) {
-        printf("[jni] %s exports JNI_OnLoad — auto-initialized FalsoJNI\n",
+    if (g_auto_jni_onload) {
+        bool first_init = !g_fake_jvm_initialized;
+        ensure_fake_jvm();
+        if (first_init)
+            printf("[jni] %s exports JNI_OnLoad — auto-initialized FalsoJNI\n",
+                   lib_path);
+        printf("[jni] Calling JNI_OnLoad for %s\n", lib_path);
+        onLoad(&jvm, NULL);
+        printf("[jni] JNI_OnLoad complete. Native methods registered.\n"
+               "[jni]   vm  = %p  (use: set vm  %p)\n"
+               "[jni]   env = %p  (use: set env %p)\n"
+               "[jni] Or use 'initjni %s <vm_var> <env_var> [--real]' "
+               "to store them in named variables.\n",
+               (void*)&jvm, (void*)&jvm,
+               (void*)&jni, (void*)&jni,
                lib_path);
+    } else {
+        printf("[jni] %s exports JNI_OnLoad — native methods not yet registered.\n"
+               "[jni]   To initialize:  initjni %s <vm_var> <env_var>\n"
+               "[jni]   To auto-call on every library load:  autojni on\n",
+               lib_path, lib_path);
     }
+}
 
-    printf("[jni] Calling JNI_OnLoad for %s\n", lib_path);
-    onLoad(&jvm, NULL);
-    printf("[jni] JNI_OnLoad complete. Native methods registered.\n"
-           "[jni]   vm  = %p  (use: set vm  %p)\n"
-           "[jni]   env = %p  (use: set env %p)\n"
-           "[jni] Or use 'initjni %s <vm_var> <env_var> [--real]' "
-           "to store them in named variables.\n",
-           (void*)&jvm, (void*)&jvm,
-           (void*)&jni, (void*)&jni,
-           lib_path);
+// ── REPL command: autojni ────────────────────────────────────────────────────
+
+void parseAutoJNI(char* args) {
+    while (*args == ' ') args++;
+    if (*args == '\0') {
+        printf("[jni] autojni is %s\n", g_auto_jni_onload ? "on" : "off");
+    } else if (strcmp(args, "on") == 0 || strcmp(args, "1") == 0) {
+        g_auto_jni_onload = true;
+        printf("[jni] Auto JNI_OnLoad on library load: enabled\n");
+    } else if (strcmp(args, "off") == 0 || strcmp(args, "0") == 0) {
+        g_auto_jni_onload = false;
+        printf("[jni] Auto JNI_OnLoad on library load: disabled\n");
+    } else {
+        raiseException(1, "Error: autojni expects 'on' or 'off'\n");
+    }
 }
 
 // ── REPL command: initjni ────────────────────────────────────────────────────
@@ -186,11 +212,11 @@ void parseInitJNI(char* args) {
         jvm_opts_start = 4;
     }
 
-    // Suppress the auto-hook so JNI_OnLoad isn't called prematurely via
-    // jni_notify_library_loaded before we've set up the intended JVM.
-    g_suppress_auto_jni_onload = true;
+    // Suppress the notify hook so jni_notify_library_loaded does not fire
+    // during this controlled load — initjni owns calling JNI_OnLoad itself.
+    g_suppress_jni_notify = true;
     void* lib_handle = getOrLoadLibrary(libraryName);
-    g_suppress_auto_jni_onload = false;
+    g_suppress_jni_notify = false;
     if (!lib_handle) {
         raiseException(1, "Error: Could not load library: %s\n", libraryName);
         return;
