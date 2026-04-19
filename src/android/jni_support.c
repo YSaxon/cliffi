@@ -19,19 +19,23 @@
 
 #include "jni_support.h"
 
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <dlfcn.h>
 
-#include "FalsoJNI/FalsoJNI.h"
-#include "FalsoJNI/FalsoJNI_Impl.h"
+// FalsoJNI headers — found via target_include_directories(... src/android/FalsoJNI)
+#include "FalsoJNI.h"
+#include "FalsoJNI_Impl.h"
 
-#include "../exception_handling.h"
-#include "../library_manager.h"
-#include "../tokenize.h"
-#include "../var_map.h"
+// cliffi headers — found via target_include_directories(... src/)
+#include "exception_handling.h"
+#include "library_manager.h"
+#include "parse_address.h"
+#include "tokenize.h"
+#include "var_map.h"
 
 // ── FalsoJNI global state ────────────────────────────────────────────────────
 

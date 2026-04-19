@@ -22,7 +22,7 @@
 
 #ifdef __ANDROID__
 
-#include "FalsoJNI/FalsoJNI_Impl.h"
+#include "FalsoJNI_Impl.h"
 
 NameToMethodID nameToMethodId[] = {};
 
