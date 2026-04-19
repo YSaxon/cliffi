@@ -24,30 +24,30 @@
 
 #include "FalsoJNI_Impl.h"
 
-NameToMethodID nameToMethodId[] = {};
+NameToMethodID nameToMethodId[1] = { { 0, "", METHOD_TYPE_UNKNOWN } };
 
-MethodsBoolean methodsBoolean[] = {};
-MethodsByte    methodsByte[]    = {};
-MethodsChar    methodsChar[]    = {};
-MethodsDouble  methodsDouble[]  = {};
-MethodsFloat   methodsFloat[]   = {};
-MethodsInt     methodsInt[]     = {};
-MethodsLong    methodsLong[]    = {};
-MethodsObject  methodsObject[]  = {};
-MethodsShort   methodsShort[]   = {};
-MethodsVoid    methodsVoid[]    = {};
+MethodsBoolean methodsBoolean[1] = { { 0, NULL } };
+MethodsByte    methodsByte[1]    = { { 0, NULL } };
+MethodsChar    methodsChar[1]    = { { 0, NULL } };
+MethodsDouble  methodsDouble[1]  = { { 0, NULL } };
+MethodsFloat   methodsFloat[1]   = { { 0, NULL } };
+MethodsInt     methodsInt[1]     = { { 0, NULL } };
+MethodsLong    methodsLong[1]    = { { 0, NULL } };
+MethodsObject  methodsObject[1]  = { { 0, NULL } };
+MethodsShort   methodsShort[1]   = { { 0, NULL } };
+MethodsVoid    methodsVoid[1]    = { { 0, NULL } };
 
-NameToFieldID  nameToFieldId[]  = {};
+NameToFieldID  nameToFieldId[1]  = { { 0, "", FIELD_TYPE_UNKNOWN } };
 
-FieldsBoolean  fieldsBoolean[]  = {};
-FieldsByte     fieldsByte[]     = {};
-FieldsChar     fieldsChar[]     = {};
-FieldsDouble   fieldsDouble[]   = {};
-FieldsFloat    fieldsFloat[]    = {};
-FieldsInt      fieldsInt[]      = {};
-FieldsObject   fieldsObject[]   = {};
-FieldsLong     fieldsLong[]     = {};
-FieldsShort    fieldsShort[]    = {};
+FieldsBoolean  fieldsBoolean[1]  = { { 0, NULL } };
+FieldsByte     fieldsByte[1]     = { { 0, NULL } };
+FieldsChar     fieldsChar[1]     = { { 0, NULL } };
+FieldsDouble   fieldsDouble[1]   = { { 0, NULL } };
+FieldsFloat    fieldsFloat[1]    = { { 0, NULL } };
+FieldsInt      fieldsInt[1]      = { { 0, NULL } };
+FieldsObject   fieldsObject[1]   = { { 0, NULL } };
+FieldsLong     fieldsLong[1]     = { { 0, NULL } };
+FieldsShort    fieldsShort[1]    = { { 0, NULL } };
 
 __FALSOJNI_IMPL_CONTAINER_SIZES
 

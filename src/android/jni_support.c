@@ -41,6 +41,10 @@
 
 static bool g_fake_jvm_initialized = false;
 
+// Set true while parseInitJNI is in progress so jni_notify_library_loaded
+// does not fire an extra JNI_OnLoad before the chosen JVM is ready.
+static bool g_suppress_auto_jni_onload = false;
+
 static void ensure_fake_jvm(void) {
     if (!g_fake_jvm_initialized) {
         jni_init();
@@ -131,6 +135,8 @@ __attribute__((visibility("default"))) void RemoveSpecialSignalHandlerFn(void){}
 typedef int (*JNI_OnLoadFunc)(void* vm, void* reserved);
 
 void jni_notify_library_loaded(void* lib_handle, const char* lib_path) {
+    if (g_suppress_auto_jni_onload) return;
+
     JNI_OnLoadFunc onLoad =
         (JNI_OnLoadFunc)dlsym(lib_handle, "JNI_OnLoad");
     if (!onLoad) return;
@@ -180,7 +186,11 @@ void parseInitJNI(char* args) {
         jvm_opts_start = 4;
     }
 
+    // Suppress the auto-hook so JNI_OnLoad isn't called prematurely via
+    // jni_notify_library_loaded before we've set up the intended JVM.
+    g_suppress_auto_jni_onload = true;
     void* lib_handle = getOrLoadLibrary(libraryName);
+    g_suppress_auto_jni_onload = false;
     if (!lib_handle) {
         raiseException(1, "Error: Could not load library: %s\n", libraryName);
         return;
