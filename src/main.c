@@ -35,6 +35,10 @@
 
 #include "shims.h"
 
+#ifdef __ANDROID__
+#include "android/jni_support.h"
+#endif
+
 const char* NAME = "cliffi";
 const char* VERSION = "v1.12.6";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
@@ -569,6 +573,15 @@ int parseREPLCommand(char* command){
                        "Shell commands:\n"
                        "  !<command>: Run a shell command\n"
                        "  shell: Drop into an interactive shell\n"
+#ifdef __ANDROID__
+                       "JNI (Android):\n"
+                       "  initjni <library> <vm_var> <env_var> [--real [jvm_opts...]]:\n"
+                       "      Load library, call JNI_OnLoad, store JavaVM*/JNIEnv* in variables.\n"
+                       "      Default: FalsoJNI stub environment (any Android version).\n"
+                       "      --real: live ART JVM via JNI_CreateJavaVM (old Android / rooted);\n"
+                       "              allows the lib to call back into real Java classes.\n"
+                       "      Note: JNI_OnLoad is also called automatically on library load.\n"
+#endif
                        "REPL Management:\n"
                        "  exit: Quit the REPL\n");
             } else if (strcmp(command, "docs") == 0) {
@@ -599,6 +612,10 @@ int parseREPLCommand(char* command){
                 parseCalculateOffset(command + 17);
             } else if (strncmp(command, "hexdump ", 8) == 0) {
                 parseHexdump(command + 8); // could also be done by dump aC<size> <address>
+#ifdef __ANDROID__
+            } else if (strncmp(command, "initjni ", 8) == 0) {
+                parseInitJNI(command + 8);
+#endif
             } else if (command[0] == '!') {
                 system(command + 1); // could also be done via libc.so v system "<command>" but this is more direct and convenient
             } else if (strcmp(command, "shell") == 0) {

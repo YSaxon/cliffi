@@ -11,6 +11,10 @@
 #include <dlfcn.h>
 #endif
 
+#ifdef __ANDROID__
+#include "android/jni_support.h"
+#endif
+
 typedef struct {
     char* libraryPath;
     void* handle;
@@ -44,6 +48,9 @@ void* loadLibraryDirectly(const char* libraryPath) {
         fprintf(stderr, "Failed to load library: %s\n", dlerror());
         return NULL;
     }
+#endif
+#ifdef __ANDROID__
+    jni_notify_library_loaded(handle, libraryPath);
 #endif
     return handle;
 }
