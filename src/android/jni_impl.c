@@ -39,15 +39,15 @@ MethodsVoid    methodsVoid[1]    = { { 0, NULL } };
 
 NameToFieldID  nameToFieldId[1]  = { { 0, "", FIELD_TYPE_UNKNOWN } };
 
-FieldsBoolean  fieldsBoolean[1]  = { { 0, NULL } };
-FieldsByte     fieldsByte[1]     = { { 0, NULL } };
-FieldsChar     fieldsChar[1]     = { { 0, NULL } };
-FieldsDouble   fieldsDouble[1]   = { { 0, NULL } };
-FieldsFloat    fieldsFloat[1]    = { { 0, NULL } };
-FieldsInt      fieldsInt[1]      = { { 0, NULL } };
-FieldsObject   fieldsObject[1]   = { { 0, NULL } };
-FieldsLong     fieldsLong[1]     = { { 0, NULL } };
-FieldsShort    fieldsShort[1]    = { { 0, NULL } };
+FieldsBoolean  fieldsBoolean[1]  = { { 0, 0 } };
+FieldsByte     fieldsByte[1]     = { { 0, 0 } };
+FieldsChar     fieldsChar[1]     = { { 0, 0 } };
+FieldsDouble   fieldsDouble[1]   = { { 0, 0 } };
+FieldsFloat    fieldsFloat[1]    = { { 0, 0 } };
+FieldsInt      fieldsInt[1]      = { { 0, 0 } };
+FieldsObject   fieldsObject[1]   = { { 0, 0 } };
+FieldsLong     fieldsLong[1]     = { { 0, 0 } };
+FieldsShort    fieldsShort[1]    = { { 0, 0 } };
 
 __FALSOJNI_IMPL_CONTAINER_SIZES
 
