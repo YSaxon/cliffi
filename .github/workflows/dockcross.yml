@@ -83,7 +83,7 @@ jobs:
 
       - name: Setup tmate session if failed
         if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
+        uses: owenthereal/action-upterm@v1
 
 
   build:
@@ -177,7 +177,7 @@ jobs:
             ./dockcross bash -c "echo hello world"
 
       # - name: Setup tmate session detached
-      #   uses: mxschmitt/action-tmate@v3
+      #   uses: owenthereal/action-upterm@v1
       #   with:
       #     detached: true
 
@@ -204,7 +204,7 @@ jobs:
 
       # - name: Setup tmate session to test android-emulator on x86 and x86_64
       #   if: (startsWith(matrix.dockcross_image, 'android') && contains(matrix.dockcross_image,'x86'))
-      #   uses: mxschmitt/action-tmate@v3
+      #   uses: owenthereal/action-upterm@v1
       #   with:
       #     detached: true
 
@@ -245,7 +245,7 @@ jobs:
 
       - name: Setup tmate session if failed
         if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
+        uses: owenthereal/action-upterm@v1
 
       # - name: get_executable
       #   id: get_executable
