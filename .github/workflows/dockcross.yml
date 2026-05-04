@@ -320,7 +320,7 @@ jobs:
 
       - name: Setup tmate session if failed
         if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
+        uses: owenthereal/action-upterm@v1
 
   finalize_release:
     needs: [build, create_release]
