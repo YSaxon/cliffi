@@ -35,6 +35,10 @@
 
 #include "shims.h"
 
+#ifdef __ANDROID__
+#include "android/jni_support.h"
+#endif
+
 const char* NAME = "cliffi";
 const char* VERSION = "v1.12.6";
 const char* BASIC_USAGE_STRING = "<library> <return_typeflag> <function_name> [[-typeflag] <arg>.. [ ... <varargs>..] ]\n";
@@ -569,6 +573,18 @@ int parseREPLCommand(char* command){
                        "Shell commands:\n"
                        "  !<command>: Run a shell command\n"
                        "  shell: Drop into an interactive shell\n"
+#ifdef __ANDROID__
+                       "JNI (Android):\n"
+                       "  initjni <library> <vm_var> <env_var> [--real [jvm_opts...]]:\n"
+                       "      Initialize JNI for a library: call JNI_OnLoad and store JavaVM*/JNIEnv*.\n"
+                       "      Default: FalsoJNI stub environment (works on any Android version).\n"
+                       "      --real: live ART JVM via JNI_CreateJavaVM (Android < 8 / rooted);\n"
+                       "              allows the lib to call back into real Java classes.\n"
+                       "  autojni [on|off]:\n"
+                       "      When on, JNI_OnLoad is called automatically via FalsoJNI whenever\n"
+                       "      a library that exports it is loaded. Default: off (prints a reminder\n"
+                       "      and lets you choose when and how to initialize via initjni).\n"
+#endif
                        "REPL Management:\n"
                        "  exit: Quit the REPL\n");
             } else if (strcmp(command, "docs") == 0) {
@@ -599,6 +615,13 @@ int parseREPLCommand(char* command){
                 parseCalculateOffset(command + 17);
             } else if (strncmp(command, "hexdump ", 8) == 0) {
                 parseHexdump(command + 8); // could also be done by dump aC<size> <address>
+#ifdef __ANDROID__
+            } else if (strncmp(command, "initjni ", 8) == 0) {
+                parseInitJNI(command + 8);
+            } else if (strncmp(command, "autojni", 7) == 0 &&
+                       (command[7] == '\0' || command[7] == ' ')) {
+                parseAutoJNI(command + 7);
+#endif
             } else if (command[0] == '!') {
                 system(command + 1); // could also be done via libc.so v system "<command>" but this is more direct and convenient
             } else if (strcmp(command, "shell") == 0) {

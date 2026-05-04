@@ -143,7 +143,29 @@ target_include_directories(cliffi_common_deps INTERFACE
 
 target_link_libraries(cliffi PRIVATE cliffi_common_deps)
 
-# Compile cliffi_testlib.c into a shared library
+if(ANDROID)
+    target_sources(cliffi PRIVATE
+        src/android/jni_support.c
+        src/android/jni_impl.c
+        src/android/FalsoJNI/FalsoJNI.c
+        src/android/FalsoJNI/FalsoJNI_ImplBridge.c
+        src/android/FalsoJNI/FalsoJNI_Logger.c
+        src/android/FalsoJNI/ConvertUTF.c
+    )
+    target_include_directories(cliffi PRIVATE src/android/FalsoJNI)
+    # Required: signal chain symbols must be visible to libandroid_runtime.so
+    target_link_options(cliffi PRIVATE -Wl,--export-dynamic)
+    # FalsoJNI vendored files: suppress warnings that are harmless in stub/upstream code.
+    # -Wunknown-pragmas: CLion IDE pragmas; -Wunused-parameter: stub impls; -Wsign-compare: int vs size_t loops.
+    # Pointer-to-int-cast warnings are NOT suppressed — those were real bugs and have been fixed.
+    set_source_files_properties(
+        src/android/FalsoJNI/FalsoJNI.c
+        src/android/FalsoJNI/FalsoJNI_ImplBridge.c
+        src/android/FalsoJNI/FalsoJNI_Logger.c
+        src/android/FalsoJNI/ConvertUTF.c
+        PROPERTIES COMPILE_OPTIONS "-Wno-unknown-pragmas;-Wno-unused-parameter;-Wno-sign-compare"
+    )
+endif()
 add_library(cliffitest SHARED test/lib/cliffi_testlib.c)
 
 # Set the output name of the library to match the platform conventions
@@ -182,6 +204,18 @@ target_link_libraries(cliffi_unit_tests PRIVATE
 )
 target_compile_definitions(cliffi_unit_tests PRIVATE CLIFFI_UNIT_TESTING) # this prevents main() from main.c from being compiled
 
+if(ANDROID)
+    target_sources(cliffi_unit_tests PRIVATE
+        src/android/jni_support.c
+        src/android/jni_impl.c
+        src/android/FalsoJNI/FalsoJNI.c
+        src/android/FalsoJNI/FalsoJNI_ImplBridge.c
+        src/android/FalsoJNI/FalsoJNI_Logger.c
+        src/android/FalsoJNI/ConvertUTF.c
+    )
+    target_include_directories(cliffi_unit_tests PRIVATE src/android/FalsoJNI)
+    target_link_options(cliffi_unit_tests PRIVATE -Wl,--export-dynamic)
+endif()
 
 add_test(NAME cliffi_unit_tests COMMAND cliffi_unit_tests)
 

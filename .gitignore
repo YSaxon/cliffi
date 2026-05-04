@@ -33,3 +33,6 @@ dockcross_android*
 
 .cliffi_history
 .cliffi_init
+build_check/
+build_android_test/
+dockcross-android-x86_64
