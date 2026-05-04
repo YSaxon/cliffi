@@ -155,6 +155,15 @@ if(ANDROID)
     target_include_directories(cliffi PRIVATE src/android/FalsoJNI)
     # Required: signal chain symbols must be visible to libandroid_runtime.so
     target_link_options(cliffi PRIVATE -Wl,--export-dynamic)
+    # Vendored FalsoJNI casts pointers to int in log statements; suppress
+    # the warning rather than patching upstream sources.
+    set_source_files_properties(
+        src/android/FalsoJNI/FalsoJNI.c
+        src/android/FalsoJNI/FalsoJNI_ImplBridge.c
+        src/android/FalsoJNI/FalsoJNI_Logger.c
+        src/android/FalsoJNI/ConvertUTF.c
+        PROPERTIES COMPILE_OPTIONS "-Wno-void-pointer-to-int-cast"
+    )
 endif()
 add_library(cliffitest SHARED test/lib/cliffi_testlib.c)
 
