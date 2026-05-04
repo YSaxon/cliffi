@@ -155,15 +155,15 @@ if(ANDROID)
     target_include_directories(cliffi PRIVATE src/android/FalsoJNI)
     # Required: signal chain symbols must be visible to libandroid_runtime.so
     target_link_options(cliffi PRIVATE -Wl,--export-dynamic)
-    # FalsoJNI was written for 32-bit PS Vita where int == pointer size;
-    # it has systematic pointer<->int casts throughout. Silence all warnings
-    # for these vendored files rather than patching upstream sources.
+    # FalsoJNI vendored files: suppress warnings that are harmless in stub/upstream code.
+    # -Wunknown-pragmas: CLion IDE pragmas; -Wunused-parameter: stub impls; -Wsign-compare: int vs size_t loops.
+    # Pointer-to-int-cast warnings are NOT suppressed — those were real bugs and have been fixed.
     set_source_files_properties(
         src/android/FalsoJNI/FalsoJNI.c
         src/android/FalsoJNI/FalsoJNI_ImplBridge.c
         src/android/FalsoJNI/FalsoJNI_Logger.c
         src/android/FalsoJNI/ConvertUTF.c
-        PROPERTIES COMPILE_OPTIONS "-w"
+        PROPERTIES COMPILE_OPTIONS "-Wno-unknown-pragmas;-Wno-unused-parameter;-Wno-sign-compare"
     )
 endif()
 add_library(cliffitest SHARED test/lib/cliffi_testlib.c)

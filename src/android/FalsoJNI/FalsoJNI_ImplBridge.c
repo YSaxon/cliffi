@@ -33,7 +33,7 @@ size_t javaDynArrays_static_capacity = 16;
 jfieldID getFieldIdByName(const char* name) {
     for (int i = 0; i < nameToFieldId_size() / sizeof(NameToFieldID); i++) {
         if (strcmp(name, nameToFieldId[i].name) == 0) {
-            return (jfieldID) nameToFieldId[i].id;
+            return (jfieldID)(uintptr_t)nameToFieldId[i].id;
         }
     }
 
@@ -166,7 +166,7 @@ void setDoubleFieldValueById(jfieldID id, jdouble value) {
 jmethodID getMethodIdByName(const char* name) {
     for (int i = 0; i < nameToMethodId_size() / sizeof(NameToMethodID); i++) {
         if (strcmp(name, nameToMethodId[i].name) == 0) {
-            return (jmethodID) nameToMethodId[i].id;
+            return (jmethodID)(uintptr_t)nameToMethodId[i].id;
         }
     }
     return NULL;
@@ -174,110 +174,110 @@ jmethodID getMethodIdByName(const char* name) {
 
 jobject methodObjectCall(jmethodID id, va_list args) {
     for (int i = 0; i < methodsObject_size() / sizeof(MethodsObject); i++) {
-        if (methodsObject[i].id == (int)id) {
+        if (methodsObject[i].id == (int)(uintptr_t)id) {
             return methodsObject[i].Method(id, args);
         }
     }
 
-    fjni_logv_warn("method ID %i not found!", (int)id);
+    fjni_logv_warn("method ID %i not found!", (int)(uintptr_t)id);
     return NULL;
 }
 
 void methodVoidCall(jmethodID id, va_list args) {
     for (int i = 0; i < methodsVoid_size() / sizeof(MethodsVoid); i++) {
-        if (methodsVoid[i].id == (int)id) {
+        if (methodsVoid[i].id == (int)(uintptr_t)id) {
             return methodsVoid[i].Method(id, args);
         }
     }
 
-    fjni_logv_warn("method ID %i not found!", (int)id);
+    fjni_logv_warn("method ID %i not found!", (int)(uintptr_t)id);
 }
 
 jboolean methodBooleanCall(jmethodID id, va_list args) {
     for (int i = 0; i < methodsBoolean_size() / sizeof(MethodsBoolean); i++) {
-        if (methodsBoolean[i].id == (int)id) {
+        if (methodsBoolean[i].id == (int)(uintptr_t)id) {
             return methodsBoolean[i].Method(id, args);
         }
     }
 
-    fjni_logv_warn("method ID %i not found!", (int)id);
+    fjni_logv_warn("method ID %i not found!", (int)(uintptr_t)id);
     return JNI_FALSE;
 }
 
 jbyte methodByteCall(jmethodID id, va_list args) {
     for (int i = 0; i < methodsByte_size() / sizeof(MethodsByte); i++) {
-        if (methodsByte[i].id == (int)id) {
+        if (methodsByte[i].id == (int)(uintptr_t)id) {
             return methodsByte[i].Method(id, args);
         }
     }
 
-    fjni_logv_warn("method ID %i not found!", (int)id);
+    fjni_logv_warn("method ID %i not found!", (int)(uintptr_t)id);
     return 0;
 }
 
 jshort methodShortCall(jmethodID id, va_list args) {
     for (int i = 0; i < methodsShort_size() / sizeof(MethodsShort); i++) {
-        if (methodsShort[i].id == (int)id) {
+        if (methodsShort[i].id == (int)(uintptr_t)id) {
             return methodsShort[i].Method(id, args);
         }
     }
 
-    fjni_logv_warn("method ID %i not found!", (int)id);
+    fjni_logv_warn("method ID %i not found!", (int)(uintptr_t)id);
     return 0;
 }
 
 jdouble methodDoubleCall(jmethodID id, va_list args) {
     for (int i = 0; i < methodsDouble_size() / sizeof(MethodsDouble); i++) {
-        if (methodsDouble[i].id == (int)id) {
+        if (methodsDouble[i].id == (int)(uintptr_t)id) {
             return methodsDouble[i].Method(id, args);
         }
     }
 
-    fjni_logv_warn("method ID %i not found!", (int)id);
+    fjni_logv_warn("method ID %i not found!", (int)(uintptr_t)id);
     return 0;
 }
 
 jchar methodCharCall(jmethodID id, va_list args) {
     for (int i = 0; i < methodsChar_size() / sizeof(MethodsChar); i++) {
-        if (methodsChar[i].id == (int)id) {
+        if (methodsChar[i].id == (int)(uintptr_t)id) {
             return methodsChar[i].Method(id, args);
         }
     }
 
-    fjni_logv_warn("method ID %i not found!", (int)id);
+    fjni_logv_warn("method ID %i not found!", (int)(uintptr_t)id);
     return 0;
 }
 
 jlong methodLongCall(jmethodID id, va_list args) {
     for (int i = 0; i < methodsLong_size() / sizeof(MethodsLong); i++) {
-        if (methodsLong[i].id == (int)id) {
+        if (methodsLong[i].id == (int)(uintptr_t)id) {
             return methodsLong[i].Method(id, args);
         }
     }
 
-    fjni_logv_warn("method ID %i not found!", (int)id);
+    fjni_logv_warn("method ID %i not found!", (int)(uintptr_t)id);
     return -1;
 }
 
 jint methodIntCall(jmethodID id, va_list args) {
     for (int i = 0; i < methodsInt_size() / sizeof(MethodsInt); i++) {
-        if (methodsInt[i].id == (int)id) {
+        if (methodsInt[i].id == (int)(uintptr_t)id) {
             return methodsInt[i].Method(id, args);
         }
     }
 
-    fjni_logv_warn("method ID %i not found!", (int)id);
+    fjni_logv_warn("method ID %i not found!", (int)(uintptr_t)id);
     return -1;
 }
 
 jfloat methodFloatCall(jmethodID id, va_list args) {
     for (int i = 0; i < methodsFloat_size() / sizeof(MethodsFloat); i++) {
-        if (methodsFloat[i].id == (int)id) {
+        if (methodsFloat[i].id == (int)(uintptr_t)id) {
             return methodsFloat[i].Method(id, args);
         }
     }
 
-    fjni_logv_warn("method ID %i not found!", (int)id);
+    fjni_logv_warn("method ID %i not found!", (int)(uintptr_t)id);
     return -1;
 }
 

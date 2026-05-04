@@ -15,6 +15,7 @@
 #define FALSOJNI_IMPL_BRIDGE
 
 #include <stddef.h>
+#include <inttypes.h>
 #include "jni.h"
 
 /*
@@ -145,71 +146,71 @@ va_list _AtoV(int dummy, ...);
 
 #define getFieldValueById(jtype, fieldtype, containertype, container, containersize, id, defaultval) ({ \
   for (int i = 0; i < nameToFieldId_size() / sizeof(NameToFieldID); i++) { \
-    if (nameToFieldId[i].id == (int)(id)) { \
+    if (nameToFieldId[i].id == (int)(uintptr_t)(id)) { \
         if (nameToFieldId[i].f != (fieldtype)) { \
-            fjni_logv_err("Field type mismatch for field #%i: expected %s, found %s", (int)id, fieldTypeToStr(fieldtype), fieldTypeToStr(nameToFieldId[i].f)); \
+            fjni_logv_err("Field type mismatch for field #%i: expected %s, found %s", (int)(uintptr_t)id, fieldTypeToStr(fieldtype), fieldTypeToStr(nameToFieldId[i].f)); \
             return defaultval; \
         } \
          \
         const jtype * x = NULL; \
         for (int u = 0; u < containersize() / sizeof(containertype); u++) { \
-            if (container[u].id == (int)id) { \
+            if (container[u].id == (int)(uintptr_t)id) { \
                 x = &container[u].value; \
             } \
         } \
         \
         if (!x) { \
-            fjni_logv_err("Field #%i is defined in NameToFieldID table but has no value set", (int)id); \
+            fjni_logv_err("Field #%i is defined in NameToFieldID table but has no value set", (int)(uintptr_t)id); \
             return defaultval; \
         } \
          \
         return *x; \
     } \
   } \
-  fjni_logv_err("Undefined fieldID #%i", (int)id); \
+  fjni_logv_err("Undefined fieldID #%i", (int)(uintptr_t)id); \
   return defaultval; \
 })
 
 #define setFieldValueById(jtype, fieldtype, containertype, container, containersize, id, value) ({ \
   for (int i = 0; i < nameToFieldId_size() / sizeof(NameToFieldID); i++) { \
-    if (nameToFieldId[i].id == (int)(id)) { \
+    if (nameToFieldId[i].id == (int)(uintptr_t)(id)) { \
         if (nameToFieldId[i].f != (fieldtype)) { \
-            fjni_logv_err("Field type mismatch for field #%i: expected %s, found %s", (int)(id), fieldTypeToStr(fieldtype), fieldTypeToStr(nameToFieldId[i].f)); \
+            fjni_logv_err("Field type mismatch for field #%i: expected %s, found %s", (int)(uintptr_t)(id), fieldTypeToStr(fieldtype), fieldTypeToStr(nameToFieldId[i].f)); \
             return; \
         } \
          \
         jtype * x = NULL; \
         for (int u = 0; u < containersize() / sizeof(containertype); u++) { \
-            if ((container)[u].id == (int)(id)) { \
+            if ((container)[u].id == (int)(uintptr_t)(id)) { \
                 x = &(container)[u].value; \
             } \
         } \
         \
         if (!x) { \
-            fjni_logv_err("Field #%i is defined in NameToFieldID table but has no value set", (int)(id)); \
+            fjni_logv_err("Field #%i is defined in NameToFieldID table but has no value set", (int)(uintptr_t)(id)); \
             return; \
         } \
         \
         *x = value; \
     } \
   } \
-  fjni_logv_err("Undefined fieldID #%i", (int)(id)); \
+  fjni_logv_err("Undefined fieldID #%i", (int)(uintptr_t)(id)); \
   return; \
 })
 
 #define GetPrimitiveArrayRegion(fun_name, fieldType, jType, array, start, length, buffer) ({ \
     JavaDynArray * jda = jda_find((void *) array); \
     if (!jda) { \
-        fjni_logv_err("[JNI] %s(env, 0x%x, %i, %i, 0x%x): Array not found.", fun_name, (int)array, start, length, buffer); \
+        fjni_logv_err("[JNI] %s(env, 0x%" PRIxPTR ", %i, %i, 0x%" PRIxPTR "): Array not found.", fun_name, (uintptr_t)array, start, length, (uintptr_t)(void*)(buffer)); \
         return; \
     } \
      \
     if (start < 0 || length > jda->len) { \
-        fjni_logv_err("[JNI] %s(env, 0x%x, %i, %i, 0x%x): Index out of bounds! (real length: %i)", fun_name, (int)array, start, length, buffer, jda->len); \
+        fjni_logv_err("[JNI] %s(env, 0x%" PRIxPTR ", %i, %i, 0x%" PRIxPTR "): Index out of bounds! (real length: %i)", fun_name, (uintptr_t)array, start, length, (uintptr_t)(void*)(buffer), jda->len); \
         return; \
     } \
      \
-    fjni_logv_dbg("[JNI] %s(env, 0x%x, %i, %i, 0x%x)", fun_name, (int)array, start, length, buffer); \
+    fjni_logv_dbg("[JNI] %s(env, 0x%" PRIxPTR ", %i, %i, 0x%" PRIxPTR ")", fun_name, (uintptr_t)array, start, length, (uintptr_t)(void*)(buffer)); \
      \
     if (!buffer) \
         buffer = (jType*) malloc(length); \
@@ -221,19 +222,19 @@ va_list _AtoV(int dummy, ...);
 #define SetPrimitiveArrayRegion(fun_name, fieldType, jType, array, start, length, buffer) ({ \
     JavaDynArray * jda = jda_find((void *) array); \
     if (!jda) { \
-        fjni_logv_err("[JNI] %s(env, 0x%x, %i, %i, 0x%x): Array not found!", fun_name, (int)array, start, length, buffer); \
+        fjni_logv_err("[JNI] %s(env, 0x%" PRIxPTR ", %i, %i, 0x%" PRIxPTR "): Array not found!", fun_name, (uintptr_t)array, start, length, (uintptr_t)(void*)(buffer)); \
         return; \
     } \
      \
     if (start < 0 || length > jda->len) { \
-        fjni_logv_err("[JNI] %s(env, 0x%x, %i, %i, 0x%x): Index out of bounds! (real length: %i)", fun_name, (int)array, start, length, buffer, jda->len); \
+        fjni_logv_err("[JNI] %s(env, 0x%" PRIxPTR ", %i, %i, 0x%" PRIxPTR "): Index out of bounds! (real length: %i)", fun_name, (uintptr_t)array, start, length, (uintptr_t)(void*)(buffer), jda->len); \
         return; \
     } \
      \
-    fjni_logv_dbg("[JNI] %s(env, 0x%x, %i, %i, 0x%x)", fun_name, (int)array, start, length, buffer); \
+    fjni_logv_dbg("[JNI] %s(env, 0x%" PRIxPTR ", %i, %i, 0x%" PRIxPTR ")", fun_name, (uintptr_t)array, start, length, (uintptr_t)(void*)(buffer)); \
      \
     if (!buffer) \
-        fjni_logv_warn("[JNI] %s(env, 0x%x, %i, %i, 0x%x): buffer is NULL", fun_name, (int)array, start, length, buffer); \
+        fjni_logv_warn("[JNI] %s(env, 0x%" PRIxPTR ", %i, %i, 0x%" PRIxPTR "): buffer is NULL", fun_name, (uintptr_t)array, start, length, (uintptr_t)(void*)(buffer)); \
      \
     jType* arr = jda->array; \
     memcpy(&arr[start], buffer, length * getFieldTypeSize(fieldType));\

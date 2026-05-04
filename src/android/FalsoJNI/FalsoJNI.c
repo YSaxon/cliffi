@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include <string.h>
 
 #include "FalsoJNI_ImplBridge.h"
@@ -103,51 +104,51 @@ jclass FindClass(JNIEnv* env, const char* name) {
     //      normally in memory and can be freed.
 
     jclass clazz = (jclass) strdup(name);
-    fjni_logv_dbg("[JNI] FindClass(%s): 0x%x", name, (int)clazz);
+    fjni_logv_dbg("[JNI] FindClass(%s): 0x%" PRIxPTR "", name, (uintptr_t)clazz);
     return clazz;
 }
 
 jclass GetSuperclass(JNIEnv* env, jclass clazz) {
-    fjni_logv_warn("[JNI] GetSuperclass(env, 0x%x): not implemented", (int)clazz);
+    fjni_logv_warn("[JNI] GetSuperclass(env, 0x%" PRIxPTR "): not implemented", (uintptr_t)clazz);
     return NULL;
 }
 
 jboolean IsAssignableFrom(JNIEnv* env, jclass clazz1, jclass clazz2) {
     // Supposed to determine whether an object of clazz1 can be safely cast to clazz2.
     // We can not check that, so return JNI_TRUE always.
-    fjni_logv_warn("[JNI] IsAssignableFrom(env, 0x%x, 0x%x): not implemented", (int)clazz1, (int)clazz2);
+    fjni_logv_warn("[JNI] IsAssignableFrom(env, 0x%" PRIxPTR ", 0x%" PRIxPTR "): not implemented", (uintptr_t)clazz1, (uintptr_t)clazz2);
     return JNI_TRUE;
 }
 
 jmethodID FromReflectedMethod(JNIEnv* env, jobject method) {
-    fjni_logv_warn("[JNI] FromReflectedMethod(env, 0x%x): not implemented", (int)method);
+    fjni_logv_warn("[JNI] FromReflectedMethod(env, 0x%" PRIxPTR "): not implemented", (uintptr_t)method);
     return NULL;
 }
 
 jfieldID FromReflectedField(JNIEnv* env, jobject field) {
-    fjni_logv_warn("[JNI] FromReflectedField(env, 0x%x): not implemented", (int)field);
+    fjni_logv_warn("[JNI] FromReflectedField(env, 0x%" PRIxPTR "): not implemented", (uintptr_t)field);
     return NULL;
 }
 
 jobject ToReflectedMethod(JNIEnv* env, jclass cls, jmethodID methodID, jboolean isStatic) {
-    fjni_logv_warn("[JNI] ToReflectedMethod(env, 0x%x, %i, %i): not implemented", (int)cls, methodID, isStatic);
+    fjni_logv_warn("[JNI] ToReflectedMethod(env, 0x%" PRIxPTR ", %i, %i): not implemented", (uintptr_t)cls, methodID, isStatic);
     return NULL;
 }
 
 jobject ToReflectedField(JNIEnv* env, jclass cls, jfieldID fieldID, jboolean isStatic) {
-    fjni_logv_warn("[JNI] ToReflectedField(env, 0x%x, %i, %i): not implemented", (int)cls, fieldID, isStatic);
+    fjni_logv_warn("[JNI] ToReflectedField(env, 0x%" PRIxPTR ", %i, %i): not implemented", (uintptr_t)cls, fieldID, isStatic);
     return 0;
 }
 
 // TODO: Handle exceptions
 
 jint Throw(JNIEnv* env, jthrowable obj) {
-    fjni_logv_warn("[JNI] Throw(env, 0x%x): not implemented", (int)obj);
+    fjni_logv_warn("[JNI] Throw(env, 0x%" PRIxPTR "): not implemented", (uintptr_t)obj);
     return 0;
 }
 
 jint ThrowNew(JNIEnv* env, jclass clazz, const char* message) {
-    fjni_logv_warn("[JNI] ThrowNew(env, 0x%x, \"%s\"): not implemented", (int)clazz, message);
+    fjni_logv_warn("[JNI] ThrowNew(env, 0x%" PRIxPTR ", \"%s\"): not implemented", (uintptr_t)clazz, message);
     return 0;
 }
 
@@ -179,13 +180,13 @@ jint PushLocalFrame(JNIEnv* env, jint capacity) {
 }
 
 jobject PopLocalFrame(JNIEnv* env, jobject result) {
-    fjni_logv_dbg("[JNI] PopLocalFrame(env, 0x%x): ignored", (int)result);
+    fjni_logv_dbg("[JNI] PopLocalFrame(env, 0x%" PRIxPTR "): ignored", (uintptr_t)result);
     // Since we operate with global pointers everywhere, no need to scope them.
     return NULL;
 }
 
 jobject NewGlobalRef(JNIEnv* env, jobject obj) {
-    fjni_logv_dbg("[JNI] NewGlobalRef(env, 0x%x)", (int)obj);
+    fjni_logv_dbg("[JNI] NewGlobalRef(env, 0x%" PRIxPTR ")", (uintptr_t)obj);
 
     // The concept of global/local references really makes sense only with
     // a real JVM. Here, since we basically operate with shared global pointers
@@ -195,7 +196,7 @@ jobject NewGlobalRef(JNIEnv* env, jobject obj) {
 }
 
 void DeleteGlobalRef(JNIEnv* env, jobject obj) {
-    fjni_logv_dbg("[JNI] DeleteGlobalRef(env, 0x%x)", (int)obj);
+    fjni_logv_dbg("[JNI] DeleteGlobalRef(env, 0x%" PRIxPTR ")", (uintptr_t)obj);
 
     // Empirically, DeleteGlobalRef() is called on dynamically allocated things
     // returned from other JNI functions. For most of them it's safe to just
@@ -203,7 +204,7 @@ void DeleteGlobalRef(JNIEnv* env, jobject obj) {
     // a separate "destructor" for those.
 
     // Reserved fake identifiers
-    if ((int)obj != 0x42424242 && (int)obj != 0x69696969) {
+    if ((uintptr_t)obj != 0x42424242 && (uintptr_t)obj != 0x69696969) {
         if (jda_free(obj) == JNI_FALSE) {
             if (obj) free(obj);
         }
@@ -211,17 +212,17 @@ void DeleteGlobalRef(JNIEnv* env, jobject obj) {
 }
 
 void DeleteLocalRef(JNIEnv* env, jobject obj) {
-    fjni_logv_dbg("[JNI] DeleteLocalRef(env, 0x%x): ignored", (int)obj);
+    fjni_logv_dbg("[JNI] DeleteLocalRef(env, 0x%" PRIxPTR "): ignored", (uintptr_t)obj);
     // Local references are useless in the setting of our fake JVM.
 }
 
 jboolean IsSameObject(JNIEnv* env, jobject ref1, jobject ref2) {
-    fjni_logv_dbg("[JNI] IsSameObject(env, 0x%x, 0x%x)", (int)ref1, (int)ref2);
+    fjni_logv_dbg("[JNI] IsSameObject(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ")", (uintptr_t)ref1, (uintptr_t)ref2);
     return (ref1 == ref2) ? JNI_TRUE : JNI_FALSE;
 }
 
 jobject NewLocalRef(JNIEnv* env, jobject obj) {
-    fjni_logv_dbg("[JNI] NewLocalRef(env, 0x%x): ignored", (int)obj);
+    fjni_logv_dbg("[JNI] NewLocalRef(env, 0x%" PRIxPTR "): ignored", (uintptr_t)obj);
     // Local references are useless in the setting of our fake JVM.
     // Just return `obj` back.
     return obj;
@@ -233,7 +234,7 @@ jint EnsureLocalCapacity(JNIEnv* env, jint capacity) {
 }
 
 jobject AllocObject(JNIEnv* env, jclass clazz) {
-    fjni_logv_warn("[JNI] AllocObject(env, 0x%x): not implemented", (int)clazz);
+    fjni_logv_warn("[JNI] AllocObject(env, 0x%" PRIxPTR "): not implemented", (uintptr_t)clazz);
     return (jobject)0x42424242;
 }
 
@@ -255,19 +256,19 @@ jobject NewObjectV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) 
 }
 
 jobject NewObjectA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue *args) {
-    fjni_logv_dbg("[JNI] NewObjectA(env, 0x%x, %i)", (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] NewObjectA(env, 0x%" PRIxPTR ", %i)", (uintptr_t)clazz, methodID);
     return methodObjectCall(methodID, _AtoV(0, args));
 }
 
 jclass GetObjectClass(JNIEnv* env, jobject obj) {
-    fjni_logv_dbg("[JNI] GetObjectClass(0x%x)", (int)obj);
+    fjni_logv_dbg("[JNI] GetObjectClass(0x%" PRIxPTR ")", (uintptr_t)obj);
     // Due to the way we implement class methods, it's safe to not waste
     // resources on mapping objects to classess and return just a constant val.
     return (jclass)0x42424242;
 }
 
 jboolean IsInstanceOf(JNIEnv* env, jobject obj, jclass clazz) {
-    fjni_logv_warn("[JNI] IsInstanceOf(env, 0x%x, 0x%x): not implemented", (int)obj, (int)clazz);
+    fjni_logv_warn("[JNI] IsInstanceOf(env, 0x%" PRIxPTR ", 0x%" PRIxPTR "): not implemented", (uintptr_t)obj, (uintptr_t)clazz);
     return JNI_FALSE;
 }
 
@@ -291,16 +292,16 @@ jmethodID GetMethodID(JNIEnv* env, jclass clazz, const char* _name, const char* 
     ret = getMethodIdByName(name);
 
     if (ret != NULL) {
-        fjni_logv_dbg("[JNI] GetMethodID(env, 0x%x, \"%s\", \"%s\"): %i", (int)clazz, name, sig, (int)ret);
+        fjni_logv_dbg("[JNI] GetMethodID(env, 0x%" PRIxPTR ", \"%s\", \"%s\"): %" PRIxPTR "", (uintptr_t)clazz, name, sig, (uintptr_t)ret);
     } else {
-        fjni_logv_err("[JNI] GetMethodID(env, 0x%x, \"%s\", \"%s\"): not found", (int)clazz, name, sig, (int)ret);
+        fjni_logv_err("[JNI] GetMethodID(env, 0x%" PRIxPTR ", \"%s\", \"%s\"): not found", (uintptr_t)clazz, name, sig, (uintptr_t)ret);
     }
 
     return ret;
 }
 
 jobject CallObjectMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallObjectMethod(env, 0x%x, %i)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallObjectMethod(env, 0x%" PRIxPTR ", %i)", (uintptr_t)obj, methodID);
 
     jobject ret;
     va_list args;
@@ -312,17 +313,17 @@ jobject CallObjectMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
 }
 
 jobject CallObjectMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallObjectMethodV(env, 0x%x, %i, args)", (int)obj, (int)methodID);
+    fjni_logv_dbg("[JNI] CallObjectMethodV(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)obj, (uintptr_t)methodID);
     return methodObjectCall(methodID, args);
 }
 
 jobject CallObjectMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallObjectMethodA(env, 0x%x, %i, args)", (int)obj, (int)methodID);
+    fjni_logv_dbg("[JNI] CallObjectMethodA(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)obj, (uintptr_t)methodID);
     return methodObjectCall(methodID, _AtoV(0, args));
 }
 
 jboolean CallBooleanMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallBooleanMethod(env, 0x%x, %i)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallBooleanMethod(env, 0x%" PRIxPTR ", %i)", (uintptr_t)obj, methodID);
 
     jboolean ret;
     va_list args;
@@ -334,17 +335,17 @@ jboolean CallBooleanMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
 }
 
 jboolean CallBooleanMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallBooleanMethodV(env, 0x%x, %i, args)", (int)obj, (int)methodID);
+    fjni_logv_dbg("[JNI] CallBooleanMethodV(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)obj, (uintptr_t)methodID);
     return methodBooleanCall(methodID, args);
 }
 
 jboolean CallBooleanMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallBooleanMethodA(env, 0x%x, %i, args)", (int)obj, (int)methodID);
+    fjni_logv_dbg("[JNI] CallBooleanMethodA(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)obj, (uintptr_t)methodID);
     return methodBooleanCall(methodID, _AtoV(0, args));
 }
 
 jbyte CallByteMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallByteMethod(env, 0x%x, %i)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallByteMethod(env, 0x%" PRIxPTR ", %i)", (uintptr_t)obj, methodID);
 
     jbyte ret;
     va_list args;
@@ -356,17 +357,17 @@ jbyte CallByteMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
 }
 
 jbyte CallByteMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallByteMethodV(env, 0x%x, %i, args)", (int)obj, (int)methodID);
+    fjni_logv_dbg("[JNI] CallByteMethodV(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)obj, (uintptr_t)methodID);
     return methodByteCall(methodID, args);
 }
 
 jbyte CallByteMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallByteMethodA(env, 0x%x, %i, args)", (int)obj, (int)methodID);
+    fjni_logv_dbg("[JNI] CallByteMethodA(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)obj, (uintptr_t)methodID);
     return methodByteCall(methodID, _AtoV(0, args));
 }
 
 jchar CallCharMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallCharMethod(env, 0x%x, %i)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallCharMethod(env, 0x%" PRIxPTR ", %i)", (uintptr_t)obj, methodID);
 
     jchar ret;
     va_list args;
@@ -378,17 +379,17 @@ jchar CallCharMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
 }
 
 jchar CallCharMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallCharMethodV(env, 0x%x, %i, args)", (int)obj, (int)methodID);
+    fjni_logv_dbg("[JNI] CallCharMethodV(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)obj, (uintptr_t)methodID);
     return methodCharCall(methodID, args);
 }
 
 jchar CallCharMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallCharMethodA(env, 0x%x, %i, args)", (int)obj, (int)methodID);
+    fjni_logv_dbg("[JNI] CallCharMethodA(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)obj, (uintptr_t)methodID);
     return methodCharCall(methodID, _AtoV(0, args));
 }
 
 jshort CallShortMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallShortMethod(env, 0x%x, %i)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallShortMethod(env, 0x%" PRIxPTR ", %i)", (uintptr_t)obj, methodID);
 
     jshort ret;
     va_list args;
@@ -400,17 +401,17 @@ jshort CallShortMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
 }
 
 jshort CallShortMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallShortMethodV(env, 0x%x, %i, args)", (int)obj, (int)methodID);
+    fjni_logv_dbg("[JNI] CallShortMethodV(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)obj, (uintptr_t)methodID);
     return methodShortCall(methodID, args);
 }
 
 jshort CallShortMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallShortMethodA(env, 0x%x, %i, args)", (int)obj, (int)methodID);
+    fjni_logv_dbg("[JNI] CallShortMethodA(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)obj, (uintptr_t)methodID);
     return methodShortCall(methodID, _AtoV(0, args));
 }
 
 jint CallIntMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallIntMethod(env, 0x%x, %i, ...)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallIntMethod(env, 0x%" PRIxPTR ", %i, ...)", (uintptr_t)obj, methodID);
 
     jint ret;
     va_list args;
@@ -422,17 +423,17 @@ jint CallIntMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
 }
 
 jint CallIntMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallIntMethodV(env, 0x%x, %i, args)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallIntMethodV(env, 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, methodID);
     return methodIntCall(methodID, args);
 }
 
 jint CallIntMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallIntMethodA(env, 0x%x, %i, args)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallIntMethodA(env, 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, methodID);
     return methodIntCall(methodID, _AtoV(0, args));
 }
 
 jlong CallLongMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallLongMethod(env, 0x%x, %i, ...)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallLongMethod(env, 0x%" PRIxPTR ", %i, ...)", (uintptr_t)obj, methodID);
 
     jlong ret;
     va_list args;
@@ -444,17 +445,17 @@ jlong CallLongMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
 }
 
 jlong CallLongMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallLongMethodV(env, 0x%x, %i, args)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallLongMethodV(env, 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, methodID);
     return methodLongCall(methodID, args);
 }
 
 jlong CallLongMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallLongMethodA(env, 0x%x, %i, args)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallLongMethodA(env, 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, methodID);
     return methodLongCall(methodID, _AtoV(0, args));
 }
 
 jfloat CallFloatMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallFloatMethod(env, 0x%x, %i, ...)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallFloatMethod(env, 0x%" PRIxPTR ", %i, ...)", (uintptr_t)obj, methodID);
 
     jfloat ret;
     va_list args;
@@ -466,17 +467,17 @@ jfloat CallFloatMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
 }
 
 jfloat CallFloatMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallFloatMethodV(env, 0x%x, %i, args)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallFloatMethodV(env, 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, methodID);
     return methodFloatCall(methodID, args);
 }
 
 jfloat CallFloatMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallFloatMethodA(env, 0x%x, %i, args)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallFloatMethodA(env, 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, methodID);
     return methodFloatCall(methodID, _AtoV(0, args));
 }
 
 jdouble CallDoubleMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallDoubleMethod(env, 0x%x, %i, ...)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallDoubleMethod(env, 0x%" PRIxPTR ", %i, ...)", (uintptr_t)obj, methodID);
 
     jdouble ret;
     va_list args;
@@ -488,17 +489,17 @@ jdouble CallDoubleMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
 }
 
 jdouble CallDoubleMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallDoubleMethodV(env, 0x%x, %i, args)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallDoubleMethodV(env, 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, methodID);
     return methodDoubleCall(methodID, args);
 }
 
 jdouble CallDoubleMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallDoubleMethodA(env, 0x%x, %i, args)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallDoubleMethodA(env, 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, methodID);
     return methodDoubleCall(methodID, _AtoV(0, args));
 }
 
 void CallVoidMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallVoidMethod(env, 0x%x, %i, ...)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallVoidMethod(env, 0x%" PRIxPTR ", %i, ...)", (uintptr_t)obj, methodID);
 
     va_list args;
     va_start(args, methodID);
@@ -507,17 +508,17 @@ void CallVoidMethod(JNIEnv* env, jobject obj, jmethodID methodID, ...) {
 }
 
 void CallVoidMethodV(JNIEnv* env, jobject obj, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallVoidMethodV(env, 0x%x, %i, args)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallVoidMethodV(env, 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, methodID);
     methodVoidCall(methodID, args);
 }
 
 void CallVoidMethodA(JNIEnv* env, jobject obj, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallVoidMethodA(env, 0x%x, %i, args)", (int)obj, methodID);
+    fjni_logv_dbg("[JNI] CallVoidMethodA(env, 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, methodID);
     methodVoidCall(methodID, _AtoV(0, args));
 }
 
 jobject CallNonvirtualObjectMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallNonvirtualObjectMethod(env, 0x%x, 0x%x, %i, ...)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualObjectMethod(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, ...)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
 
     jobject ret;
     va_list args;
@@ -529,17 +530,17 @@ jobject CallNonvirtualObjectMethod(JNIEnv* env, jobject obj, jclass clazz, jmeth
 }
 
 jobject CallNonvirtualObjectMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualObjectMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualObjectMethodV(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     return methodObjectCall(methodID, args);
 }
 
 jobject CallNonvirtualObjectMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualObjectMethodA(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualObjectMethodA(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     return methodObjectCall(methodID, _AtoV(0, args));
 }
 
 jboolean CallNonvirtualBooleanMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallNonvirtualBooleanMethod(env, 0x%x, 0x%x, %i, ...)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualBooleanMethod(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, ...)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
 
     jboolean ret;
     va_list args;
@@ -551,17 +552,17 @@ jboolean CallNonvirtualBooleanMethod(JNIEnv* env, jobject obj, jclass clazz, jme
 }
 
 jboolean CallNonvirtualBooleanMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualBooleanMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualBooleanMethodV(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     return methodBooleanCall(methodID, args);
 }
 
 jboolean CallNonvirtualBooleanMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualBooleanMethodA(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualBooleanMethodA(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     return methodBooleanCall(methodID, _AtoV(0, args));
 }
 
 jbyte CallNonvirtualByteMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallNonvirtualByteMethod(env, 0x%x, 0x%x, %i, ...)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualByteMethod(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, ...)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
 
     jbyte ret;
     va_list args;
@@ -573,17 +574,17 @@ jbyte CallNonvirtualByteMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID
 }
 
 jbyte CallNonvirtualByteMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualByteMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualByteMethodV(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     return methodByteCall(methodID, args);
 }
 
 jbyte CallNonvirtualByteMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualByteMethodA(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualByteMethodA(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     return methodByteCall(methodID, _AtoV(0, args));
 }
 
 jchar CallNonvirtualCharMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallNonvirtualCharMethod(env, 0x%x, 0x%x, %i, ...)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualCharMethod(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, ...)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
 
     jchar ret;
     va_list args;
@@ -595,17 +596,17 @@ jchar CallNonvirtualCharMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID
 }
 
 jchar CallNonvirtualCharMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualCharMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualCharMethodV(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     return methodCharCall(methodID, args);
 }
 
 jchar CallNonvirtualCharMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualCharMethodA(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualCharMethodA(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     return methodCharCall(methodID, _AtoV(0, args));
 }
 
 jshort CallNonvirtualShortMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallNonvirtualShortMethod(env, 0x%x, 0x%x, %i, ...)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualShortMethod(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, ...)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
 
     jshort ret;
     va_list args;
@@ -617,17 +618,17 @@ jshort CallNonvirtualShortMethod(JNIEnv* env, jobject obj, jclass clazz, jmethod
 }
 
 jshort CallNonvirtualShortMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualShortMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualShortMethodV(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     return methodShortCall(methodID, args);
 }
 
 jshort CallNonvirtualShortMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualShortMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualShortMethodV(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     return methodShortCall(methodID, _AtoV(0, args));
 }
 
 jint CallNonvirtualIntMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallNonvirtualIntMethod(env, 0x%x, 0x%x, %i, ...)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualIntMethod(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, ...)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
 
     jint ret;
     va_list args;
@@ -639,17 +640,17 @@ jint CallNonvirtualIntMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID m
 }
 
 jint CallNonvirtualIntMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualIntMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualIntMethodV(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     return methodIntCall(methodID, args);
 }
 
 jint CallNonvirtualIntMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualIntMethodA(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualIntMethodA(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     return methodIntCall(methodID, _AtoV(0, args));
 }
 
 jlong CallNonvirtualLongMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallNonvirtualLongMethod(env, 0x%x, 0x%x, %i, ...)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualLongMethod(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, ...)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
 
     jlong ret;
     va_list args;
@@ -661,17 +662,17 @@ jlong CallNonvirtualLongMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID
 }
 
 jlong CallNonvirtualLongMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualLongMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualLongMethodV(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     return methodLongCall(methodID, args);
 }
 
 jlong CallNonvirtualLongMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualLongMethodA(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualLongMethodA(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     return methodLongCall(methodID, _AtoV(0, args));
 }
 
 jfloat CallNonvirtualFloatMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallNonvirtualFloatMethod(env, 0x%x, 0x%x, %i, ...)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualFloatMethod(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, ...)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
 
     jfloat ret;
     va_list args;
@@ -683,17 +684,17 @@ jfloat CallNonvirtualFloatMethod(JNIEnv* env, jobject obj, jclass clazz, jmethod
 }
 
 jfloat CallNonvirtualFloatMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualFloatMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualFloatMethodV(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     return methodFloatCall(methodID, args);
 }
 
 jfloat CallNonvirtualFloatMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualFloatMethodA(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualFloatMethodA(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     return methodFloatCall(methodID, _AtoV(0, args));
 }
 
 jdouble CallNonvirtualDoubleMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallNonvirtualDoubleMethod(env, 0x%x, 0x%x, %i, ...)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualDoubleMethod(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, ...)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
 
     jdouble ret;
     va_list args;
@@ -705,17 +706,17 @@ jdouble CallNonvirtualDoubleMethod(JNIEnv* env, jobject obj, jclass clazz, jmeth
 }
 
 jdouble CallNonvirtualDoubleMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualDoubleMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualDoubleMethodV(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     return methodDoubleCall(methodID, args);
 }
 
 jdouble CallNonvirtualDoubleMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualDoubleMethodA(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualDoubleMethodA(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     return methodDoubleCall(methodID, _AtoV(0, args));
 }
 
 void CallNonvirtualVoidMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallNonvirtualVoidMethod(env, 0x%x, 0x%x, %i, ...)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualVoidMethod(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, ...)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
 
     va_list args;
     va_start(args, methodID);
@@ -724,107 +725,107 @@ void CallNonvirtualVoidMethod(JNIEnv* env, jobject obj, jclass clazz, jmethodID 
 }
 
 void CallNonvirtualVoidMethodV(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualVoidMethodV(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualVoidMethodV(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     methodVoidCall(methodID, args);
 }
 
 void CallNonvirtualVoidMethodA(JNIEnv* env, jobject obj, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallNonvirtualVoidMethodA(env, 0x%x, 0x%x, %i, args)", (int)obj, (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallNonvirtualVoidMethodA(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i, args)", (uintptr_t)obj, (uintptr_t)clazz, methodID);
     methodVoidCall(methodID, _AtoV(0, args));
 }
 
 jfieldID GetFieldID(JNIEnv * env, jclass clazz, const char* name, const char* t) {
-    fjni_logv_dbg("[JNI] GetFieldID(env, 0x%x, \"%s\", \"%s\")", (int)clazz, name, t);
+    fjni_logv_dbg("[JNI] GetFieldID(env, 0x%" PRIxPTR ", \"%s\", \"%s\")", (uintptr_t)clazz, name, t);
     return getFieldIdByName(name);
 }
 
 jobject GetObjectField(JNIEnv* env, jobject obj, jfieldID fieldID) {
-    fjni_logv_dbg("[JNI] GetObjectField(env, 0x%x, %i)", (int)obj, fieldID);
+    fjni_logv_dbg("[JNI] GetObjectField(env, 0x%" PRIxPTR ", %i)", (uintptr_t)obj, fieldID);
     return getObjectFieldValueById(fieldID);
 }
 
 jboolean GetBooleanField(JNIEnv* env, jobject obj, jfieldID fieldID) {
-    fjni_logv_dbg("[JNI] GetBooleanField(env, 0x%x, %i)", (int)obj, fieldID);
+    fjni_logv_dbg("[JNI] GetBooleanField(env, 0x%" PRIxPTR ", %i)", (uintptr_t)obj, fieldID);
     return getBooleanFieldValueById(fieldID);
 }
 
 jbyte GetByteField(JNIEnv* env, jobject obj, jfieldID fieldID) {
-    fjni_logv_dbg("[JNI] GetByteField(env, 0x%x, %i)", (int)obj, fieldID);
+    fjni_logv_dbg("[JNI] GetByteField(env, 0x%" PRIxPTR ", %i)", (uintptr_t)obj, fieldID);
     return getByteFieldValueById(fieldID);
 }
 
 jchar GetCharField(JNIEnv* env, jobject obj, jfieldID fieldID) {
-    fjni_logv_dbg("[JNI] GetCharField(env, 0x%x, %i)", (int)obj, fieldID);
+    fjni_logv_dbg("[JNI] GetCharField(env, 0x%" PRIxPTR ", %i)", (uintptr_t)obj, fieldID);
     return getCharFieldValueById(fieldID);
 }
 
 jshort GetShortField(JNIEnv* env, jobject obj, jfieldID fieldID) {
-    fjni_logv_dbg("[JNI] GetShortField(env, 0x%x, %i)", (int)obj, fieldID);
+    fjni_logv_dbg("[JNI] GetShortField(env, 0x%" PRIxPTR ", %i)", (uintptr_t)obj, fieldID);
     return getShortFieldValueById(fieldID);
 }
 
 jint GetIntField(JNIEnv* env, jobject obj, jfieldID fieldID) {
-    fjni_logv_dbg("[JNI] GetIntField(env, 0x%x, %i)", (int)obj, fieldID);
+    fjni_logv_dbg("[JNI] GetIntField(env, 0x%" PRIxPTR ", %i)", (uintptr_t)obj, fieldID);
     return getIntFieldValueById(fieldID);
 }
 
 jlong GetLongField(JNIEnv* env, jobject obj, jfieldID fieldID) {
-    fjni_logv_dbg("[JNI] GetLongField(env, 0x%x, %i)", (int)obj, fieldID);
+    fjni_logv_dbg("[JNI] GetLongField(env, 0x%" PRIxPTR ", %i)", (uintptr_t)obj, fieldID);
     return getLongFieldValueById(fieldID);
 }
 
 jfloat GetFloatField(JNIEnv* env, jobject obj, jfieldID fieldID) {
-    fjni_logv_dbg("[JNI] GetFloatField(env, 0x%x, %i)", (int)obj, fieldID);
+    fjni_logv_dbg("[JNI] GetFloatField(env, 0x%" PRIxPTR ", %i)", (uintptr_t)obj, fieldID);
     return getFloatFieldValueById(fieldID);
 }
 
 jdouble GetDoubleField(JNIEnv* env, jobject obj, jfieldID fieldID) {
-    fjni_logv_dbg("[JNI] GetFloatField(env, 0x%x, %i)", (int)obj, fieldID);
+    fjni_logv_dbg("[JNI] GetFloatField(env, 0x%" PRIxPTR ", %i)", (uintptr_t)obj, fieldID);
     return getDoubleFieldValueById(fieldID);
 }
 
 void SetObjectField(JNIEnv* env, jobject obj, jfieldID fieldID, jobject value) {
-    fjni_logv_dbg("[JNI] SetObjectField(env, 0x%x, %i, 0x%x)", (int)obj, fieldID, (int)value);
+    fjni_logv_dbg("[JNI] SetObjectField(env, 0x%" PRIxPTR ", %i, 0x%" PRIxPTR ")", (uintptr_t)obj, fieldID, (uintptr_t)value);
     setObjectFieldValueById(fieldID, value);
 }
 
 void SetBooleanField(JNIEnv* env, jobject obj, jfieldID fieldID, jboolean value) {
-    fjni_logv_dbg("[JNI] SetBooleanField(env, 0x%x, %i, 0x%x)", (int)obj, fieldID, (int)value);
+    fjni_logv_dbg("[JNI] SetBooleanField(env, 0x%" PRIxPTR ", %i, 0x%" PRIxPTR ")", (uintptr_t)obj, fieldID, (uintptr_t)value);
     setBooleanFieldValueById(fieldID, value);
 }
 
 void SetByteField(JNIEnv* env, jobject obj, jfieldID fieldID, jbyte value) {
-    fjni_logv_dbg("[JNI] SetByteField(env, 0x%x, %i, 0x%x)", (int)obj, fieldID, (int)value);
+    fjni_logv_dbg("[JNI] SetByteField(env, 0x%" PRIxPTR ", %i, 0x%" PRIxPTR ")", (uintptr_t)obj, fieldID, (uintptr_t)value);
     setByteFieldValueById(fieldID, value);
 }
 
 void SetCharField(JNIEnv* env, jobject obj, jfieldID fieldID, jchar value) {
-    fjni_logv_dbg("[JNI] SetCharField(env, 0x%x, %i, '%s')", (int)obj, fieldID, value);
+    fjni_logv_dbg("[JNI] SetCharField(env, 0x%" PRIxPTR ", %i, '%s')", (uintptr_t)obj, fieldID, value);
     setCharFieldValueById(fieldID, value);
 }
 
 void SetShortField(JNIEnv* env, jobject obj, jfieldID fieldID, jshort value) {
-    fjni_logv_dbg("[JNI] SetShortField(env, 0x%x, %i, %i)", (int)obj, fieldID, (int)value);
+    fjni_logv_dbg("[JNI] SetShortField(env, 0x%" PRIxPTR ", %" PRIxPTR ", %" PRIxPTR ")", (uintptr_t)obj, fieldID, (uintptr_t)value);
     setShortFieldValueById(fieldID, value);
 }
 
 void SetIntField(JNIEnv* env, jobject obj, jfieldID fieldID, jint value) {
-    fjni_logv_dbg("[JNI] SetIntField(env, 0x%x, %i, %i)", (int)obj, fieldID, (int)value);
+    fjni_logv_dbg("[JNI] SetIntField(env, 0x%" PRIxPTR ", %" PRIxPTR ", %" PRIxPTR ")", (uintptr_t)obj, fieldID, (uintptr_t)value);
     setIntFieldValueById(fieldID, value);
 }
 
 void SetLongField(JNIEnv* env, jobject obj, jfieldID fieldID, jlong value) {
-    fjni_logv_dbg("[JNI] SetLongField(env, 0x%x, %i, %i)", (int)obj, fieldID, (int)value);
+    fjni_logv_dbg("[JNI] SetLongField(env, 0x%" PRIxPTR ", %" PRIxPTR ", %" PRIxPTR ")", (uintptr_t)obj, fieldID, (uintptr_t)value);
     setLongFieldValueById(fieldID, value);
 }
 
 void SetFloatField(JNIEnv* env, jobject obj, jfieldID fieldID, jfloat value) {
-    fjni_logv_dbg("[JNI] SetFloatField(env, 0x%x, %i, %f)", (int)obj, fieldID, value);
+    fjni_logv_dbg("[JNI] SetFloatField(env, 0x%" PRIxPTR ", %i, %f)", (uintptr_t)obj, fieldID, value);
     setFloatFieldValueById(fieldID, value);
 }
 
 void SetDoubleField(JNIEnv* env, jobject obj, jfieldID fieldID, jdouble value) {
-    fjni_logv_dbg("[JNI] SetFloatField(env, 0x%x, %i, %i)", (int)obj, fieldID, value);
+    fjni_logv_dbg("[JNI] SetFloatField(env, 0x%" PRIxPTR ", %i, %i)", (uintptr_t)obj, fieldID, value);
     setDoubleFieldValueById(fieldID, value);
 }
 
@@ -848,16 +849,16 @@ jmethodID GetStaticMethodID(JNIEnv* env, jclass clazz, const char* _name, const 
     ret = getMethodIdByName(name);
 
     if (ret != NULL) {
-        fjni_logv_dbg("[JNI] GetStaticMethodID(env, 0x%x, \"%s\", \"%s\"): %i", (int)clazz, name, sig, (int)ret);
+        fjni_logv_dbg("[JNI] GetStaticMethodID(env, 0x%" PRIxPTR ", \"%s\", \"%s\"): %" PRIxPTR "", (uintptr_t)clazz, name, sig, (uintptr_t)ret);
     } else {
-        fjni_logv_err("[JNI] GetStaticMethodID(env, 0x%x, \"%s\", \"%s\"): not found", (int)clazz, name, sig, (int)ret);
+        fjni_logv_err("[JNI] GetStaticMethodID(env, 0x%" PRIxPTR ", \"%s\", \"%s\"): not found", (uintptr_t)clazz, name, sig, (uintptr_t)ret);
     }
 
     return ret;
 }
 
 jobject CallStaticObjectMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallStaticObjectMethod(env, 0x%x, %i)", (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallStaticObjectMethod(env, 0x%" PRIxPTR ", %i)", (uintptr_t)clazz, methodID);
 
     jobject ret;
     va_list args;
@@ -869,17 +870,17 @@ jobject CallStaticObjectMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ..
 }
 
 jobject CallStaticObjectMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallStaticObjectMethodV(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
+    fjni_logv_dbg("[JNI] CallStaticObjectMethodV(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)clazz, (uintptr_t)methodID);
     return methodObjectCall(methodID, args);
 }
 
 jobject CallStaticObjectMethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallStaticObjectMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
+    fjni_logv_dbg("[JNI] CallStaticObjectMethodA(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)clazz, (uintptr_t)methodID);
     return methodObjectCall(methodID, _AtoV(0, args));
 }
 
 jboolean CallStaticBooleanMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallStaticBooleanMethod(env, 0x%x, %i)", (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallStaticBooleanMethod(env, 0x%" PRIxPTR ", %i)", (uintptr_t)clazz, methodID);
 
     jboolean ret;
     va_list args;
@@ -891,17 +892,17 @@ jboolean CallStaticBooleanMethod(JNIEnv* env, jclass clazz, jmethodID methodID, 
 }
 
 jboolean CallStaticBooleanMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallStaticBooleanMethodV(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
+    fjni_logv_dbg("[JNI] CallStaticBooleanMethodV(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)clazz, (uintptr_t)methodID);
     return methodBooleanCall(methodID, args);
 }
 
 jboolean CallStaticBooleanMethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallStaticBooleanMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
+    fjni_logv_dbg("[JNI] CallStaticBooleanMethodA(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)clazz, (uintptr_t)methodID);
     return methodBooleanCall(methodID, _AtoV(0, args));
 }
 
 jbyte CallStaticByteMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallStaticByteMethod(env, 0x%x, %i)", (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallStaticByteMethod(env, 0x%" PRIxPTR ", %i)", (uintptr_t)clazz, methodID);
 
     jbyte ret;
     va_list args;
@@ -913,17 +914,17 @@ jbyte CallStaticByteMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) {
 }
 
 jbyte CallStaticByteMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallStaticByteMethodV(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
+    fjni_logv_dbg("[JNI] CallStaticByteMethodV(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)clazz, (uintptr_t)methodID);
     return methodByteCall(methodID, args);
 }
 
 jbyte CallStaticByteMethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallStaticByteMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
+    fjni_logv_dbg("[JNI] CallStaticByteMethodA(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)clazz, (uintptr_t)methodID);
     return methodByteCall(methodID, _AtoV(0, args));
 }
 
 jchar CallStaticCharMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallStaticCharMethod(env, 0x%x, %i)", (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallStaticCharMethod(env, 0x%" PRIxPTR ", %i)", (uintptr_t)clazz, methodID);
 
     jchar ret;
     va_list args;
@@ -935,17 +936,17 @@ jchar CallStaticCharMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) {
 }
 
 jchar CallStaticCharMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallStaticCharMethodV(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
+    fjni_logv_dbg("[JNI] CallStaticCharMethodV(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)clazz, (uintptr_t)methodID);
     return methodCharCall(methodID, args);
 }
 
 jchar CallStaticCharMethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallStaticCharMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
+    fjni_logv_dbg("[JNI] CallStaticCharMethodA(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)clazz, (uintptr_t)methodID);
     return methodCharCall(methodID, _AtoV(0, args));
 }
 
 jshort CallStaticShortMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallStaticShortMethod(env, 0x%x, %i)", (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallStaticShortMethod(env, 0x%" PRIxPTR ", %i)", (uintptr_t)clazz, methodID);
 
     jshort ret;
     va_list args;
@@ -957,17 +958,17 @@ jshort CallStaticShortMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...)
 }
 
 jshort CallStaticShortMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallStaticShortMethodV(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
+    fjni_logv_dbg("[JNI] CallStaticShortMethodV(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)clazz, (uintptr_t)methodID);
     return methodShortCall(methodID, args);
 }
 
 jshort CallStaticShortMethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallStaticShortMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
+    fjni_logv_dbg("[JNI] CallStaticShortMethodA(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)clazz, (uintptr_t)methodID);
     return methodShortCall(methodID, _AtoV(0, args));
 }
 
 jint CallStaticIntMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallStaticIntMethod(env, 0x%x, %i, ...)", (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallStaticIntMethod(env, 0x%" PRIxPTR ", %i, ...)", (uintptr_t)clazz, methodID);
 
     jint ret;
     va_list args;
@@ -979,17 +980,17 @@ jint CallStaticIntMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) {
 }
 
 jint CallStaticIntMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallStaticIntMethodV(env, 0x%x, %i, args)", (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallStaticIntMethodV(env, 0x%" PRIxPTR ", %i, args)", (uintptr_t)clazz, methodID);
     return methodIntCall(methodID, args);
 }
 
 jint CallStaticIntMethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallStaticIntMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
+    fjni_logv_dbg("[JNI] CallStaticIntMethodA(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)clazz, (uintptr_t)methodID);
     return methodIntCall(methodID, _AtoV(0, args));
 }
 
 jlong CallStaticLongMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallStaticLongMethod(env, 0x%x, %i, ...)", (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallStaticLongMethod(env, 0x%" PRIxPTR ", %i, ...)", (uintptr_t)clazz, methodID);
 
     jlong ret;
     va_list args;
@@ -1001,17 +1002,17 @@ jlong CallStaticLongMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) {
 }
 
 jlong CallStaticLongMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallStaticLongMethodV(env, 0x%x, %i, args)", (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallStaticLongMethodV(env, 0x%" PRIxPTR ", %i, args)", (uintptr_t)clazz, methodID);
     return methodLongCall(methodID, args);
 }
 
 jlong CallStaticLongMethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallStaticLongMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
+    fjni_logv_dbg("[JNI] CallStaticLongMethodA(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)clazz, (uintptr_t)methodID);
     return methodLongCall(methodID, _AtoV(0, args));
 }
 
 jfloat CallStaticFloatMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallStaticFloatMethod(env, 0x%x, %i, ...)", (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallStaticFloatMethod(env, 0x%" PRIxPTR ", %i, ...)", (uintptr_t)clazz, methodID);
 
     jfloat ret;
     va_list args;
@@ -1023,17 +1024,17 @@ jfloat CallStaticFloatMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...)
 }
 
 jfloat CallStaticFloatMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallStaticFloatMethodV(env, 0x%x, %i, args)", (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallStaticFloatMethodV(env, 0x%" PRIxPTR ", %i, args)", (uintptr_t)clazz, methodID);
     return methodFloatCall(methodID, args);
 }
 
 jfloat CallStaticFloatMethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallStaticFloatMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
+    fjni_logv_dbg("[JNI] CallStaticFloatMethodA(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)clazz, (uintptr_t)methodID);
     return methodFloatCall(methodID, _AtoV(0, args));
 }
 
 jdouble CallStaticDoubleMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallStaticDoubleMethod(env, 0x%x, %i, ...)", (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallStaticDoubleMethod(env, 0x%" PRIxPTR ", %i, ...)", (uintptr_t)clazz, methodID);
 
     jdouble ret;
     va_list args;
@@ -1045,17 +1046,17 @@ jdouble CallStaticDoubleMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ..
 }
 
 jdouble CallStaticDoubleMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallStaticDoubleMethodV(env, 0x%x, %i, args)", (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallStaticDoubleMethodV(env, 0x%" PRIxPTR ", %i, args)", (uintptr_t)clazz, methodID);
     return methodDoubleCall(methodID, args);
 }
 
 jdouble CallStaticDoubleMethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallStaticDoubleMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
+    fjni_logv_dbg("[JNI] CallStaticDoubleMethodA(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)clazz, (uintptr_t)methodID);
     return methodDoubleCall(methodID, _AtoV(0, args));
 }
 
 void CallStaticVoidMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) {
-    fjni_logv_dbg("[JNI] CallStaticVoidMethod(env, 0x%x, %i, ...)", (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallStaticVoidMethod(env, 0x%" PRIxPTR ", %i, ...)", (uintptr_t)clazz, methodID);
 
     va_list args;
     va_start(args, methodID);
@@ -1064,107 +1065,107 @@ void CallStaticVoidMethod(JNIEnv* env, jclass clazz, jmethodID methodID, ...) {
 }
 
 void CallStaticVoidMethodV(JNIEnv* env, jclass clazz, jmethodID methodID, va_list args) {
-    fjni_logv_dbg("[JNI] CallStaticVoidMethodV(env, 0x%x, %i, args)", (int)clazz, methodID);
+    fjni_logv_dbg("[JNI] CallStaticVoidMethodV(env, 0x%" PRIxPTR ", %i, args)", (uintptr_t)clazz, methodID);
     methodVoidCall(methodID, args);
 }
 
 void CallStaticVoidMethodA(JNIEnv* env, jclass clazz, jmethodID methodID, const jvalue* args) {
-    fjni_logv_dbg("[JNI] CallStaticVoidMethodA(env, 0x%x, %i, args)", (int)clazz, (int)methodID);
+    fjni_logv_dbg("[JNI] CallStaticVoidMethodA(env, 0x%" PRIxPTR ", %" PRIxPTR ", args)", (uintptr_t)clazz, (uintptr_t)methodID);
     methodVoidCall(methodID, _AtoV(0, args));
 }
 
 jfieldID GetStaticFieldID(JNIEnv* env, jclass clazz, const char* name, const char* t) {
-    fjni_logv_dbg("[JNI] GetStaticFieldID(env, 0x%x, \"%s\", \"%s\")", (int)clazz, name, t);
+    fjni_logv_dbg("[JNI] GetStaticFieldID(env, 0x%" PRIxPTR ", \"%s\", \"%s\")", (uintptr_t)clazz, name, t);
     return getFieldIdByName(name);
 }
 
 jobject GetStaticObjectField(JNIEnv* env, jclass clazz, jfieldID fieldID) {
-    fjni_logv_dbg("[JNI] GetStaticObjectField(env, 0x%x, %i)", (int)clazz, fieldID);
+    fjni_logv_dbg("[JNI] GetStaticObjectField(env, 0x%" PRIxPTR ", %i)", (uintptr_t)clazz, fieldID);
     return getObjectFieldValueById(fieldID);
 }
 
 jboolean GetStaticBooleanField(JNIEnv* env, jclass clazz, jfieldID fieldID) {
-    fjni_logv_dbg("[JNI] GetStaticBooleanField(env, 0x%x, %i)", (int)clazz, fieldID);
+    fjni_logv_dbg("[JNI] GetStaticBooleanField(env, 0x%" PRIxPTR ", %i)", (uintptr_t)clazz, fieldID);
     return getBooleanFieldValueById(fieldID);
 }
 
 jbyte GetStaticByteField(JNIEnv* env, jclass clazz, jfieldID fieldID) {
-    fjni_logv_dbg("[JNI] GetStaticByteField(env, 0x%x, %i)", (int)clazz, fieldID);
+    fjni_logv_dbg("[JNI] GetStaticByteField(env, 0x%" PRIxPTR ", %i)", (uintptr_t)clazz, fieldID);
     return getByteFieldValueById(fieldID);
 }
 
 jchar GetStaticCharField(JNIEnv* env, jclass clazz, jfieldID fieldID) {
-    fjni_logv_dbg("[JNI] GetStaticCharField(env, 0x%x, %i)", (int)clazz, fieldID);
+    fjni_logv_dbg("[JNI] GetStaticCharField(env, 0x%" PRIxPTR ", %i)", (uintptr_t)clazz, fieldID);
     return getCharFieldValueById(fieldID);
 }
 
 jshort GetStaticShortField(JNIEnv* env, jclass clazz, jfieldID fieldID) {
-    fjni_logv_dbg("[JNI] GetStaticShortField(env, 0x%x, %i)", (int)clazz, fieldID);
+    fjni_logv_dbg("[JNI] GetStaticShortField(env, 0x%" PRIxPTR ", %i)", (uintptr_t)clazz, fieldID);
     return getShortFieldValueById(fieldID);
 }
 
 jint GetStaticIntField(JNIEnv* env, jclass clazz, jfieldID fieldID) {
-    fjni_logv_dbg("[JNI] GetStaticIntField(env, 0x%x, %i): ", (int)clazz, fieldID);
+    fjni_logv_dbg("[JNI] GetStaticIntField(env, 0x%" PRIxPTR ", %i): ", (uintptr_t)clazz, fieldID);
     return getIntFieldValueById(fieldID);
 }
 
 jlong GetStaticLongField(JNIEnv* env, jclass clazz, jfieldID fieldID) {
-    fjni_logv_dbg("[JNI] GetStaticLongField(env, 0x%x, %i)", (int)clazz, fieldID);
+    fjni_logv_dbg("[JNI] GetStaticLongField(env, 0x%" PRIxPTR ", %i)", (uintptr_t)clazz, fieldID);
     return getLongFieldValueById(fieldID);
 }
 
 jfloat GetStaticFloatField(JNIEnv* env, jclass clazz, jfieldID fieldID) {
-    fjni_logv_dbg("[JNI] GetStaticFloatField(env, 0x%x, %i)", (int)clazz, fieldID);
+    fjni_logv_dbg("[JNI] GetStaticFloatField(env, 0x%" PRIxPTR ", %i)", (uintptr_t)clazz, fieldID);
     return getFloatFieldValueById(fieldID);
 }
 
 jdouble GetStaticDoubleField(JNIEnv* env, jclass clazz, jfieldID fieldID) {
-    fjni_logv_dbg("[JNI] GetStaticDoubleField(env, 0x%x, %i)", (int)clazz, fieldID);
+    fjni_logv_dbg("[JNI] GetStaticDoubleField(env, 0x%" PRIxPTR ", %i)", (uintptr_t)clazz, fieldID);
     return getDoubleFieldValueById(fieldID);
 }
 
 void SetStaticObjectField(JNIEnv* env, jclass clazz, jfieldID fieldID, jobject value) {
-    fjni_logv_dbg("[JNI] SetStaticObjectField(env, 0x%x, %i, 0x%x)", (int)clazz, fieldID, (int)value);
+    fjni_logv_dbg("[JNI] SetStaticObjectField(env, 0x%" PRIxPTR ", %i, 0x%" PRIxPTR ")", (uintptr_t)clazz, fieldID, (uintptr_t)value);
     setObjectFieldValueById(fieldID, value);
 }
 
 void SetStaticBooleanField(JNIEnv* env, jclass clazz, jfieldID fieldID, jboolean value) {
-    fjni_logv_dbg("[JNI] SetStaticBooleanField(env, 0x%x, %i, 0x%x)", (int)clazz, fieldID, (int)value);
+    fjni_logv_dbg("[JNI] SetStaticBooleanField(env, 0x%" PRIxPTR ", %i, 0x%" PRIxPTR ")", (uintptr_t)clazz, fieldID, (uintptr_t)value);
     setBooleanFieldValueById(fieldID, value);
 }
 
 void SetStaticByteField(JNIEnv* env, jclass clazz, jfieldID fieldID, jbyte value) {
-    fjni_logv_dbg("[JNI] SetStaticByteField(env, 0x%x, %i, 0x%x)", (int)clazz, fieldID, (int)value);
+    fjni_logv_dbg("[JNI] SetStaticByteField(env, 0x%" PRIxPTR ", %i, 0x%" PRIxPTR ")", (uintptr_t)clazz, fieldID, (uintptr_t)value);
     setByteFieldValueById(fieldID, value);
 }
 
 void SetStaticCharField(JNIEnv* env, jclass clazz, jfieldID fieldID, jchar value) {
-    fjni_logv_dbg("[JNI] SetStaticCharField(env, 0x%x, %i, '%s')", (int)clazz, fieldID, value);
+    fjni_logv_dbg("[JNI] SetStaticCharField(env, 0x%" PRIxPTR ", %i, '%s')", (uintptr_t)clazz, fieldID, value);
     setCharFieldValueById(fieldID, value);
 }
 
 void SetStaticShortField(JNIEnv* env, jclass clazz, jfieldID fieldID, jshort value) {
-    fjni_logv_dbg("[JNI] SetStaticShortField(env, 0x%x, %i, %i)", (int)clazz, fieldID, (int)value);
+    fjni_logv_dbg("[JNI] SetStaticShortField(env, 0x%" PRIxPTR ", %" PRIxPTR ", %" PRIxPTR ")", (uintptr_t)clazz, fieldID, (uintptr_t)value);
     setShortFieldValueById(fieldID, value);
 }
 
 void SetStaticIntField(JNIEnv* env, jclass clazz, jfieldID fieldID, jint value) {
-    fjni_logv_dbg("[JNI] SetStaticIntField(env, 0x%x, %i, %i)", (int)clazz, fieldID, (int)value);
+    fjni_logv_dbg("[JNI] SetStaticIntField(env, 0x%" PRIxPTR ", %" PRIxPTR ", %" PRIxPTR ")", (uintptr_t)clazz, fieldID, (uintptr_t)value);
     setIntFieldValueById(fieldID, value);
 }
 
 void SetStaticLongField(JNIEnv* env, jclass clazz, jfieldID fieldID, jlong value) {
-    fjni_logv_dbg("[JNI] SetStaticLongField(env, 0x%x, %i, %i)", (int)clazz, fieldID, (int)value);
+    fjni_logv_dbg("[JNI] SetStaticLongField(env, 0x%" PRIxPTR ", %" PRIxPTR ", %" PRIxPTR ")", (uintptr_t)clazz, fieldID, (uintptr_t)value);
     setLongFieldValueById(fieldID, value);
 }
 
 void SetStaticFloatField(JNIEnv* env, jclass clazz, jfieldID fieldID, jfloat value) {
-    fjni_logv_dbg("[JNI] SetStaticFloatField(env, 0x%x, %i, %f)", (int)clazz, fieldID, value);
+    fjni_logv_dbg("[JNI] SetStaticFloatField(env, 0x%" PRIxPTR ", %i, %f)", (uintptr_t)clazz, fieldID, value);
     setFloatFieldValueById(fieldID, value);
 }
 
 void SetStaticDoubleField(JNIEnv* env, jclass clazz, jfieldID fieldID, jdouble value) {
-    fjni_logv_dbg("[JNI] SetStaticFloatField(env, 0x%x, %i, %i)", (int)clazz, fieldID, value);
+    fjni_logv_dbg("[JNI] SetStaticFloatField(env, 0x%" PRIxPTR ", %i, %i)", (uintptr_t)clazz, fieldID, value);
     setDoubleFieldValueById(fieldID, value);
 }
 
@@ -1200,7 +1201,7 @@ jstring NewString(JNIEnv* env, const jchar* chars, jsize char_count) {
 }
 
 jsize GetStringLength(JNIEnv* env, jstring string) {
-    fjni_logv_dbg("[JNI] GetStringLength(env, 0x%x/\"%s\")", (int)string, (char*)string);
+    fjni_logv_dbg("[JNI] GetStringLength(env, 0x%" PRIxPTR "/\"%s\")", (uintptr_t)string, (char*)string);
     return (jsize)strlen(string);
 }
 
@@ -1296,20 +1297,20 @@ const char* GetStringUTFChars(JNIEnv* env, jstring string, jboolean* isCopy) {
 }
 
 void ReleaseStringUTFChars(JNIEnv* env, jstring string, char* chars) {
-    fjni_logv_dbg("[JNI] ReleaseStringUTFChars(env, 0x%x, \"%s\")", (int)string, chars);
+    fjni_logv_dbg("[JNI] ReleaseStringUTFChars(env, 0x%" PRIxPTR ", \"%s\")", (uintptr_t)string, chars);
     if (chars) {
         free(chars);
     }
 }
 
 jsize GetArrayLength(JNIEnv* env, jarray array) {
-    fjni_logv_dbg("[JNI] GetArrayLength(env, 0x%x)", (int)array);
+    fjni_logv_dbg("[JNI] GetArrayLength(env, 0x%" PRIxPTR ")", (uintptr_t)array);
 
     // TODO: this can theoretically be called for ObjectField values. Need to keep track of their sizes too?
     jsize ret = jda_sizeof(array);
     if (ret > -1) return ret;
 
-    fjni_logv_warn("Array 0x%x not found. Unknown array type?", (int)array);
+    fjni_logv_warn("Array 0x%" PRIxPTR " not found. Unknown array type?", (uintptr_t)array);
     return 0;
 }
 
@@ -1324,7 +1325,7 @@ jobjectArray NewObjectArray(JNIEnv* env, jsize length, jclass elementClass, jobj
     for (int i = 0; i < length; ++i)
         arr[i] = initialElement;
 
-    fjni_logv_dbg("[JNI] NewObjectArray(env, %i, 0x%x, 0x%x): 0x%x", length, elementClass, initialElement, (int)jda);
+    fjni_logv_dbg("[JNI] NewObjectArray(env, %i, 0x%" PRIxPTR ", 0x%" PRIxPTR "): 0x%" PRIxPTR "", length, elementClass, initialElement, (uintptr_t)jda);
     return jda;
 }
 
@@ -1341,7 +1342,7 @@ jobject GetObjectArrayElement(JNIEnv* env, jobjectArray array, jsize index) {
     }
 
     jobject * arr = jda->array;
-    fjni_logv_dbg("[JNI] GetObjectArrayElement(env, 0x%x, idx:%i): 0x%x", array, index, (int)arr[index]);
+    fjni_logv_dbg("[JNI] GetObjectArrayElement(env, 0x%" PRIxPTR ", idx:%i): 0x%" PRIxPTR "", array, index, (uintptr_t)arr[index]);
     return arr[index];
 }
 
@@ -1370,7 +1371,7 @@ jbooleanArray NewBooleanArray(JNIEnv* env, jsize length) {
         return NULL;
     }
 
-    fjni_logv_dbg("[JNI] NewBooleanArray(env, %i): 0x%x", length, (int)jda);
+    fjni_logv_dbg("[JNI] NewBooleanArray(env, %i): 0x%" PRIxPTR "", length, (uintptr_t)jda);
     return jda;
 }
 
@@ -1381,7 +1382,7 @@ jbyteArray NewByteArray(JNIEnv* env, jsize length) {
         return NULL;
     }
 
-    fjni_logv_dbg("[JNI] NewByteArray(env, %i): 0x%x", length, (int)jda);
+    fjni_logv_dbg("[JNI] NewByteArray(env, %i): 0x%" PRIxPTR "", length, (uintptr_t)jda);
     return jda;
 }
 
@@ -1392,7 +1393,7 @@ jcharArray NewCharArray(JNIEnv* env, jsize length) {
         return NULL;
     }
 
-    fjni_logv_dbg("[JNI] NewCharArray(env, %i): 0x%x", length, (int)jda);
+    fjni_logv_dbg("[JNI] NewCharArray(env, %i): 0x%" PRIxPTR "", length, (uintptr_t)jda);
     return jda;
 }
 
@@ -1403,7 +1404,7 @@ jshortArray NewShortArray(JNIEnv* env, jsize length) {
         return NULL;
     }
 
-    fjni_logv_dbg("[JNI] NewShortArray(env, %i): 0x%x", length, (int)jda);
+    fjni_logv_dbg("[JNI] NewShortArray(env, %i): 0x%" PRIxPTR "", length, (uintptr_t)jda);
     return jda;
 }
 
@@ -1414,7 +1415,7 @@ jintArray NewIntArray(JNIEnv* env, jsize length) {
         return NULL;
     }
 
-    fjni_logv_dbg("[JNI] NewIntArray(env, %i): 0x%x", length, (int)jda);
+    fjni_logv_dbg("[JNI] NewIntArray(env, %i): 0x%" PRIxPTR "", length, (uintptr_t)jda);
     return jda;
 }
 
@@ -1425,7 +1426,7 @@ jlongArray NewLongArray(JNIEnv* env, jsize length) {
         return NULL;
     }
 
-    fjni_logv_dbg("[JNI] NewLongArray(env, %i): 0x%x", length, (int)jda);
+    fjni_logv_dbg("[JNI] NewLongArray(env, %i): 0x%" PRIxPTR "", length, (uintptr_t)jda);
     return jda;
 }
 
@@ -1436,7 +1437,7 @@ jfloatArray NewFloatArray(JNIEnv* env, jsize length) {
         return NULL;
     }
 
-    fjni_logv_dbg("[JNI] NewFloatArray(env, %i): 0x%x", length, (int)jda);
+    fjni_logv_dbg("[JNI] NewFloatArray(env, %i): 0x%" PRIxPTR "", length, (uintptr_t)jda);
     return jda;
 }
 
@@ -1447,7 +1448,7 @@ jdoubleArray NewDoubleArray(JNIEnv* env, jsize length) {
         return NULL;
     }
 
-    fjni_logv_dbg("[JNI] NewDoubleArray(env, %i): 0x%x", length, (int)jda);
+    fjni_logv_dbg("[JNI] NewDoubleArray(env, %i): 0x%" PRIxPTR "", length, (uintptr_t)jda);
     return jda;
 }
 
@@ -1458,7 +1459,7 @@ jboolean* GetBooleanArrayElements(JNIEnv* env, jbooleanArray array, jboolean* is
         return NULL;
     }
 
-    fjni_logv_dbg("[JNI] GetBooleanArrayElements(env, 0x%x, 0x%x)", (int)array, (int)isCopy);
+    fjni_logv_dbg("[JNI] GetBooleanArrayElements(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ")", (uintptr_t)array, (uintptr_t)isCopy);
     if (isCopy != NULL) *isCopy = JNI_FALSE;
     return jda->array;
 }
@@ -1470,7 +1471,7 @@ jbyte* GetByteArrayElements(JNIEnv* env, jbyteArray array, jboolean* isCopy) {
         return NULL;
     }
 
-    fjni_logv_dbg("[JNI] GetByteArrayElements(env, 0x%x, 0x%x)", (int)array, (int)isCopy);
+    fjni_logv_dbg("[JNI] GetByteArrayElements(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ")", (uintptr_t)array, (uintptr_t)isCopy);
     if (isCopy != NULL) *isCopy = JNI_FALSE;
     return jda->array;
 }
@@ -1482,7 +1483,7 @@ jchar* GetCharArrayElements(JNIEnv* env, jcharArray array, jboolean* isCopy) {
         return NULL;
     }
 
-    fjni_logv_dbg("[JNI] GetCharArrayElements(env, 0x%x, 0x%x)", (int)array, (int)isCopy);
+    fjni_logv_dbg("[JNI] GetCharArrayElements(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ")", (uintptr_t)array, (uintptr_t)isCopy);
     if (isCopy != NULL) *isCopy = JNI_FALSE;
     return jda->array;
 }
@@ -1494,7 +1495,7 @@ jshort* GetShortArrayElements(JNIEnv* env, jshortArray array, jboolean* isCopy) 
         return NULL;
     }
 
-    fjni_logv_dbg("[JNI] GetShortArrayElements(env, 0x%x, 0x%x)", (int)array, (int)isCopy);
+    fjni_logv_dbg("[JNI] GetShortArrayElements(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ")", (uintptr_t)array, (uintptr_t)isCopy);
     if (isCopy != NULL) *isCopy = JNI_FALSE;
     return jda->array;
 }
@@ -1506,7 +1507,7 @@ jint* GetIntArrayElements(JNIEnv* env, jintArray array, jboolean* isCopy) {
         return NULL;
     }
 
-    fjni_logv_dbg("[JNI] GetIntArrayElements(env, 0x%x, 0x%x)", (int)array, (int)isCopy);
+    fjni_logv_dbg("[JNI] GetIntArrayElements(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ")", (uintptr_t)array, (uintptr_t)isCopy);
     if (isCopy != NULL) *isCopy = JNI_FALSE;
     return jda->array;
 }
@@ -1518,7 +1519,7 @@ jlong* GetLongArrayElements(JNIEnv* env, jlongArray array, jboolean* isCopy) {
         return NULL;
     }
 
-    fjni_logv_dbg("[JNI] GetLongArrayElements(env, 0x%x, 0x%x)", (int)array, (int)isCopy);
+    fjni_logv_dbg("[JNI] GetLongArrayElements(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ")", (uintptr_t)array, (uintptr_t)isCopy);
     if (isCopy != NULL) *isCopy = JNI_FALSE;
     return jda->array;
 }
@@ -1530,7 +1531,7 @@ jfloat* GetFloatArrayElements(JNIEnv* env, jfloatArray array, jboolean* isCopy) 
         return NULL;
     }
 
-    fjni_logv_dbg("[JNI] GetFloatArrayElements(env, 0x%x, 0x%x)", (int)array, (int)isCopy);
+    fjni_logv_dbg("[JNI] GetFloatArrayElements(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ")", (uintptr_t)array, (uintptr_t)isCopy);
     if (isCopy != NULL) *isCopy = JNI_FALSE;
     return jda->array;
 }
@@ -1542,7 +1543,7 @@ jdouble* GetDoubleArrayElements(JNIEnv* env, jdoubleArray array, jboolean* isCop
         return NULL;
     }
 
-    fjni_logv_dbg("[JNI] GetDoubleArrayElements(env, 0x%x, 0x%x)", (int)array, (int)isCopy);
+    fjni_logv_dbg("[JNI] GetDoubleArrayElements(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ")", (uintptr_t)array, (uintptr_t)isCopy);
     if (isCopy != NULL) *isCopy = JNI_FALSE;
     return jda->array;
 }
@@ -1625,12 +1626,12 @@ void SetDoubleArrayRegion(JNIEnv* env, jdoubleArray array, jsize start, jsize le
 // Due to the way we define and execute functions, Register/UnregisterNatives are redundant
 
 jint RegisterNatives(JNIEnv* env, jclass clazz, const JNINativeMethod* methods, jint nMethods) {
-    fjni_logv_dbg("[JNI] RegisterNatives(env, 0x%x, 0x%x, n:%i): ignored", (int)clazz, (int)methods, nMethods);
+    fjni_logv_dbg("[JNI] RegisterNatives(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", n:%i): ignored", (uintptr_t)clazz, (uintptr_t)methods, nMethods);
     return JNI_OK;
 }
 
 jint UnregisterNatives(JNIEnv* env, jclass clazz) {
-    fjni_logv_dbg("[JNI] UnregisterNatives(env, 0x%x): ignored", (int)clazz);
+    fjni_logv_dbg("[JNI] UnregisterNatives(env, 0x%" PRIxPTR "): ignored", (uintptr_t)clazz);
     return JNI_OK;
 }
 
@@ -1638,13 +1639,13 @@ jint UnregisterNatives(JNIEnv* env, jclass clazz) {
 
 jint MonitorEnter(JNIEnv* env, jobject obj) {
     // Here reduced log level to dbg to avoid a million logs
-    fjni_logv_dbg("[JNI] MonitorEnter(env, 0x%x): not implemented", (int)obj);
+    fjni_logv_dbg("[JNI] MonitorEnter(env, 0x%" PRIxPTR "): not implemented", (uintptr_t)obj);
     return JNI_OK;
 }
 
 jint MonitorExit(JNIEnv* env, jobject obj) {
     // Here reduced log level to dbg to avoid a million logs
-    fjni_logv_dbg("[JNI] MonitorExit(env, 0x%x): not implemented", (int)obj);
+    fjni_logv_dbg("[JNI] MonitorExit(env, 0x%" PRIxPTR "): not implemented", (uintptr_t)obj);
     return JNI_OK;
 }
 
@@ -1655,7 +1656,7 @@ jint GetJavaVM(JNIEnv* env, JavaVM** vm) {
 }
 
 void GetStringRegion(JNIEnv* env, jstring str, jsize start, jsize len, jchar* buf) {
-    fjni_logv_dbg("[JNI] GetStringRegion(env, 0x%x, start:%i, len:%i, 0x%x)", (int)str, start, len, (int)buf);
+    fjni_logv_dbg("[JNI] GetStringRegion(env, 0x%" PRIxPTR ", start:%i, len:%i, 0x%" PRIxPTR ")", (uintptr_t)str, start, len, (uintptr_t)buf);
 
     if (str == NULL) {
         fjni_log_err("str is NULL");
@@ -1675,7 +1676,7 @@ void GetStringRegion(JNIEnv* env, jstring str, jsize start, jsize len, jchar* bu
 }
 
 void GetStringUTFRegion(JNIEnv* env, jstring str, jsize start, jsize len, char* buf) {
-    fjni_logv_dbg("[JNI] GetStringUTFRegion(env, 0x%x, start:%i, len:%i, 0x%x)", (int)str, start, len, (int)buf);
+    fjni_logv_dbg("[JNI] GetStringUTFRegion(env, 0x%" PRIxPTR ", start:%i, len:%i, 0x%" PRIxPTR ")", (uintptr_t)str, start, len, (uintptr_t)buf);
 
     if (str == NULL) {
         fjni_log_err("str is NULL");
@@ -1699,17 +1700,17 @@ void* GetPrimitiveArrayCritical(JNIEnv* env, jarray array, jboolean* isCopy) {
 
     JavaDynArray * jda = jda_find((void *) array);
     if (!jda) {
-        fjni_logv_err("[JNI] GetPrimitiveArrayCritical(env, 0x%x, 0x%x): Array not found.", (int)array, (int)isCopy);
+        fjni_logv_err("[JNI] GetPrimitiveArrayCritical(env, 0x%" PRIxPTR ", 0x%" PRIxPTR "): Array not found.", (uintptr_t)array, (uintptr_t)isCopy);
         return NULL;
     }
 
-    fjni_logv_dbg("[JNI] GetPrimitiveArrayCritical(env, 0x%x, 0x%x)", (int)array, (int)isCopy);
+    fjni_logv_dbg("[JNI] GetPrimitiveArrayCritical(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ")", (uintptr_t)array, (uintptr_t)isCopy);
     return jda->array;
 }
 
 void ReleasePrimitiveArrayCritical(JNIEnv* env, jarray array, void* carray, jint mode) {
     // We never copy in GetPrimitiveArrayCritical, so can ignore Release*
-    fjni_logv_dbg("[JNI] ReleasePrimitiveArrayCritical(env, 0x%x, 0x%x, %i): ignored", (int)array, (int)carray, mode);
+    fjni_logv_dbg("[JNI] ReleasePrimitiveArrayCritical(env, 0x%" PRIxPTR ", 0x%" PRIxPTR ", %i): ignored", (uintptr_t)array, (uintptr_t)carray, mode);
 }
 
 const jchar* GetStringCritical(JNIEnv* env, jstring string, jboolean* isCopy) {
@@ -1739,12 +1740,12 @@ void ReleaseStringCritical(JNIEnv* env, jstring string, const jchar* carray) {
 }
 
 jweak NewWeakGlobalRef(JNIEnv* env, jobject obj) {
-    fjni_logv_dbg("[JNI] NewWeakGlobalRef(env, 0x%x): ignored", (int)obj);
+    fjni_logv_dbg("[JNI] NewWeakGlobalRef(env, 0x%" PRIxPTR "): ignored", (uintptr_t)obj);
     return (jweak)obj;
 }
 
 void DeleteWeakGlobalRef(JNIEnv* env, jweak obj) {
-    fjni_logv_dbg("[JNI] DeleteWeakGlobalRef(env, 0x%x)", (int)obj);
+    fjni_logv_dbg("[JNI] DeleteWeakGlobalRef(env, 0x%" PRIxPTR ")", (uintptr_t)obj);
     // Do not free, since we have not created any additional references above.
 }
 
@@ -1756,22 +1757,22 @@ jboolean ExceptionCheck(JNIEnv* env) {
 // TODO: Implement DirectByteBuffers
 
 jobject NewDirectByteBuffer(JNIEnv* env, void* address, jlong capacity) {
-    fjni_logv_warn("[JNI] NewDirectByteBuffer(env, 0x%x, %i): not implemented", (int)address, capacity);
+    fjni_logv_warn("[JNI] NewDirectByteBuffer(env, 0x%" PRIxPTR ", %i): not implemented", (uintptr_t)address, capacity);
     return NULL;
 }
 
 void* GetDirectBufferAddress(JNIEnv* env, jobject buf) {
-    fjni_logv_warn("[JNI] GetDirectBufferAddress(env, 0x%x)", (int)buf);
+    fjni_logv_warn("[JNI] GetDirectBufferAddress(env, 0x%" PRIxPTR ")", (uintptr_t)buf);
     return NULL;
 }
 
 jlong GetDirectBufferCapacity(JNIEnv* env, jobject buf) {
-    fjni_logv_warn("[JNI] GetDirectBufferCapacity(env, 0x%x)", (int)buf);
+    fjni_logv_warn("[JNI] GetDirectBufferCapacity(env, 0x%" PRIxPTR ")", (uintptr_t)buf);
     return 0;
 }
 
 jobjectRefType GetObjectRefType(JNIEnv* env, jobject obj) {
-    fjni_logv_warn("[JNI] GetObjectRefType(env, 0x%x): not implemented", (int)obj);
+    fjni_logv_warn("[JNI] GetObjectRefType(env, 0x%" PRIxPTR "): not implemented", (uintptr_t)obj);
     return JNIInvalidRefType;
 }
 
